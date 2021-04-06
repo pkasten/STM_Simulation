@@ -1,8 +1,10 @@
 import os
+import threading
 
 mv_from = ""
 mv_to = ""
 namescheme = ""
+edit_lock = threading.Lock()
 
 
 # Checks wheather the name fits the given scheme
@@ -13,6 +15,7 @@ def _fits_scheme(name, namescheme):
     if not name.endswith(suffix): return False
     if extractNums(name) == "": return False
     return True
+
 
 # returns number of files inside folder
 def countFiles(folder):
@@ -83,17 +86,41 @@ def firstFile(folder, namescheme):
 
 # removes one File
 def removeFirst(folder, namescheme):
-    os.remove(os.path.join(folder, firstFile(folder, namescheme)))
+    ff = firstFile(folder, namescheme)
+    if ff == "":
+        return
+    edit_lock.acquire()
+    try:
+        os.remove(os.path.join(folder, ff))
+    except FileNotFoundError as fnfe:
+        None
+    edit_lock.release()
 
 
 # removes min File
 def removeMin(folder, namescheme):
-    os.remove(os.path.join(folder, minIndexFile(folder, namescheme)))
+    mif = minIndexFile(folder, namescheme)
+    if mif == "":
+        return
+    try:
+        os.remove(os.path.join(folder, mif))
+    except FileNotFoundError as fnfe:
+        None
+    edit_lock.acquire()
+    edit_lock.release()
 
 
 # removes max File
 def removeMax(folder, namescheme):
-    os.remove(os.path.join(folder, maxIndexFile(folder, namescheme)))
+    mif = maxIndexFile(folder, namescheme)
+    if mif == "":
+        return
+    edit_lock.acquire()
+    try:
+        os.remove(os.path.join(folder, mif))
+    except FileNotFoundError as fnfe:
+        None
+    edit_lock.release()
 
 
 # testing functionalities
