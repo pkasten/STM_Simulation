@@ -6,19 +6,23 @@ settings_file = os.getcwd() + "/Configuration.settings.ini"
 ovr = 'SETTINGS'
 def_loc = os.getcwd()
 def_name = 'file_#.txt'
+def_firstStore = os.getcwd()
+def_secondStore = os.getcwd() + "/second"
 initialized = False
 
 
 # Reset parameters to default values
 def _writeDefaults():
     if not initialized: setup()
-    conf[ovr] = {'threads': 1, 'file_location': def_loc, 'file_namescheme': def_name}
+    conf[ovr] = {'threads': 1, 'file_location': def_loc, 'file_namescheme': def_name, 'first_storage': def_firstStore, 'second_storage': def_secondStore}
     with open(settings_file, 'w') as settings:
         conf.write(settings)
 
 
 # Create a new settings-file if not yet existent
 def setup():
+    global initialized
+    initialized = True
     if not os.path.exists(settings_file):
         _writeDefaults()
 
@@ -69,6 +73,33 @@ def set_fileName(name):
     with open(settings_file, "w") as settings:
         conf.write(settings)
 
+#set FIRST_STORAGE parameter
+def set_firstStorage(path):
+    if not initialized: setup()
+    conf[ovr]['first_storage'] = str(path)
+    with open(settings_file, "w") as settings:
+        conf.write(settings)
+
+# get FIRST_STORAGE parameter
+def get_firstStorage():
+    if not initialized: setup()
+    conf.read(settings_file)
+    return conf[ovr]['first_Storage']
+
+
+# set SECOND_STORAGE parameter
+def set_secondStorage(path):
+    if not initialized: setup()
+    conf[ovr]['second_storage'] = str(path)
+    with open(settings_file, "w") as settings:
+        conf.write(settings)
+
+
+# get SECOND_STORAGE parameter
+def get_secondStorage():
+    if not initialized: setup()
+    conf.read(settings_file)
+    return conf[ovr]['second_Storage']
 
 # print each line in settings_file
 def print_file():
