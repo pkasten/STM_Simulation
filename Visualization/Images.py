@@ -3,6 +3,7 @@ import Data
 from PIL import Image
 import numpy as np
 # import scipy as sp
+from Configuration import Files as files
 from Maths import Functions
 from Configuration import Configuration
 
@@ -29,9 +30,11 @@ class Images:
 
     def addPoint(self, coo):
         adding = np.zeros((self.width, self.height))
-        adding = 255 * func.normalDistribution(adding, coo, self.sigma)
-        print(adding)
-        print(np.shape(adding)) #ToDo: Correct
+        for i in range(self.width):
+            for j in range(self.height):
+                adding[i, j] = 255 * func.normalDistribution(coo, (i, j), self.sigma)
+        #print(adding)
+        #print(np.shape(adding)) #ToDo: Correct
         self.colors = self.colors + adding
 
     def updateImage(self):
@@ -53,4 +56,10 @@ class Images:
         while data.hasPoints():
             self.addPoint(data.getPoint())
         self.updateImage()
-        self.showImage()
+        # self.showImage()
+
+    def saveImage(self):
+        fp = files.MultiFileManager.getFileName() #ToDo: possibly beter way to select FileManager
+        self.img.save(fp)
+        return fp
+

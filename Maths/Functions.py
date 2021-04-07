@@ -8,4 +8,5 @@ class Functions:
     @staticmethod
     def normalDistribution(center, point, sigma):
         d = Functions.dist2D(center, point)
-        return np.power(2 * np.pi * np.square(sigma), -0.5) * np.exp(-(np.square(d)) / (2 * np.square(sigma)))
+        # return np.power(2 * np.pi * np.square(sigma), -0.5) * np.exp(-(np.square(d)) / (2 * np.square(sigma)))
+        return np.exp(-(np.square(d)) / (2 * np.square(sigma)))

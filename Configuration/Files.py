@@ -5,6 +5,18 @@ from multiprocessing import Lock as mpLock
 
 class FileManager:
 
+    index = 0
+    defaultFolder = os.getcwd()
+
+    @staticmethod
+    def setDefaultFolder(path):
+        FileManager.defaultFolder = path
+
+    @staticmethod
+    def getFileName():
+        FileManager.index += 1
+        return FileManager.defaultFolder + "/image" + str(FileManager.index) + ".png"
+
     # Checks wheather the name fits the given scheme
     @staticmethod
     def _fits_scheme(name, namescheme):
@@ -163,6 +175,15 @@ class FileManager:
 class ThreadsafeFileManager(FileManager):
     #ToDo: Check if all Methods areimplemented
     edit_lock = threading.Lock()
+    filename_lock = threading.Lock()
+
+    @staticmethod
+    def getFileName():
+        ThreadsafeFileManager.filename_lock.acquire()
+        ThreadsafeFileManager.index += 1
+        ret = ThreadsafeFileManager.defaultFolder + "/image" + str(ThreadsafeFileManager.index) + ".png"
+        ThreadsafeFileManager.filename_lock.release()
+        return ret
 
     # removes one File
     def removeFirst(self, folder, namescheme):
@@ -293,6 +314,7 @@ class ThreadsafeFileManager(FileManager):
 
 class MultiFileManager(ThreadsafeFileManager):
     edit_lock = mpLock()
+    filename_lock = mpLock()
 
     @staticmethod
     def clearFolder(folder):
