@@ -10,6 +10,7 @@ from multiprocessing import Process
 #printlock = threading.Lock()
 #folder = os.getcwd() + "/testFiles"
 
+
 def testFileManager():
     moves = 300
     filesNo = 700
@@ -72,7 +73,7 @@ def testFileManager():
             manageFiles("Single", files.FileManager(), folderB)
         duration = time.process_time() - start
         print("Single Test: " + str(duration))
-        fm.clearFolder(folderB)
+        #fm.clearFolder(folderB)
         return duration
 
     def doTestThread():
@@ -159,12 +160,15 @@ def testFileManager():
             t.join()
         end = time.process_time() - start
         print("End: " + str(end))
-        fm.clearFolder(folderB)
+        #fm.clearFolder(folderB)
         return end
 
     def doTestMulti():
 
-        cM = files.MultiFileManager()
+        folderA = os.getcwd() + "/testFilesA"
+        folderB = os.getcwd() + "/testFilesB"
+
+        fm = files.MultiFileManager()
 
         class MyThread(Process):
             name = "Process-"
@@ -180,9 +184,7 @@ def testFileManager():
 
             def __init__(self):
                 super().__init__()
-                global counter
-                self.name = self.name + str(counter)
-                counter += 1
+
 
             def run(self):
                 while True:
@@ -191,20 +193,57 @@ def testFileManager():
                     if manageFiles(self.name, self.fileManager, self.folderB):
                         break
 
+        class MovingThread(Process):
+            name = "TProcess-"
+            interrupted = False
+            fileManager = files.MultiFileManager()
+            #printlock = threading.Lock()
+            folderA = os.getcwd() + "/testFilesA"
+            folderB = os.getcwd() + "/testFilesB"
+
+            def setConfig(self, fileM):
+                self.fileManager = fileM
+
+            def interrupt(self):
+                self.interrupted = True
+
+            def __init__(self):
+                super().__init__()
+
+            def run(self):
+                while True:
+                    if self.interrupted:
+                        break
+                    if fm.countFiles(folderA) == 0:
+                        break
+                    if not fm.moveFile(folderA, folderB):
+                        break
+
         print("Multi")
         start = time.process_time()
         threads = []
+        movers = []
         initTest()
         for i in range(config.ConfigManager.get_threads()):
             threads.append(MyThread())
+            movers.append(MovingThread())
+        for m in movers:
+            m.start()
+        for m in movers:
+            m.join()
         for t in threads:
-            t.setConfig(cM)
+            t.setConfig(fm)
             t.start()
         print("Stopping")
+        while fm.countFiles(folderA) > 0:
+            time.sleep(1)
+
         for t in threads:
+            t.interrupt()
             t.join()
         end = time.process_time() - start
         print("End: " + str(end))
+        #fm.clearFolder(folderB)
         return end
 
     def comparison():
@@ -215,20 +254,20 @@ def testFileManager():
         for i in range(runs):
             print("Starting Run " + str(i))
             singles.append(doTestSingle())
-            #threadings.append(doTestThread())
+            threadings.append(doTestThread())
             multis.append(doTestMulti())
 
         print("-------------------")
         print("-------------------")
         print("-------------------")
         print("Single average:  " + str(sum(singles) / len(singles)))
-        #print("Thread average:  " + str(sum(threadings) / len(threadings)))
+        print("Thread average:  " + str(sum(threadings) / len(threadings)))
         print("Multi average:  " + str(sum(multis) / len(multis)))
 
-    doTestSingle()
-    doTestThread()
-    # doTestMulti()
-    # comparison()
+    #doTestSingle()
+    #doTestThread()
+    #doTestMulti()
+    comparison()
 
 
 if __name__ == "__main__":

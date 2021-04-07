@@ -10,16 +10,21 @@ class ConfigManager:
     def_name = 'file_#.txt'
     def_firstStore = os.getcwd()
     def_secondStore = os.getcwd() + "/second"
+    def_width = 200
+    def_height = 200
     initialized = False
 
     # Reset parameters to default values
     @staticmethod
     def _writeDefaults():
         if not ConfigManager.initialized: ConfigManager.setup()
-        ConfigManager.conf[ConfigManager.ovr] = {'threads': 1, 'file_location': ConfigManager.def_loc,
+        ConfigManager.conf[ConfigManager.ovr] = {'threads': 1,
+                                                 'file_location': ConfigManager.def_loc,
                                                  'file_namescheme': ConfigManager.def_name,
                                                  'first_storage': ConfigManager.def_firstStore,
-                                                 'second_storage': ConfigManager.def_secondStore}
+                                                 'second_storage': ConfigManager.def_secondStore,
+                                                 'width': ConfigManager.def_width,
+                                                 'height': ConfigManager.def_height}
         with open(ConfigManager.settings_file, 'w') as settings:
             ConfigManager.conf.write(settings)
 
@@ -114,6 +119,32 @@ class ConfigManager:
         with open(ConfigManager.settings_file, "r") as sf:
             for line in sf:
                 print(line)
+
+    @staticmethod
+    def get_width():
+        if not ConfigManager.initialized: ConfigManager.setup()
+        ConfigManager.conf.read(ConfigManager.settings_file)
+        return int(ConfigManager.conf[ConfigManager.ovr]['width'])
+
+    @staticmethod
+    def get_height():
+        if not ConfigManager.initialized: ConfigManager.setup()
+        ConfigManager.conf.read(ConfigManager.settings_file)
+        return int(ConfigManager.conf[ConfigManager.ovr]['height'])
+
+    @staticmethod
+    def set_width(w):
+        if not ConfigManager.initialized: ConfigManager.setup()
+        ConfigManager.conf[ConfigManager.ovr]['width'] = str(w)
+        with open(ConfigManager.settings_file, "w") as settings:
+            ConfigManager.conf.write(settings)
+
+    @staticmethod
+    def set_heigth(h):
+        if not ConfigManager.initialized: ConfigManager.setup()
+        ConfigManager.conf[ConfigManager.ovr]['height'] = str(h)
+        with open(ConfigManager.settings_file, "w") as settings:
+            ConfigManager.conf.write(settings)
 
     # testing this script
     @staticmethod

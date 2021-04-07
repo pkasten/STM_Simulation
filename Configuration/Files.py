@@ -184,13 +184,13 @@ class ThreadsafeFileManager(FileManager):
         if redo:
             self.removeFirst(folder, namescheme)
 
-    def removeFirst(self, folder):
+    def removeFirstNameless(self, folder):
         self.removeFirst(folder, None)
 
-    @staticmethod
-    def clearFolder(folder):
+
+    def clearFolder(self, folder):
         while ThreadsafeFileManager.countFiles(folder) > 0:
-            ThreadsafeFileManager.removeFirst(folder)
+            self.removeFirstNameless(folder)
 
     # moves files from Folder A to Folder B
     def moveFile(self, folderA, folderB):
@@ -302,10 +302,14 @@ class MultiFileManager(ThreadsafeFileManager):
     def moveFile(self, folderA, folderB):
         self.edit_lock.acquire()
         file = MultiFileManager.firstFile(folderA, None)
-        äprint("Moving file " + file + " At Size " + str(MultiFileManager.countFiles(folderA)))
+        #print("Moving file " + file + " At Size " + str(MultiFileManager.countFiles(folderA)))
         if file is None:
             self.edit_lock.release()
             return False
-        os.rename(os.path.join(folderA, file), os.path.join(folderB, file))
-        self.edit_lock.release()
+        try:
+            os.rename(folderA + "/" + file, folderB + "/" + file)
+        except OSError:
+            return False
+        finally:
+            self.edit_lock.release()
         return True
