@@ -151,41 +151,66 @@ class ThreadsafeFileManager(FileManager):
 
     # removes one File
     def removeFirst(self, folder, namescheme):
+        redo = False
         ff = ThreadsafeFileManager.firstFile(folder, namescheme)
-        if ff == "":
+        if ff is None:
             return
         self.edit_lock.acquire()
         try:
-            os.remove(os.path.join(folder, ff))
+            if os.path.exists(folder + "/" + ff):
+                os.remove(os.path.join(folder, ff))
+            else:
+                #print("Not Existant: " + folder + "/" + ff)
+                redo = True
         except FileNotFoundError as fnfe:
             pass
-        self.edit_lock.release()
+        finally:
+            self.edit_lock.release()
+        if redo:
+            self.removeFirst(folder, namescheme)
 
     # removes min File
     def removeMin(self, folder, namescheme):
+        redo = False
         mif = ThreadsafeFileManager.minIndexFile(folder, namescheme)
-        if mif == "":
+        if mif is None:
             return
         self.edit_lock.acquire()
         try:
-            os.remove(os.path.join(folder, mif))
+            if os.path.exists(folder + "/" + mif):
+                os.remove(os.path.join(folder, mif))
+            else:
+                #print("Not Existent: " + folder + "/" + mif)
+                redo = True
         except FileNotFoundError as fnfe:
             pass
+        finally:
+            self.edit_lock.release()
 
-        self.edit_lock.release()
+        if redo: self.removeMin(folder, namescheme)
+
+
 
     # removes max File
     def removeMax(self, folder, namescheme):
+        redo = False
         mif = self.maxIndexFile(folder, namescheme)
-        if mif == "":
+        if mif is None:
             return
         self.edit_lock.acquire()
         try:
-            os.remove(os.path.join(folder, mif))
-        except FileNotFoundError as fnfe: pass
-
-
-        self.edit_lock.release()
+            if os.path.exists(folder + "/" + mif):
+                os.remove(os.path.join(folder, mif))
+            else:
+                #print("Not Existent: " + folder + "/" + mif)
+                #print(self.countFiles(folder))
+                redo = True
+        except FileNotFoundError as fnfe:
+            pass
+        finally:
+            self.edit_lock.release()
+        if redo:
+            self.removeMax(folder, namescheme)
 
     # testing functionalities
     def test(self):
