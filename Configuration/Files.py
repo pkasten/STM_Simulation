@@ -4,19 +4,26 @@ from multiprocessing import Lock as mpLock
 
 
 class FileManager:
-    mv_from = ""
-    mv_to = ""
-    namescheme = ""
 
     # Checks wheather the name fits the given scheme
     @staticmethod
     def _fits_scheme(name, namescheme):
+        if namescheme is None:
+            return True
         suffix = str(namescheme).split('.', maxsplit=1)[1]
         prefix = str(namescheme).split('#', maxsplit=1)[0]
         if not name.startswith(prefix): return False
         if not name.endswith(suffix): return False
         if FileManager.extractNums(name) == "": return False
         return True
+
+    #clears the entire folder. asks for premission
+    @staticmethod
+    def clearFolder(folder):
+        if input("Clear folder " + folder + "?").lower().startswith("n"):
+            return
+        while FileManager.countFiles(folder) > 0:
+            FileManager.removeFirst(folder, None)
 
     # returns number of files inside folder
     @staticmethod
@@ -106,6 +113,16 @@ class FileManager:
             folder = os.getcwd()
         os.remove(os.path.join(folder, FileManager.maxIndexFile(folder, namescheme)))
 
+    #moves files from Folder A to Folder B
+    @staticmethod
+    def moveFile(folderA, folderB):
+        file = FileManager.firstFile(folderA, None)
+        #print("Moving file " + file + " At Size " + str(FileManager.countFiles(folderA)))
+        if file is None:
+            return False
+        os.rename(os.path.join(folderA, file), os.path.join(folderB, file))
+        return True
+
     # testing functionalities
     def test(self):
         path = os.getcwd() + "/testfiles"
@@ -142,11 +159,9 @@ class FileManager:
 
         print("Testing Done")
 
-    # if __name__ == "__main__":
-    #    test()
-
 
 class ThreadsafeFileManager(FileManager):
+    #ToDo: Check if all Methods areimplemented
     edit_lock = threading.Lock()
 
     # removes one File
@@ -168,6 +183,33 @@ class ThreadsafeFileManager(FileManager):
             self.edit_lock.release()
         if redo:
             self.removeFirst(folder, namescheme)
+
+    def removeFirst(self, folder):
+        self.removeFirst(folder, None)
+
+    @staticmethod
+    def clearFolder(folder):
+        while ThreadsafeFileManager.countFiles(folder) > 0:
+            ThreadsafeFileManager.removeFirst(folder)
+
+    # moves files from Folder A to Folder B
+    def moveFile(self, folderA, folderB):
+        #print("Moving TS")
+        self.edit_lock.acquire()
+        file = ThreadsafeFileManager.firstFile(folderA, None)
+        #print("Moving file " + file + " At Size " + str(ThreadsafeFileManager.countFiles(folderA)))
+        if file is None:
+            print("File is none")
+            return False
+        try:
+            os.rename(folderA + "/" + file, folderB + "/" + file)
+        except OSError:
+            return False
+        finally:
+            self.edit_lock.release()
+
+
+        return True
 
     # removes min File
     def removeMin(self, folder, namescheme):
@@ -251,3 +293,19 @@ class ThreadsafeFileManager(FileManager):
 
 class MultiFileManager(ThreadsafeFileManager):
     edit_lock = mpLock()
+
+    @staticmethod
+    def clearFolder(folder):
+        while MultiFileManager.countFiles(folder) > 0:
+            MultiFileManager.removeFirst(folder, None)
+
+    def moveFile(self, folderA, folderB):
+        self.edit_lock.acquire()
+        file = MultiFileManager.firstFile(folderA, None)
+        äprint("Moving file " + file + " At Size " + str(MultiFileManager.countFiles(folderA)))
+        if file is None:
+            self.edit_lock.release()
+            return False
+        os.rename(os.path.join(folderA, file), os.path.join(folderB, file))
+        self.edit_lock.release()
+        return True
