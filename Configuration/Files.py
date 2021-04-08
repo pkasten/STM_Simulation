@@ -46,6 +46,7 @@ class FileManager:
     @staticmethod
     @measureTime
     def countFiles(folder):
+        #print("CountingFiles")
         if folder is None:
             folder = os.getcwd()
         return len(os.listdir(folder))
@@ -142,12 +143,15 @@ class FileManager:
     @staticmethod
     @measureTime
     def moveFile(folderA, folderB):
+        #print("MoveFile called")
         file = FileManager.firstFile(folderA, None)
+        #print("MoveFile called ff")
         # print("Moving file " + file + " At Size " + str(FileManager.countFiles(folderA)))
         if file is None:
             return False
         os.rename(os.path.join(folderA, file), os.path.join(folderB, file))
         return True
+
 
     # testing functionalities
     def test(self):
@@ -347,15 +351,24 @@ class MultiFileManager(ThreadsafeFileManager):
 
     @measureTime
     def moveFile(self, folderA, folderB):
+        try:
+            os.mkdir(folderB)
+        except FileExistsError as fe:
+            pass
+        #print("MoveFileCalled")
         self.edit_lock.acquire()
+
         file = MultiFileManager.firstFile(folderA, None)
         # print("Moving file " + file + " At Size " + str(MultiFileManager.countFiles(folderA)))
         if file is None:
+            print("NoFile")
             self.edit_lock.release()
             return False
         try:
             os.rename(folderA + "/" + file, folderB + "/" + file)
-        except OSError:
+        except OSError as err:
+            #print("OSError")
+            #print(err)
             return False
         finally:
             self.edit_lock.release()

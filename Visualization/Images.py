@@ -10,6 +10,8 @@ from Maths.Functions import measureTime
 
 func = Functions.Functions()
 
+aspectRange = 3
+
 
 class Images:
     width = Configuration.ConfigManager.get_width()
@@ -37,10 +39,24 @@ class Images:
 
     @measureTime
     def addPoint(self, coo):
+        dist = aspectRange * self.sigma
+        xmin = int(max(0, coo[0] - dist))
+        xmax = int(min(self.width, coo[0] + dist))
+        ymin = int(max(0, coo[1] - dist))
+        ymax = int(min(self.height, coo[1] + dist))
+        adding = np.zeros((self.width, self.height))
+        for i in range(xmin, xmax):
+            for j in range(ymin, ymax):
+                adding[i, j] = 255 * func.normalDistribution(coo, (i, j), self.sigma)
+        self.colors = self.colors + adding
+
+    @measureTime
+    def addPoints(self, coo):  # Not efficient
         adding = np.zeros((self.width, self.height))
         for i in range(self.width):
             for j in range(self.height):
-                adding[i, j] = 255 * func.normalDistribution(coo, (i, j), self.sigma)
+                for pt in coo:
+                    adding[i, j] = 255 * func.normalDistribution(pt, (i, j), self.sigma)
         self.colors = self.colors + adding
 
     @measureTime
@@ -63,8 +79,11 @@ class Images:
     def createImage(self, data):
         Configuration.ConfigManager.setup()
         self.newImage()
+        coos = []
         while data.hasPoints():
+            # coos.append(data.getPoint())
             self.addPoint(data.getPoint())
+        # self.addPoints(coos)
         self.updateImage()
 
     @measureTime

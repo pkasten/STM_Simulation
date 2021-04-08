@@ -9,11 +9,14 @@ from Maths.Functions import measureTime, clearLog, evaluateLog
 
 
 def test():
+    Configuration.MultiConfigManager.set_images_pt(250)
     clearLog()
     start = time.perf_counter()
 
     Configuration.MultiConfigManager.set_threads(4)
     path = os.getcwd() + "/bildordner"
+    moveTo = os.getcwd() + "/bildordner2"
+
     try:
         os.mkdir(path)
     except OSError:
@@ -26,7 +29,7 @@ def test():
 
     class DataCreator(Process):
         def run(self):
-            for i in range(4):
+            for i in range(Configuration.MultiConfigManager.get_images_pt()):
                 img = Images.Images(Files.MultiFileManager(), fn_generator)
                 number_of_points = 10
                 data = frame.DataFrame()
@@ -37,20 +40,50 @@ def test():
                 path = img.saveImage()
                 print("Image " + path + " saved by: " + str(self.name))
 
-    processes = []
-    for i in range(Configuration.MultiConfigManager.get_threads()):
-        processes.append(DataCreator())
-    for pro in processes:
-        pro.start()
-    for po in processes:
-        po.join()
+    class Movement(Process):
+        mfm = Files.MultiFileManager()
+        def __init__(self):
+            super().__init__()
+
+        def run(self):
+            #print("Running")
+            while self.mfm.countFiles(path) > 0:
+                #print("Inner")
+                self.mfm.moveFile(path, moveTo)
+                #print("movedFile")
+
+    @measureTime
+    def genererateTestFiles():
+
+        processes = []
+        for i in range(Configuration.MultiConfigManager.get_threads()):
+            processes.append(DataCreator())
+        for pro in processes:
+            pro.start()
+        for po in processes:
+            po.join()
+
+    @measureTime
+    def moveAllTest():
+        processes = []
+        for i in range(Configuration.MultiConfigManager.get_threads()):
+            processes.append(Movement())
+            #print("appended")
+        for pro in processes:
+            pro.start()
+            #print("started")
+        for po in processes:
+            po.join()
 
     # print(data)
     #print_statistics()
-
+    genererateTestFiles()
+    moveAllTest()
     evaluateLog()
     print("OVR Dauer: {:.3f}".format(time.perf_counter() - start) + " s")
     print("Done")
+
+
 
 
 if __name__ == "__main__":

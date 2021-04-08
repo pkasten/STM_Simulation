@@ -5,7 +5,7 @@ from Maths.Functions import measureTime
 
 class ConfigManager:
     conf = cp.ConfigParser()
-    settings_file = os.getcwd() + "/Configuration.settings.ini"
+    settings_file = os.getcwd() + "/Configuration/settings.ini"
     ovr = 'SETTINGS'
     def_loc = os.getcwd()
     def_name = 'file_#.txt'
@@ -21,6 +21,7 @@ class ConfigManager:
     def _writeDefaults():
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf[ConfigManager.ovr] = {'threads': 1,
+                                                 'images_per_thread': 25,
                                                  'file_location': ConfigManager.def_loc,
                                                  'file_namescheme': ConfigManager.def_name,
                                                  'first_storage': ConfigManager.def_firstStore,
@@ -47,6 +48,23 @@ class ConfigManager:
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf.read(ConfigManager.settings_file)
         return int(ConfigManager.conf[ConfigManager.ovr]['threads'])  # ToDo: Castch Exceptions
+
+    # get Images Per Thread
+    @staticmethod
+    @measureTime
+    def get_images_pt():
+        if not ConfigManager.initialized: ConfigManager.setup()
+        ConfigManager.conf.read(ConfigManager.settings_file)
+        return int(ConfigManager.conf[ConfigManager.ovr]['images_per_thread'])  # ToDo: Castch Exceptions
+
+    # set Images Per Thread
+    @staticmethod
+    @measureTime
+    def set_images_pt(num):
+        if not ConfigManager.initialized: ConfigManager.setup()
+        ConfigManager.conf[ConfigManager.ovr]['images_per_thread'] = str(num)
+        with open(ConfigManager.settings_file, "w") as settings:
+            ConfigManager.conf.write(settings)
 
     # set THREADS parameter
     @staticmethod
