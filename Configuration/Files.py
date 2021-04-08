@@ -2,23 +2,27 @@ import os
 import threading
 from multiprocessing import Lock as mpLock
 
+from Maths.Functions import measureTime
+
 
 class FileManager:
-
     index = 0
     defaultFolder = os.getcwd()
 
     @staticmethod
+    @measureTime
     def setDefaultFolder(path):
         FileManager.defaultFolder = path
 
     @staticmethod
+    @measureTime
     def getFileName():
         FileManager.index += 1
         return FileManager.defaultFolder + "/image" + str(FileManager.index) + ".png"
 
     # Checks wheather the name fits the given scheme
     @staticmethod
+    @measureTime
     def _fits_scheme(name, namescheme):
         if namescheme is None:
             return True
@@ -29,8 +33,9 @@ class FileManager:
         if FileManager.extractNums(name) == "": return False
         return True
 
-    #clears the entire folder. asks for premission
+    # clears the entire folder. asks for premission
     @staticmethod
+    @measureTime
     def clearFolder(folder):
         if input("Clear folder " + folder + "?").lower().startswith("n"):
             return
@@ -39,6 +44,7 @@ class FileManager:
 
     # returns number of files inside folder
     @staticmethod
+    @measureTime
     def countFiles(folder):
         if folder is None:
             folder = os.getcwd()
@@ -46,6 +52,7 @@ class FileManager:
 
     # extract all Numbers from given String
     @staticmethod
+    @measureTime
     def extractNums(string):
         target = ""
         for c in string:
@@ -55,6 +62,7 @@ class FileManager:
 
     # returns path to maximum Indexed file. Namescheme Index##### where # means a number
     @staticmethod
+    @measureTime
     def maxIndexFile(folder, namescheme):
         suffix = str(namescheme).split('.', maxsplit=1)[1]
         prefix = str(namescheme).split('#', maxsplit=1)[0]
@@ -75,6 +83,7 @@ class FileManager:
 
     # returns path to minimum Indexed file. Namescheme Index##### where # means a number
     @staticmethod
+    @measureTime
     def minIndexFile(folder, namescheme):
         suffix = str(namescheme).split('.', maxsplit=1)[1]
         prefix = str(namescheme).split('#', maxsplit=1)[0]
@@ -95,6 +104,7 @@ class FileManager:
 
     # returns one File
     @staticmethod
+    @measureTime
     def firstFile(folder, namescheme):
         if folder is None:
             folder = os.getcwd()
@@ -106,6 +116,7 @@ class FileManager:
 
     # removes one File
     @staticmethod
+    @measureTime
     def removeFirst(folder, namescheme):
         if folder is None:
             folder = os.getcwd()
@@ -113,6 +124,7 @@ class FileManager:
 
     # removes min File
     @staticmethod
+    @measureTime
     def removeMin(folder, namescheme):
         if folder is None:
             folder = os.getcwd()
@@ -120,16 +132,18 @@ class FileManager:
 
     # removes max File
     @staticmethod
+    @measureTime
     def removeMax(folder, namescheme):
         if folder is None:
             folder = os.getcwd()
         os.remove(os.path.join(folder, FileManager.maxIndexFile(folder, namescheme)))
 
-    #moves files from Folder A to Folder B
+    # moves files from Folder A to Folder B
     @staticmethod
+    @measureTime
     def moveFile(folderA, folderB):
         file = FileManager.firstFile(folderA, None)
-        #print("Moving file " + file + " At Size " + str(FileManager.countFiles(folderA)))
+        # print("Moving file " + file + " At Size " + str(FileManager.countFiles(folderA)))
         if file is None:
             return False
         os.rename(os.path.join(folderA, file), os.path.join(folderB, file))
@@ -173,11 +187,12 @@ class FileManager:
 
 
 class ThreadsafeFileManager(FileManager):
-    #ToDo: Check if all Methods areimplemented
+    # ToDo: Check if all Methods areimplemented
     edit_lock = threading.Lock()
     filename_lock = threading.Lock()
 
     @staticmethod
+    @measureTime
     def getFileName():
         ThreadsafeFileManager.filename_lock.acquire()
         ThreadsafeFileManager.index += 1
@@ -186,6 +201,7 @@ class ThreadsafeFileManager(FileManager):
         return ret
 
     # removes one File
+    @measureTime
     def removeFirst(self, folder, namescheme):
         redo = False
         ff = ThreadsafeFileManager.firstFile(folder, namescheme)
@@ -196,7 +212,7 @@ class ThreadsafeFileManager(FileManager):
             if os.path.exists(folder + "/" + ff):
                 os.remove(os.path.join(folder, ff))
             else:
-                #print("Not Existant: " + folder + "/" + ff)
+                # print("Not Existant: " + folder + "/" + ff)
                 redo = True
         except FileNotFoundError as fnfe:
             pass
@@ -205,20 +221,22 @@ class ThreadsafeFileManager(FileManager):
         if redo:
             self.removeFirst(folder, namescheme)
 
+    @measureTime
     def removeFirstNameless(self, folder):
         self.removeFirst(folder, None)
 
-
+    @measureTime
     def clearFolder(self, folder):
         while ThreadsafeFileManager.countFiles(folder) > 0:
             self.removeFirstNameless(folder)
 
     # moves files from Folder A to Folder B
+    @measureTime
     def moveFile(self, folderA, folderB):
-        #print("Moving TS")
+        # print("Moving TS")
         self.edit_lock.acquire()
         file = ThreadsafeFileManager.firstFile(folderA, None)
-        #print("Moving file " + file + " At Size " + str(ThreadsafeFileManager.countFiles(folderA)))
+        # print("Moving file " + file + " At Size " + str(ThreadsafeFileManager.countFiles(folderA)))
         if file is None:
             print("File is none")
             return False
@@ -229,10 +247,10 @@ class ThreadsafeFileManager(FileManager):
         finally:
             self.edit_lock.release()
 
-
         return True
 
     # removes min File
+    @measureTime
     def removeMin(self, folder, namescheme):
         redo = False
         mif = ThreadsafeFileManager.minIndexFile(folder, namescheme)
@@ -243,7 +261,7 @@ class ThreadsafeFileManager(FileManager):
             if os.path.exists(folder + "/" + mif):
                 os.remove(os.path.join(folder, mif))
             else:
-                #print("Not Existent: " + folder + "/" + mif)
+                # print("Not Existent: " + folder + "/" + mif)
                 redo = True
         except FileNotFoundError as fnfe:
             pass
@@ -252,9 +270,8 @@ class ThreadsafeFileManager(FileManager):
 
         if redo: self.removeMin(folder, namescheme)
 
-
-
     # removes max File
+    @measureTime
     def removeMax(self, folder, namescheme):
         redo = False
         mif = self.maxIndexFile(folder, namescheme)
@@ -265,8 +282,8 @@ class ThreadsafeFileManager(FileManager):
             if os.path.exists(folder + "/" + mif):
                 os.remove(os.path.join(folder, mif))
             else:
-                #print("Not Existent: " + folder + "/" + mif)
-                #print(self.countFiles(folder))
+                # print("Not Existent: " + folder + "/" + mif)
+                # print(self.countFiles(folder))
                 redo = True
         except FileNotFoundError as fnfe:
             pass
@@ -316,15 +333,23 @@ class MultiFileManager(ThreadsafeFileManager):
     edit_lock = mpLock()
     filename_lock = mpLock()
 
+    # def __init__(self, filelock):
+    #    self.filename_lock = filelock
+
+    # def setLock(self, lock):
+    #    self.filename_lock = lock
+
     @staticmethod
+    @measureTime
     def clearFolder(folder):
         while MultiFileManager.countFiles(folder) > 0:
             MultiFileManager.removeFirst(folder, None)
 
+    @measureTime
     def moveFile(self, folderA, folderB):
         self.edit_lock.acquire()
         file = MultiFileManager.firstFile(folderA, None)
-        #print("Moving file " + file + " At Size " + str(MultiFileManager.countFiles(folderA)))
+        # print("Moving file " + file + " At Size " + str(MultiFileManager.countFiles(folderA)))
         if file is None:
             self.edit_lock.release()
             return False
@@ -335,3 +360,43 @@ class MultiFileManager(ThreadsafeFileManager):
         finally:
             self.edit_lock.release()
         return True
+
+    @measureTime
+    def getFileName(self):
+        self.filename_lock.acquire()
+        MultiFileManager.index += 1
+        ret = MultiFileManager.defaultFolder + "/image" + str(MultiFileManager.index) + ".png"
+        self.filename_lock.release()
+        return ret
+
+
+class AtomicCounter:
+    index = 0
+
+    @measureTime
+    def incAndGet(self):
+        self.index = self.index + 1
+        return self.index
+
+
+class FilenameGenerator:
+    path = "" + os.getcwd()
+    suffix = ".png"
+    index = 0
+    index_lock = None
+    prefix = "/image"
+
+    def __init__(self, path, suffix):
+        self.path = path
+        self.suffix = suffix
+        self.index = 0
+        self.index_lock = mpLock()
+        self.counter = AtomicCounter()
+
+    @measureTime
+    def generate(self):
+        self.index_lock.acquire()
+        index = self.counter.incAndGet()
+        ret = self.path + self.prefix + str(index) + self.suffix
+        self.index_lock.release()
+        return ret

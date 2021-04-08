@@ -1,5 +1,6 @@
 import configparser as cp
 import os
+from Maths.Functions import measureTime
 
 
 class ConfigManager:
@@ -16,6 +17,7 @@ class ConfigManager:
 
     # Reset parameters to default values
     @staticmethod
+    @measureTime
     def _writeDefaults():
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf[ConfigManager.ovr] = {'threads': 1,
@@ -30,6 +32,7 @@ class ConfigManager:
 
     # Create a new settings-file if not yet existent
     @staticmethod
+    @measureTime
     def setup():
         ConfigManager.initialized = True
         if not os.path.exists(ConfigManager.settings_file):
@@ -39,6 +42,7 @@ class ConfigManager:
 
     # return THREADS parameter
     @staticmethod
+    @measureTime
     def get_threads():
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf.read(ConfigManager.settings_file)
@@ -46,6 +50,7 @@ class ConfigManager:
 
     # set THREADS parameter
     @staticmethod
+    @measureTime
     def set_threads(num):
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf[ConfigManager.ovr]['threads'] = str(num)
@@ -54,6 +59,7 @@ class ConfigManager:
 
     # get FILE_LOCATION parameter
     @staticmethod
+    @measureTime
     def get_fileLocation():
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf.read(ConfigManager.settings_file)
@@ -61,6 +67,7 @@ class ConfigManager:
 
     # set FILE_LOCATION parameter
     @staticmethod
+    @measureTime
     def set_fileLocation(loc):
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf[ConfigManager.ovr]['file_location'] = str(loc)
@@ -69,6 +76,7 @@ class ConfigManager:
 
     # get FILE_NAME parameter
     @staticmethod
+    @measureTime
     def get_fileName():
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf.read(ConfigManager.settings_file)
@@ -76,6 +84,7 @@ class ConfigManager:
 
     # set FILE_NAME parameter
     @staticmethod
+    @measureTime
     def set_fileName(name):
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf[ConfigManager.ovr]['file_namescheme'] = str(name)
@@ -84,6 +93,7 @@ class ConfigManager:
 
     # set FIRST_STORAGE parameter
     @staticmethod
+    @measureTime
     def set_firstStorage(path):
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf[ConfigManager.ovr]['first_storage'] = str(path)
@@ -92,6 +102,7 @@ class ConfigManager:
 
     # get FIRST_STORAGE parameter
     @staticmethod
+    @measureTime
     def get_firstStorage():
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf.read(ConfigManager.settings_file)
@@ -99,6 +110,7 @@ class ConfigManager:
 
     # set SECOND_STORAGE parameter
     @staticmethod
+    @measureTime
     def set_secondStorage(path):
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf[ConfigManager.ovr]['second_storage'] = str(path)
@@ -107,6 +119,7 @@ class ConfigManager:
 
     # get SECOND_STORAGE parameter
     @staticmethod
+    @measureTime
     def get_secondStorage():
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf.read(ConfigManager.settings_file)
@@ -114,6 +127,7 @@ class ConfigManager:
 
     # print each line in settings_file
     @staticmethod
+    @measureTime
     def print_file():
         if not ConfigManager.initialized: ConfigManager.setup()
         with open(ConfigManager.settings_file, "r") as sf:
@@ -121,18 +135,21 @@ class ConfigManager:
                 print(line)
 
     @staticmethod
+    @measureTime
     def get_width():
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf.read(ConfigManager.settings_file)
         return int(ConfigManager.conf[ConfigManager.ovr]['width'])
 
     @staticmethod
+    @measureTime
     def get_height():
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf.read(ConfigManager.settings_file)
         return int(ConfigManager.conf[ConfigManager.ovr]['height'])
 
     @staticmethod
+    @measureTime
     def set_width(w):
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf[ConfigManager.ovr]['width'] = str(w)
@@ -140,6 +157,7 @@ class ConfigManager:
             ConfigManager.conf.write(settings)
 
     @staticmethod
+    @measureTime
     def set_heigth(h):
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf[ConfigManager.ovr]['height'] = str(h)
@@ -148,6 +166,7 @@ class ConfigManager:
 
     # testing this script
     @staticmethod
+    @measureTime
     def test():
         if not ConfigManager.initialized: ConfigManager.setup()
         print("Testing ConfigManager.py\n")
