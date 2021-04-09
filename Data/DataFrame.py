@@ -14,6 +14,10 @@ class DataFrame:
     filepath = os.getcwd() + "/Daten"
 
     @measureTime
+    def getIterator(self):
+        return self.points
+
+    @measureTime
     def save(self, index):
         self.index = index
         filename = self.name + str(index) + self.suffix
@@ -24,33 +28,27 @@ class DataFrame:
         # queue2 = mp.Queue()
         content = "Index, X, Y\n"
         sep = ","
-        print(self.points)
-        # self.points.put('STOP')
         for item in self.points:
-            if i != 'STOP':
-                # queue2.put(i)
-                xs.append(item[0])
-                ys.append(item[1])
-                i += 1
-                numerate.append(i)
+            xs.append(item[0])
+            ys.append(item[1])
+            i += 1
+            numerate.append(i)
 
         # self.points = queue2
         for l in range(len(xs)):
             content += "{},{},{}\n".format(numerate[l], xs[l], ys[l])
-        print(content)
-        print(self.points)
         fm.saveTxt(self.filepath, filename, content)
 
-    @measureTime
-    def clone(self):
-        ret = DataFrame()
-        for pt in self.points:
-            ret.points.append(pt)
-        ret.index = self.index
-        ret.name = self.name
-        ret.filepath = self.filepath
-        ret.suffix = self.suffix
-        return ret
+  #  @measureTime
+  #  def clone(self):
+  #      ret = DataFrame()
+   #     for pt in self.points:
+   #         ret.points.append(pt)
+   #     ret.index = self.index
+   #     ret.name = self.name
+   #     ret.filepath = self.filepath
+   #     ret.suffix = self.suffix
+   #     return ret
 
     @measureTime
     def addPoint(self, xy):

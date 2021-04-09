@@ -2,7 +2,7 @@ import numpy as np
 import time, os
 
 logfile = os.getcwd() + "/log.txt"
-MEASURE = False
+MEASURE = True
 
 statisticsfile = os.getcwd() + "/statistics.txt"
 

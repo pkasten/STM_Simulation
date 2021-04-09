@@ -423,3 +423,10 @@ class FilenameGenerator:
         ret = self.path + self.prefix + str(index) + self.suffix
         self.index_lock.release()
         return ret, index
+
+    @measureTime
+    def generateIndex(self):
+        self.index_lock.acquire()
+        index = self.counter.incAndGet()
+        self.index_lock.release()
+        return index

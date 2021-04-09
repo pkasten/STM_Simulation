@@ -3,10 +3,12 @@ import Data
 from PIL import Image
 import numpy as np
 # import scipy as sp
+import os
 from Configuration import Files as files
 from Maths import Functions
 from Configuration import Configuration
 from Maths.Functions import measureTime
+import math, random
 
 func = Functions.Functions()
 
@@ -17,7 +19,7 @@ aspectRange = 3
 class Images:
     width = Configuration.ConfigManager.get_width()
     height = Configuration.ConfigManager.get_height()
-
+    noise = True
     colors = np.zeros((width, height))
     sigma = 5.5
 
@@ -81,15 +83,31 @@ class Images:
         Configuration.ConfigManager.setup()
         self.newImage()
         coos = []
-        dummyData = data.clone()
-        while dummyData.hasPoints():
+        #dummyData = data.clone()
+        while data.hasPoints():
             # coos.append(data.getPoint())
-            self.addPoint(dummyData.getPoint())
+            self.addPoint(data.getPoint())
         # self.addPoints(coos)
         self.updateImage()
 
     @measureTime
-    def saveImage(self):
-        fp, index = self.filename_generator.generate()
+    def noiseImage(self):
+        if self.noise:
+            dist = aspectRange * self.sigma
+            xmin = 0
+            xmax = self.width
+            ymin = 0
+            ymax = self.height
+            adding = np.zeros((self.width, self.height))
+            for i in range(xmin, xmax):
+                for j in range(ymin, ymax):
+                    if(random.random() < 0.2):
+                        adding[i, j] += math.floor(random.random() * 50)
+
+            self.colors = self.colors + adding
+
+    @measureTime
+    def saveImage(self, index):
+        fp = os.getcwd() + "/bildordner/Image" + str(index) + ".png"
         self.img.save(fp)
         return fp, index

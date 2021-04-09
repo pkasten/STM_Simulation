@@ -9,9 +9,10 @@ from Maths.Functions import measureTime, clearLog, evaluateLog
 import matplotlib.pyplot as plt
 import math
 
+
 def compareThreadCount():
     times = []
-    #times[0] = 0
+    # times[0] = 0
     times.append(0)
     imagesperRun = 480
     Configuration.ConfigManager.set_images_pt(25)
@@ -31,6 +32,7 @@ def compareThreadCount():
     plt.ylabel("Time in sec")
     plt.savefig(os.getcwd() + "/compareThreadCount.png")
 
+
 def compareImageSize():
     times = []
     # times[0] = 0
@@ -40,30 +42,49 @@ def compareImageSize():
     Configuration.ConfigManager.set_threads(2)
     Configuration.ConfigManager.set_images_pt(math.ceil(imagesperRun / 2))
     x = []
-    for i in range(100, 2000, 100):
+    for i in range(100, 8000, 100):
         Configuration.ConfigManager.set_width(i)
         Configuration.ConfigManager.set_heigth(i)
-        times.append(test())
+        times.append(test(10))
         x.append(i)
 
+
+def compare_points_per_image():
+    times = []
+    # times[0] = 0
+    times.append(0)
+    imagesperRun = 10
+
+    Configuration.ConfigManager.set_threads(2)
+    Configuration.ConfigManager.set_images_pt(math.ceil(imagesperRun / 2))
+    x = []
+    Configuration.ConfigManager.set_width(800)
+    Configuration.ConfigManager.set_heigth(800)
+    for i in range(10, 100, 10):
+        times.append(test(i))
+        x.append(i)
 
     y = []
     for i in range(len(x)):
         y.append(times[i])
     plt.plot(x, y)
-    plt.title("Comparing computational time over imageSize")
-    plt.xlabel("ImageSize in px")
+    plt.title("Comparing computational time over PointsPerImage")
+    plt.xlabel("No. of Points")
     plt.ylabel("time in s")
-    plt.savefig(os.getcwd() + "/compareImageSize.png")
-
+    plt.savefig(os.getcwd() + "/comparePointsPerImage.png")
 
 
 def test():
+    test(10)
 
-    #Configuration.MultiConfigManager.set_images_pt(250)
-    clearLog()
+
+def test(number_of_points):
+    # Configuration.MultiConfigManager.set_images_pt(250)
+
+    global nop
+    nop = number_of_points
     start = time.perf_counter()
-    #Configuration.MultiConfigManager.set_threads(4)
+    # Configuration.MultiConfigManager.set_threads(4)
     path = os.getcwd() + "/bildordner"
     moveTo = os.getcwd() + "/bildordner2"
     sem = Semaphore(Files.FileManager.countFiles(path))
@@ -77,26 +98,30 @@ def test():
     filemanager = BaseManager()
     filemanager.start()
     fn_generator = filemanager.FilenameGenerator(path, ".png")
-    #Configuration.MultiConfigManager.set_images_pt(25)
+
+    # Configuration.MultiConfigManager.set_images_pt(25)
 
     class DataCreator(Process):
         def run(self):
             for i in range(Configuration.MultiConfigManager.get_images_pt()):
                 img = Images.Images(Files.MultiFileManager(), fn_generator)
-                number_of_points = 10
                 data = frame.DataFrame()
+
                 for nono in range(number_of_points):
                     data.addPoint(sim.getPoint(0, img.getWidth(), 0, img.getHeight()))
 
-                img.createImage(data)
-                path, index = img.saveImage()
+                index = fn_generator.generateIndex()
                 data.save(index)
+                #img.noiseImage()
+                img.createImage(data)  # ToDo: dont delete, or other method to provide index
+                path = img.saveImage(index)[0]
                 sem.release()
                 print("Image " + path + " saved by: " + str(self.name))
 
     class Movement(Process):
         mfm = Files.MultiFileManager()
         interrupted = False
+
         def __init__(self):
             super().__init__()
 
@@ -104,7 +129,7 @@ def test():
             self.interrupted = True
 
         def run(self):
-            #print("Running")
+            # print("Running")
             while not self.interrupted:
                 sem.acquire()
                 self.mfm.moveFile(path, moveTo)
@@ -126,10 +151,10 @@ def test():
         processes = []
         for i in range(Configuration.MultiConfigManager.get_threads()):
             processes.append(Movement())
-            #print("appended")
+            # print("appended")
         for pro in processes:
             pro.start()
-            #print("started")
+            # print("started")
         for po in processes:
             po.join()
 
@@ -151,22 +176,20 @@ def test():
             j.interrupt()
             j.join()
 
-
     # print(data)
-    #print_statistics()
+    # print_statistics()
     genererateTestFiles()
-    #moveAllTest()
-    #generateAndMove(3,1)
-    evaluateLog()
+    # moveAllTest()
+    # generateAndMove(3,1)
     print("OVR Dauer: {:.3f}".format(time.perf_counter() - start) + " s")
     print("Done")
 
     return time.perf_counter() - start
 
 
-
-
 if __name__ == "__main__":
-    #test()
+    clearLog()
+    # test()
+    compare_points_per_image()
+    evaluateLog()
 
-    compareImageSize()
