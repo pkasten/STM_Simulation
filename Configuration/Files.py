@@ -16,6 +16,16 @@ class FileManager:
 
     @staticmethod
     @measureTime
+    def saveTxt(path, name, content):
+        try:
+            os.mkdir(path)
+        except OSError:
+            pass
+        with open(os.path.join(path, name), "w") as file:
+            file.write(content)
+
+    @staticmethod
+    @measureTime
     def getFileName():
         FileManager.index += 1
         return FileManager.defaultFolder + "/image" + str(FileManager.index) + ".png"
@@ -412,4 +422,4 @@ class FilenameGenerator:
         index = self.counter.incAndGet()
         ret = self.path + self.prefix + str(index) + self.suffix
         self.index_lock.release()
-        return ret
+        return ret, index

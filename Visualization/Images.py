@@ -11,6 +11,7 @@ from Maths.Functions import measureTime
 func = Functions.Functions()
 
 aspectRange = 3
+aspectRange = 3
 
 
 class Images:
@@ -80,14 +81,15 @@ class Images:
         Configuration.ConfigManager.setup()
         self.newImage()
         coos = []
-        while data.hasPoints():
+        dummyData = data.clone()
+        while dummyData.hasPoints():
             # coos.append(data.getPoint())
-            self.addPoint(data.getPoint())
+            self.addPoint(dummyData.getPoint())
         # self.addPoints(coos)
         self.updateImage()
 
     @measureTime
     def saveImage(self):
-        fp = self.filename_generator.generate()
+        fp, index = self.filename_generator.generate()
         self.img.save(fp)
-        return fp
+        return fp, index

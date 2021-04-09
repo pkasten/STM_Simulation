@@ -2,7 +2,7 @@ import numpy as np
 import time, os
 
 logfile = os.getcwd() + "/log.txt"
-MEASURE = True
+MEASURE = False
 
 statisticsfile = os.getcwd() + "/statistics.txt"
 
@@ -96,3 +96,5 @@ class Functions:
         d = Functions.dist2D(center, point)
         # return np.power(2 * np.pi * np.square(sigma), -0.5) * np.exp(-(np.square(d)) / (2 * np.square(sigma)))
         return np.exp(-(np.square(d)) / (2 * np.square(sigma)))
+
+

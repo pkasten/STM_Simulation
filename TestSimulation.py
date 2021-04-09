@@ -3,19 +3,70 @@ from Data import DataFrame as frame
 from Visualization import Images
 from Configuration import Files, Configuration
 import os, time
-from multiprocessing import Process, Lock, Manager
+from multiprocessing import Process, Lock, Manager, Semaphore
 from multiprocessing.managers import BaseManager
 from Maths.Functions import measureTime, clearLog, evaluateLog
+import matplotlib.pyplot as plt
+import math
+
+def compareThreadCount():
+    times = []
+    #times[0] = 0
+    times.append(0)
+    imagesperRun = 480
+    Configuration.ConfigManager.set_images_pt(25)
+    for i in range(1, 6):
+        Configuration.ConfigManager.set_threads(i)
+        Configuration.ConfigManager.set_images_pt(math.ceil(imagesperRun / i))
+        times.append(test())
+
+    x = []
+    y = []
+    for i in range(1, len(times)):
+        x.append(i)
+        y.append(times[i])
+    plt.plot(x, y)
+    plt.title("Comparing computational time over threads")
+    plt.xlabel("Threads")
+    plt.ylabel("Time in sec")
+    plt.savefig(os.getcwd() + "/compareThreadCount.png")
+
+def compareImageSize():
+    times = []
+    # times[0] = 0
+    times.append(0)
+    imagesperRun = 10
+
+    Configuration.ConfigManager.set_threads(2)
+    Configuration.ConfigManager.set_images_pt(math.ceil(imagesperRun / 2))
+    x = []
+    for i in range(100, 2000, 100):
+        Configuration.ConfigManager.set_width(i)
+        Configuration.ConfigManager.set_heigth(i)
+        times.append(test())
+        x.append(i)
+
+
+    y = []
+    for i in range(len(x)):
+        y.append(times[i])
+    plt.plot(x, y)
+    plt.title("Comparing computational time over imageSize")
+    plt.xlabel("ImageSize in px")
+    plt.ylabel("time in s")
+    plt.savefig(os.getcwd() + "/compareImageSize.png")
+
 
 
 def test():
-    Configuration.MultiConfigManager.set_images_pt(250)
+
+    #Configuration.MultiConfigManager.set_images_pt(250)
     clearLog()
     start = time.perf_counter()
-
-    Configuration.MultiConfigManager.set_threads(4)
+    #Configuration.MultiConfigManager.set_threads(4)
     path = os.getcwd() + "/bildordner"
     moveTo = os.getcwd() + "/bildordner2"
+    sem = Semaphore(Files.FileManager.countFiles(path))
 
     try:
         os.mkdir(path)
@@ -26,6 +77,7 @@ def test():
     filemanager = BaseManager()
     filemanager.start()
     fn_generator = filemanager.FilenameGenerator(path, ".png")
+    #Configuration.MultiConfigManager.set_images_pt(25)
 
     class DataCreator(Process):
         def run(self):
@@ -37,20 +89,26 @@ def test():
                     data.addPoint(sim.getPoint(0, img.getWidth(), 0, img.getHeight()))
 
                 img.createImage(data)
-                path = img.saveImage()
+                path, index = img.saveImage()
+                data.save(index)
+                sem.release()
                 print("Image " + path + " saved by: " + str(self.name))
 
     class Movement(Process):
         mfm = Files.MultiFileManager()
+        interrupted = False
         def __init__(self):
             super().__init__()
 
+        def interrupt(self):
+            self.interrupted = True
+
         def run(self):
             #print("Running")
-            while self.mfm.countFiles(path) > 0:
-                #print("Inner")
+            while not self.interrupted:
+                sem.acquire()
                 self.mfm.moveFile(path, moveTo)
-                #print("movedFile")
+                print("movedFile. remaining: " + str(self.mfm.countFiles(path)))
 
     @measureTime
     def genererateTestFiles():
@@ -75,16 +133,40 @@ def test():
         for po in processes:
             po.join()
 
+    @measureTime
+    def generateAndMove(create, move):
+        processesC = []
+        processesM = []
+        for i in range(create):
+            processesC.append(DataCreator())
+        for j in range(move):
+            processesM.append(Movement())
+        for i in processesC:
+            i.start()
+        for j in processesM:
+            j.start()
+        for i in processesC:
+            i.join()
+        for j in processesM:
+            j.interrupt()
+            j.join()
+
+
     # print(data)
     #print_statistics()
     genererateTestFiles()
-    moveAllTest()
+    #moveAllTest()
+    #generateAndMove(3,1)
     evaluateLog()
     print("OVR Dauer: {:.3f}".format(time.perf_counter() - start) + " s")
     print("Done")
+
+    return time.perf_counter() - start
 
 
 
 
 if __name__ == "__main__":
-    test()
+    #test()
+
+    compareImageSize()
