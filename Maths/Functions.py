@@ -3,7 +3,7 @@ import time, os
 
 # logfile = os.getcwd() + "/log.txt"
 logfile = str(os.path.join(os.getcwd(), "log.txt"))
-MEASURE = True
+MEASURE = False
 
 # statisticsfile = os.getcwd() + "/statistics.txt"
 statisticsfile = str(os.path.join(os.getcwd(), "statistics.txt"))
