@@ -8,6 +8,7 @@ class ConfigManager:
     # settings_file = os.getcwd() + "/Configuration/settings.ini"
     settings_file = str(os.path.join(os.getcwd(), "Configuration", "settings.ini"))
     ovr = 'SETTINGS'
+    def_threads = os.cpu_count()
     def_loc = os.getcwd()
     def_name = 'file_#.txt'
     def_firstStore = os.getcwd()
@@ -24,7 +25,7 @@ class ConfigManager:
     @measureTime
     def _writeDefaults():
         if not ConfigManager.initialized: ConfigManager.setup()
-        ConfigManager.conf[ConfigManager.ovr] = {'threads': 1,
+        ConfigManager.conf[ConfigManager.ovr] = {'threads': def_threads,
                                                  'images_per_thread': ConfigManager.def_images_per_thread,
                                                  'operating_system': ConfigManager.def_OS,
                                                  'file_location': ConfigManager.def_loc,

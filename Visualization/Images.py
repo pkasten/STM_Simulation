@@ -109,6 +109,6 @@ class Images:
     @measureTime
     def saveImage(self, index):
         # fp = os.getcwd() + "/bildordner/Image" + str(index) + ".png"
-        fp = os.path.join(os.getcwd(), "bildornder", "Image" + str(index) + ".png")
+        fp = os.path.join(os.getcwd(), "bildordner", "Image" + str(index) + ".png")
         self.img.save(fp)
         return fp, index
