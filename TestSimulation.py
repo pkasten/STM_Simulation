@@ -37,16 +37,25 @@ def compareImageSize():
     times = []
     # times[0] = 0
     times.append(0)
-    imagesperRun = 10
+    imagesperRun = 16
 
-    Configuration.ConfigManager.set_threads(2)
-    Configuration.ConfigManager.set_images_pt(math.ceil(imagesperRun / 2))
+    Configuration.ConfigManager.set_threads(os.cpu_count())
+    Configuration.ConfigManager.set_images_pt(math.ceil(imagesperRun / os.cpu_count()))
     x = []
     for i in range(100, 8000, 100):
         Configuration.ConfigManager.set_width(i)
         Configuration.ConfigManager.set_heigth(i)
         times.append(test(10))
-        x.append(i)
+        x.append(i*i)
+
+    y = []
+    for i in range(len(x)):
+        y.append(times[i])
+    plt.plot(x, y)
+    plt.title("Comparing computational time over ImageSize")
+    plt.xlabel("ImageSize in px")
+    plt.ylabel("time in s")
+    plt.savefig(os.path.join(os.getcwd(), "compareImageSize.png"))
 
 
 def compare_points_per_image():
@@ -55,7 +64,7 @@ def compare_points_per_image():
     times.append(0)
     imagesperRun = 10
 
-    Configuration.ConfigManager.set_threads(2)
+    Configuration.ConfigManager.set_threads(os.cpu_count())
     Configuration.ConfigManager.set_images_pt(math.ceil(imagesperRun / 2))
     x = []
     Configuration.ConfigManager.set_width(800)
@@ -193,5 +202,7 @@ def test(number_of_points):
 if __name__ == "__main__":
     clearLog()
     # test()
-    compare_points_per_image()
+    # compareThreadCount()
+    # compare_points_per_image()
+    compareImageSize()
     evaluateLog()
