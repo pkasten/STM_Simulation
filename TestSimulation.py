@@ -71,7 +71,8 @@ def compare_points_per_image():
     plt.title("Comparing computational time over PointsPerImage")
     plt.xlabel("No. of Points")
     plt.ylabel("time in s")
-    plt.savefig(os.getcwd() + "/comparePointsPerImage.png")
+    # plt.savefig(os.getcwd() + "/comparePointsPerImage.png")
+    plt.savefig(os.path.join(os.getcwd(), "comparePointsPerImage.png"))
 
 
 def test():
@@ -85,8 +86,10 @@ def test(number_of_points):
     nop = number_of_points
     start = time.perf_counter()
     # Configuration.MultiConfigManager.set_threads(4)
-    path = os.getcwd() + "/bildordner"
-    moveTo = os.getcwd() + "/bildordner2"
+    # path = os.getcwd() + "/bildordner"
+    path = os.path.join(os.getcwd(), "bildordner")
+    # moveTo = os.getcwd() + "/bildordner2"
+    moveTo = os.path.join(os.getcwd(), "bildordner2")
     sem = Semaphore(Files.FileManager.countFiles(path))
 
     try:
@@ -112,7 +115,7 @@ def test(number_of_points):
 
                 index = fn_generator.generateIndex()
                 data.save(index)
-                #img.noiseImage()
+                # img.noiseImage()
                 img.createImage(data)  # ToDo: dont delete, or other method to provide index
                 path = img.saveImage(index)[0]
                 sem.release()
@@ -192,4 +195,3 @@ if __name__ == "__main__":
     # test()
     compare_points_per_image()
     evaluateLog()
-

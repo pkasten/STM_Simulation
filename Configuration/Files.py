@@ -28,7 +28,8 @@ class FileManager:
     @measureTime
     def getFileName():
         FileManager.index += 1
-        return FileManager.defaultFolder + "/image" + str(FileManager.index) + ".png"
+        # return FileManager.defaultFolder + "/image" + str(FileManager.index) + ".png"
+        return str(os.path.join(FileManager.defaultFolder, "image" + str(FileManager.index) + ".png"))
 
     # Checks wheather the name fits the given scheme
     @staticmethod
@@ -56,10 +57,18 @@ class FileManager:
     @staticmethod
     @measureTime
     def countFiles(folder):
-        #print("CountingFiles")
+        # print("CountingFiles")
         if folder is None:
             folder = os.getcwd()
-        return len(os.listdir(folder))
+        try:
+            return len(os.listdir(folder))
+        except FileNotFoundError as fnfe:
+            try:
+                os.mkdir(folder)
+            except OSError:
+                return False
+        finally:
+            return len(os.listdir(folder))
 
     # extract all Numbers from given String
     @staticmethod
@@ -153,19 +162,19 @@ class FileManager:
     @staticmethod
     @measureTime
     def moveFile(folderA, folderB):
-        #print("MoveFile called")
+        # print("MoveFile called")
         file = FileManager.firstFile(folderA, None)
-        #print("MoveFile called ff")
+        # print("MoveFile called ff")
         # print("Moving file " + file + " At Size " + str(FileManager.countFiles(folderA)))
         if file is None:
             return False
         os.rename(os.path.join(folderA, file), os.path.join(folderB, file))
         return True
 
-
     # testing functionalities
     def test(self):
-        path = os.getcwd() + "/testfiles"
+        # path = os.getcwd() + "/testfiles"
+        path = str(os.path.join(os.getcwd(), "testfiles"))
         nameless = input("Enter namescheme")
         folder = input("Enter Folder")
         print("Generating some Testfiles inside " + path)
@@ -210,7 +219,9 @@ class ThreadsafeFileManager(FileManager):
     def getFileName():
         ThreadsafeFileManager.filename_lock.acquire()
         ThreadsafeFileManager.index += 1
-        ret = ThreadsafeFileManager.defaultFolder + "/image" + str(ThreadsafeFileManager.index) + ".png"
+        # ret = ThreadsafeFileManager.defaultFolder + "/image" + str(ThreadsafeFileManager.index) + ".png"
+        ret = str(
+            os.path.join(ThreadsafeFileManager.defaultFolder, "image" + str(ThreadsafeFileManager.index) + ".png"))
         ThreadsafeFileManager.filename_lock.release()
         return ret
 
@@ -223,7 +234,7 @@ class ThreadsafeFileManager(FileManager):
             return
         self.edit_lock.acquire()
         try:
-            if os.path.exists(folder + "/" + ff):
+            if os.path.exists(os.path.join(folder, ff)):
                 os.remove(os.path.join(folder, ff))
             else:
                 # print("Not Existant: " + folder + "/" + ff)
@@ -255,8 +266,10 @@ class ThreadsafeFileManager(FileManager):
             print("File is none")
             return False
         try:
-            os.rename(folderA + "/" + file, folderB + "/" + file)
+            # os.rename(folderA + "/" + file, folderB + "/" + file)
+            os.rename(os.path.join(folderA, file), os.path.join(folderB, file))
         except OSError:
+            print("OSError")
             return False
         finally:
             self.edit_lock.release()
@@ -272,7 +285,7 @@ class ThreadsafeFileManager(FileManager):
             return
         self.edit_lock.acquire()
         try:
-            if os.path.exists(folder + "/" + mif):
+            if os.path.exists(os.path.join(folder, mif)):
                 os.remove(os.path.join(folder, mif))
             else:
                 # print("Not Existent: " + folder + "/" + mif)
@@ -293,7 +306,7 @@ class ThreadsafeFileManager(FileManager):
             return
         self.edit_lock.acquire()
         try:
-            if os.path.exists(folder + "/" + mif):
+            if os.path.exists(os.path.join(folder, mif)):
                 os.remove(os.path.join(folder, mif))
             else:
                 # print("Not Existent: " + folder + "/" + mif)
@@ -308,7 +321,7 @@ class ThreadsafeFileManager(FileManager):
 
     # testing functionalities
     def test(self):
-        path = os.getcwd() + "/testfiles"
+        path = str(os.path.join(os.getcwd(), "testfiles"))
         nameless = input("Enter namescheme")
         folder = input("Enter Folder")
         print("Generating some Testfiles inside " + path)
@@ -321,7 +334,7 @@ class ThreadsafeFileManager(FileManager):
 
         filenames = []
         for i in range(37):
-            filenames.append(str.format("testfiles/{}{}.{}", prefix, i, suffix))
+            filenames.append(str.format("testfiles/{}{}.{}", prefix, i, suffix))  # ToDO: Windowsize
 
         for file in filenames:
             with open(file, "w") as current:
@@ -365,7 +378,7 @@ class MultiFileManager(ThreadsafeFileManager):
             os.mkdir(folderB)
         except FileExistsError as fe:
             pass
-        #print("MoveFileCalled")
+        # print("MoveFileCalled")
         self.edit_lock.acquire()
 
         file = MultiFileManager.firstFile(folderA, None)
@@ -375,10 +388,10 @@ class MultiFileManager(ThreadsafeFileManager):
             self.edit_lock.release()
             return False
         try:
-            os.rename(folderA + "/" + file, folderB + "/" + file)
+            os.rename(os.path.join(folderA, file), os.path.join(folderB, file))
         except OSError as err:
-            #print("OSError")
-            #print(err)
+            # print("OSError")
+            # print(err)
             return False
         finally:
             self.edit_lock.release()
@@ -388,7 +401,8 @@ class MultiFileManager(ThreadsafeFileManager):
     def getFileName(self):
         self.filename_lock.acquire()
         MultiFileManager.index += 1
-        ret = MultiFileManager.defaultFolder + "/image" + str(MultiFileManager.index) + ".png"
+        ret = str(
+            os.path.join(MultiFileManager.defaultFolder, "image" + str(MultiFileManager.index) + ".png"))
         self.filename_lock.release()
         return ret
 
@@ -407,7 +421,7 @@ class FilenameGenerator:
     suffix = ".png"
     index = 0
     index_lock = None
-    prefix = "/image"
+    prefix = "image"
 
     def __init__(self, path, suffix):
         self.path = path
@@ -420,7 +434,8 @@ class FilenameGenerator:
     def generate(self):
         self.index_lock.acquire()
         index = self.counter.incAndGet()
-        ret = self.path + self.prefix + str(index) + self.suffix
+        # ret = self.path + self.prefix + str(index) + self.suffix
+        ret = str(os.path.join(self.path, self.prefix + str(index) + self.suffix))
         self.index_lock.release()
         return ret, index
 

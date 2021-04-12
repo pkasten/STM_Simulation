@@ -5,14 +5,18 @@ from Maths.Functions import measureTime
 
 class ConfigManager:
     conf = cp.ConfigParser()
-    settings_file = os.getcwd() + "/Configuration/settings.ini"
+    # settings_file = os.getcwd() + "/Configuration/settings.ini"
+    settings_file = str(os.path.join(os.getcwd(), "Configuration", "settings.ini"))
     ovr = 'SETTINGS'
     def_loc = os.getcwd()
     def_name = 'file_#.txt'
     def_firstStore = os.getcwd()
-    def_secondStore = os.getcwd() + "/second"
+    # def_secondStore = os.getcwd() + "/second"
+    def_secondStore = os.path.join(os.getcwd(), "second")
     def_width = 200
     def_height = 200
+    def_OS = "Windows"
+    def_images_per_thread = 25
     initialized = False
 
     # Reset parameters to default values
@@ -21,7 +25,8 @@ class ConfigManager:
     def _writeDefaults():
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf[ConfigManager.ovr] = {'threads': 1,
-                                                 'images_per_thread': 25,
+                                                 'images_per_thread': ConfigManager.def_images_per_thread,
+                                                 'operating_system': ConfigManager.def_OS,
                                                  'file_location': ConfigManager.def_loc,
                                                  'file_namescheme': ConfigManager.def_name,
                                                  'first_storage': ConfigManager.def_firstStore,
@@ -47,7 +52,7 @@ class ConfigManager:
     def get_threads():
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf.read(ConfigManager.settings_file)
-        return int(ConfigManager.conf[ConfigManager.ovr]['threads'])  # ToDo: Castch Exceptions
+        return int(ConfigManager.conf[ConfigManager.ovr]['threads'])  # ToDo: Catch Exceptions
 
     # get Images Per Thread
     @staticmethod
@@ -181,6 +186,28 @@ class ConfigManager:
         ConfigManager.conf[ConfigManager.ovr]['height'] = str(h)
         with open(ConfigManager.settings_file, "w") as settings:
             ConfigManager.conf.write(settings)
+
+    @staticmethod
+    @measureTime
+    def get_OS():
+        if not ConfigManager.initialized: ConfigManager.setup()
+        ConfigManager.conf.read(ConfigManager.settings_file)
+        return ConfigManager.conf[ConfigManager.ovr]['operating_system']
+
+    @staticmethod
+    @measureTime
+    def set_OS(name):
+        if not ConfigManager.initialized: ConfigManager.setup()
+        ConfigManager.conf[ConfigManager.ovr]['operating_system'] = name
+        with open(ConfigManager.settings_file, "w") as settings:
+            ConfigManager.conf.write(settings)
+
+    @staticmethod
+    @measureTime
+    def is_Unix():
+        if not ConfigManager.initialized: ConfigManager.setup()
+        return ConfigManager.get_OS().lower().split(" ")[0] == "linux"
+
 
     # testing this script
     @staticmethod

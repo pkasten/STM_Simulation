@@ -1,10 +1,12 @@
 import numpy as np
 import time, os
 
-logfile = os.getcwd() + "/log.txt"
+# logfile = os.getcwd() + "/log.txt"
+logfile = str(os.path.join(os.getcwd(), "log.txt"))
 MEASURE = True
 
-statisticsfile = os.getcwd() + "/statistics.txt"
+# statisticsfile = os.getcwd() + "/statistics.txt"
+statisticsfile = str(os.path.join(os.getcwd(), "statistics.txt"))
 
 
 def log(string):
