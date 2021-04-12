@@ -110,9 +110,5 @@ class Images:
     def saveImage(self, index):
         # fp = os.getcwd() + "/bildordner/Image" + str(index) + ".png"
         fp = os.path.join(os.getcwd(), "bildordner", "Image" + str(index) + ".png")
-        #try:
         self.img.save(fp)
-        #except FileNotFoundError:
-        #    os.mkdir(os.path.join(os.getcwd(), "bildordner"))
-        #    self.img.save(fp)
         return fp, index
