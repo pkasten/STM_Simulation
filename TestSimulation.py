@@ -14,10 +14,9 @@ def compareThreadCount():
     times = []
     # times[0] = 0
     times.append(0)
-    imagesperRun = 120
-    Configuration.ConfigManager._writeDefaults()
+    imagesperRun = 480
     Configuration.ConfigManager.set_images_pt(25)
-    for i in range(2, 32):
+    for i in range(1, 32):
         Configuration.ConfigManager.set_threads(i)
         Configuration.ConfigManager.set_images_pt(math.ceil(imagesperRun / i))
         times.append(test(10))
@@ -194,7 +193,5 @@ def test(number_of_points):
 if __name__ == "__main__":
     clearLog()
     # test()
-    # compare_points_per_image()
-    # compareImageSize()
-    compareThreadCount()
+    compare_points_per_image()
     evaluateLog()
