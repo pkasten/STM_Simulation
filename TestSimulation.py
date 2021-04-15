@@ -201,11 +201,13 @@ def test(number_of_points):
 
 if __name__ == "__main__":
     clearLog()
-    Files.FileManager.clearFolder(os.path.join(os.getcwd(), "bildordner"))
-    Files.FileManager.clearFolder(os.path.join(os.getcwd(), "Daten"))
+    #Files.FileManager.clearFolder(os.path.join(os.getcwd(), "bildordner"))
+    #Files.FileManager.clearFolder(os.path.join(os.getcwd(), "Daten"))
+    Files.FileManager.moveAll(os.path.join(os.getcwd(), "bildordner"), os.path.join(os.getcwd(), "bildordner2"))
+    Files.FileManager.moveAll(os.path.join(os.getcwd(), "Daten"), os.path.join(os.getcwd(), "Daten2"))
     # test()
     # compare_points_per_image()
-    compareThreadCount()
+    # compareThreadCount()
     # compare_points_per_image()
-    # compareImageSize()
+    compareImageSize()
     evaluateLog()

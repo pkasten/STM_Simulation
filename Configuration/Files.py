@@ -172,6 +172,12 @@ class FileManager:
         os.rename(os.path.join(folderA, file), os.path.join(folderB, file))
         return True
 
+    @staticmethod
+    @measureTime
+    def moveAll(folderA, folderB):
+        while FileManager.countFiles(folderA) > 0:
+            FileManager.moveFile(folderA, folderB)
+
     # testing functionalities
     def test(self):
         # path = os.getcwd() + "/testfiles"
