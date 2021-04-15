@@ -23,6 +23,7 @@ class FileManager:
             pass
         with open(os.path.join(path, name), "w") as file:
             file.write(content)
+            file.flush()
 
     @staticmethod
     @measureTime
