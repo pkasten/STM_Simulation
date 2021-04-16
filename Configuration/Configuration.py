@@ -5,18 +5,18 @@ from Maths.Functions import measureTime
 
 class ConfigManager:
     conf = cp.ConfigParser()
-    # settings_file = os.getcwd() + "/Configuration/settings.ini"
-    settings_file = str(os.path.join(os.getcwd(), "Configuration", "settings.ini"))
+    settings_folder = os.path.join(os.getcwd(), "Configuration")
+    settings_file = str(os.path.join(settings_folder, "settings.ini"))
     ovr = 'SETTINGS'
     def_threads = os.cpu_count()
     def_loc = os.getcwd()
     def_name = 'file_#.txt'
-    def_firstStore = os.getcwd()
-    # def_secondStore = os.getcwd() + "/second"
-    def_secondStore = os.path.join(os.getcwd(), "second")
-    def_width = 200
-    def_height = 200
-    def_OS = "Windows"
+    def_firstStore_images = str(os.path.join(os.getcwd(), "bildordner"))
+    def_secondStore_images = str(os.path.join(os.getcwd(), "bildordner2"))
+    def_firstStore_data = str(os.path.join(os.getcwd(), "data"))
+    def_secondStore_data = str(os.path.join(os.getcwd(), "data2"))
+    def_width = 400
+    def_height = 400
     def_images_per_thread = 25
     initialized = False
 
@@ -24,18 +24,28 @@ class ConfigManager:
     @staticmethod
     @measureTime
     def _writeDefaults():
-        if not ConfigManager.initialized: ConfigManager.setup()
-        ConfigManager.conf[ConfigManager.ovr] = {'threads': def_threads,
+        # if not ConfigManager.initialized: ConfigManager.setup()
+        ConfigManager.conf[ConfigManager.ovr] = {'threads': ConfigManager.def_threads,
                                                  'images_per_thread': ConfigManager.def_images_per_thread,
-                                                 'operating_system': ConfigManager.def_OS,
                                                  'file_location': ConfigManager.def_loc,
                                                  'file_namescheme': ConfigManager.def_name,
-                                                 'first_storage': ConfigManager.def_firstStore,
-                                                 'second_storage': ConfigManager.def_secondStore,
+                                                 'first_storage_Image': ConfigManager.def_firstStore_images,
+                                                 'second_storage_Image': ConfigManager.def_secondStore_images,
+                                                 'first_storage_Data': ConfigManager.def_firstStore_data,
+                                                 'second_storage_Data': ConfigManager.def_secondStore_data,
                                                  'width': ConfigManager.def_width,
                                                  'height': ConfigManager.def_height}
-        with open(ConfigManager.settings_file, 'w') as settings:
-            ConfigManager.conf.write(settings)
+        try:
+            with open(ConfigManager.settings_file, 'w') as settings:
+                ConfigManager.conf.write(settings)
+        except FileNotFoundError:
+            try:
+                os.mkdir(ConfigManager.settings_folder)
+            except FileExistsError:
+                with open(ConfigManager.settings_file, 'w') as settings:
+                    settings.write("")
+            with open(ConfigManager.settings_file, 'w') as settings:
+                ConfigManager.conf.write(settings)
 
     # Create a new settings-file if not yet existent
     @staticmethod
@@ -51,7 +61,8 @@ class ConfigManager:
     @staticmethod
     @measureTime
     def get_threads():
-        if not ConfigManager.initialized: ConfigManager.setup()
+        if not ConfigManager.initialized:
+            ConfigManager.setup()
         ConfigManager.conf.read(ConfigManager.settings_file)
         return int(ConfigManager.conf[ConfigManager.ovr]['threads'])  # ToDo: Catch Exceptions
 
@@ -84,7 +95,7 @@ class ConfigManager:
     # get FILE_LOCATION parameter
     @staticmethod
     @measureTime
-    def get_fileLocation():
+    def get_root():
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf.read(ConfigManager.settings_file)
         return ConfigManager.conf[ConfigManager.ovr]['file_location']
@@ -92,8 +103,10 @@ class ConfigManager:
     # set FILE_LOCATION parameter
     @staticmethod
     @measureTime
-    def set_fileLocation(loc):
+    def set_root(loc):
         if not ConfigManager.initialized: ConfigManager.setup()
+        if "\\" not in str(loc) and "/" not in str(loc):
+            loc = os.path.join(os.getcwd(), loc)
         ConfigManager.conf[ConfigManager.ovr]['file_location'] = str(loc)
         with open(ConfigManager.settings_file, "w") as settings:
             ConfigManager.conf.write(settings)
@@ -118,36 +131,74 @@ class ConfigManager:
     # set FIRST_STORAGE parameter
     @staticmethod
     @measureTime
-    def set_firstStorage(path):
+    def set_firstStorage_Image(path):
         if not ConfigManager.initialized: ConfigManager.setup()
-        ConfigManager.conf[ConfigManager.ovr]['first_storage'] = str(path)
+        if "\\" not in str(path) and "/" not in str(path):
+            path = os.path.join(os.getcwd(), path)
+        ConfigManager.conf[ConfigManager.ovr]['first_storage_Image'] = str(path)
+        with open(ConfigManager.settings_file, "w") as settings:
+            ConfigManager.conf.write(settings)
+
+    @staticmethod
+    @measureTime
+    def set_secondStorage_Image(path):
+        if not ConfigManager.initialized: ConfigManager.setup()
+        if "\\" not in str(path) and "/" not in str(path):
+            path = os.path.join(os.getcwd(), path)
+        ConfigManager.conf[ConfigManager.ovr]['second_storage_Image'] = str(path)
         with open(ConfigManager.settings_file, "w") as settings:
             ConfigManager.conf.write(settings)
 
     # get FIRST_STORAGE parameter
     @staticmethod
     @measureTime
-    def get_firstStorage():
+    def get_firstStorage_Image():
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf.read(ConfigManager.settings_file)
-        return ConfigManager.conf[ConfigManager.ovr]['first_Storage']
+        return ConfigManager.conf[ConfigManager.ovr]['first_storage_Image']
 
-    # set SECOND_STORAGE parameter
     @staticmethod
     @measureTime
-    def set_secondStorage(path):
+    def get_secondStorage_Image():
         if not ConfigManager.initialized: ConfigManager.setup()
-        ConfigManager.conf[ConfigManager.ovr]['second_storage'] = str(path)
+        ConfigManager.conf.read(ConfigManager.settings_file)
+        return ConfigManager.conf[ConfigManager.ovr]['second_storage_Image']
+
+    # set FIRST_STORAGE parameter
+    @staticmethod
+    @measureTime
+    def set_firstStorage_Data(path):
+        if not ConfigManager.initialized: ConfigManager.setup()
+        if "\\" not in str(path) and "/" not in str(path):
+            path = os.path.join(os.getcwd(), path)
+        ConfigManager.conf[ConfigManager.ovr]['first_storage_Data'] = str(path)
         with open(ConfigManager.settings_file, "w") as settings:
             ConfigManager.conf.write(settings)
 
-    # get SECOND_STORAGE parameter
     @staticmethod
     @measureTime
-    def get_secondStorage():
+    def set_secondStorage_Data(path):
+        if not ConfigManager.initialized: ConfigManager.setup()
+        if "\\" not in str(path) and "/" not in str(path):
+            path = os.path.join(os.getcwd(), path)
+        ConfigManager.conf[ConfigManager.ovr]['second_storage_Data'] = str(path)
+        with open(ConfigManager.settings_file, "w") as settings:
+            ConfigManager.conf.write(settings)
+
+    # get FIRST_STORAGE parameter
+    @staticmethod
+    @measureTime
+    def get_firstStorage_Data():
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf.read(ConfigManager.settings_file)
-        return ConfigManager.conf[ConfigManager.ovr]['second_Storage']
+        return ConfigManager.conf[ConfigManager.ovr]['first_storage_Data']
+
+    @staticmethod
+    @measureTime
+    def get_secondStorage_Data():
+        if not ConfigManager.initialized: ConfigManager.setup()
+        ConfigManager.conf.read(ConfigManager.settings_file)
+        return ConfigManager.conf[ConfigManager.ovr]['second_storage_Data']
 
     # print each line in settings_file
     @staticmethod
@@ -156,7 +207,8 @@ class ConfigManager:
         if not ConfigManager.initialized: ConfigManager.setup()
         with open(ConfigManager.settings_file, "r") as sf:
             for line in sf:
-                print(line)
+                print(line, end="")
+
 
     @staticmethod
     @measureTime
@@ -165,12 +217,14 @@ class ConfigManager:
         ConfigManager.conf.read(ConfigManager.settings_file)
         return int(ConfigManager.conf[ConfigManager.ovr]['width'])
 
+
     @staticmethod
     @measureTime
     def get_height():
         if not ConfigManager.initialized: ConfigManager.setup()
         ConfigManager.conf.read(ConfigManager.settings_file)
         return int(ConfigManager.conf[ConfigManager.ovr]['height'])
+
 
     @staticmethod
     @measureTime
@@ -180,6 +234,7 @@ class ConfigManager:
         with open(ConfigManager.settings_file, "w") as settings:
             ConfigManager.conf.write(settings)
 
+
     @staticmethod
     @measureTime
     def set_heigth(h):
@@ -188,47 +243,75 @@ class ConfigManager:
         with open(ConfigManager.settings_file, "w") as settings:
             ConfigManager.conf.write(settings)
 
-    @staticmethod
-    @measureTime
-    def get_OS():
-        if not ConfigManager.initialized: ConfigManager.setup()
-        ConfigManager.conf.read(ConfigManager.settings_file)
-        return ConfigManager.conf[ConfigManager.ovr]['operating_system']
 
-    @staticmethod
-    @measureTime
-    def set_OS(name):
-        if not ConfigManager.initialized: ConfigManager.setup()
-        ConfigManager.conf[ConfigManager.ovr]['operating_system'] = name
-        with open(ConfigManager.settings_file, "w") as settings:
-            ConfigManager.conf.write(settings)
-
-    @staticmethod
-    @measureTime
-    def is_Unix():
-        if not ConfigManager.initialized: ConfigManager.setup()
-        return ConfigManager.get_OS().lower().split(" ")[0] == "linux"
-
-
-    # testing this script
+# testing this script
     @staticmethod
     @measureTime
     def test():
-        if not ConfigManager.initialized: ConfigManager.setup()
-        print("Testing ConfigManager.py\n")
-        print("Setup...")
-        ConfigManager.setup()
-        print("Get Attributes")
-        print("Threads: " + ConfigManager.get_threads(), end='\n')
-        print("File_Location " + ConfigManager.get_fileLocation(), end='\n')
-        print("NameScheme " + ConfigManager.get_fileName(), end='\n')
+        ConfigManager.settings_folder = os.getcwd()
+        ConfigManager.settings_file = str(os.path.join(ConfigManager.settings_folder, "settings.ini"))
+
+        print("File: ")
+        ConfigManager.print_file()
+
+        print("Threads: " + str(ConfigManager.get_threads()))
+        print("Images Pt: " + str(ConfigManager.get_images_pt()))
+        print("Root: " + str(ConfigManager.get_root()))
+        print("File Name: " + str(ConfigManager.get_fileName()))
+        print("Width: " + str(ConfigManager.get_width()))
+        print("Heigth: " + str(ConfigManager.get_height()))
+        print("1 Image: " + str(ConfigManager.get_firstStorage_Image()))
+        print("2 Image: " + str(ConfigManager.get_secondStorage_Image()))
+        print("1 Data: " + str(ConfigManager.get_firstStorage_Data()))
+        print("2 Data: " + str(ConfigManager.get_secondStorage_Data()))
+
+        print("File: ")
+        ConfigManager.print_file()
+
+        print("Setting: ")
+        ConfigManager.set_images_pt(100)
+        ConfigManager.set_threads(100)
+        ConfigManager.set_root("Here")
+        ConfigManager.set_fileName('FN')
+        ConfigManager.set_heigth(100)
+        ConfigManager.set_width(100)
+        ConfigManager.set_firstStorage_Data("1D")
+        ConfigManager.set_firstStorage_Image("1I")
+        ConfigManager.set_secondStorage_Data("2D")
+        ConfigManager.set_secondStorage_Image("2I")
+
+        print("Threads: " + str(ConfigManager.get_threads()))
+        print("Images Pt: " + str(ConfigManager.get_images_pt()))
+        print("Root: " + str(ConfigManager.get_root()))
+        print("File Name: " + str(ConfigManager.get_fileName()))
+        print("Width: " + str(ConfigManager.get_width()))
+        print("Heigth: " + str(ConfigManager.get_height()))
+        print("1 Image: " + str(ConfigManager.get_firstStorage_Image()))
+        print("2 Image: " + str(ConfigManager.get_secondStorage_Image()))
+        print("1 Data: " + str(ConfigManager.get_firstStorage_Data()))
+        print("2 Data: " + str(ConfigManager.get_secondStorage_Data()))
+
+        print("Reset")
+
+        ConfigManager._writeDefaults()
+
+        print("Threads: " + str(ConfigManager.get_threads()))
+        print("Images Pt: " + str(ConfigManager.get_images_pt()))
+        print("Root: " + str(ConfigManager.get_root()))
+        print("File Name: " + str(ConfigManager.get_fileName()))
+        print("Width: " + str(ConfigManager.get_width()))
+        print("Heigth: " + str(ConfigManager.get_height()))
+        print("1 Image: " + str(ConfigManager.get_firstStorage_Image()))
+        print("2 Image: " + str(ConfigManager.get_secondStorage_Image()))
+        print("1 Data: " + str(ConfigManager.get_firstStorage_Data()))
+        print("2 Data: " + str(ConfigManager.get_secondStorage_Data()))
 
 
-class ThreadsafeConfigManager(ConfigManager):
-    def __init__(self):
-        super(ThreadsafeConfigManager, self).__init__()
 
 
-class MultiConfigManager(ThreadsafeConfigManager):
-    def __init__(self):
-        super(MultiConfigManager, self).__init__()
+
+
+
+if __name__ == "__main__":
+    ConfigManager.test()
+
