@@ -9,6 +9,12 @@ from Maths.Functions import measureTime, clearLog, evaluateLog
 import matplotlib.pyplot as plt
 import math
 
+runningProcesses = []
+
+def print(st):
+    with open("DebugLog.txt", "a") as log:
+        log.write(str(st) + "\n")
+
 
 def compareThreadCount():
     times = []
@@ -64,7 +70,7 @@ def compare_points_per_image():
     times.append(0)
     imagesperRun = 10
 
-    cfg.set_threads(os.cpu_count())
+    cfg.set_threads(os.cpu_count()/2)
     cfg.set_images_pt(math.ceil(imagesperRun / 2))
     x = []
     cfg.set_width(800)
@@ -94,11 +100,7 @@ def test(number_of_points):
     global nop
     nop = number_of_points
     start = time.perf_counter()
-    # cfg.set_threads(4)
-    # path = os.getcwd() + "/bildordner"
     path = os.path.join(os.getcwd(), "bildordner")
-    # moveTo = os.getcwd() + "/bildordner2"
-    moveTo = os.path.join(os.getcwd(), "bildordner2")
     sem = Semaphore(Files.FileManager.countFiles(path))
 
     try:
@@ -111,11 +113,18 @@ def test(number_of_points):
     filemanager.start()
     fn_generator = filemanager.FilenameGenerator(path, ".png")
 
-    # cfg.set_images_pt(25)
 
     class DataCreator(Process):
+
+        alive = True
+        def stopNow(self):
+
+            self.alive = False
+
+
         def run(self):
             for i in range(cfg.get_images_pt()):
+                print("prozess Running")
                 img = Images.Images(Files.MultiFileManager(), fn_generator)
                 data = frame.DataFrame()
 
@@ -125,71 +134,37 @@ def test(number_of_points):
                 index = fn_generator.generateIndex()
                 data.save(index)
                 # img.noiseImage()
-                img.createImage(data)  # ToDo: dont delete, or other method to provide index
+                print("Start imgs.createImg")
+                if not self.alive: return
+                img.createImageTest(data, str(self))  # ToDo: dont delete, or other method to provide index
+                if not self.alive: return
+                print("Start Saving")
                 path = img.saveImage(index)[0]
+                print("Done Saving")
                 sem.release()
                 print("Image " + path + " saved by: " + str(self.name))
 
-    class Movement(Process):
-        mfm = Files.MultiFileManager()
-        interrupted = False
-
-        def __init__(self):
-            super().__init__()
-
-        def interrupt(self):
-            self.interrupted = True
-
-        def run(self):
-            # print("Running")
-            while not self.interrupted:
-                sem.acquire()
-                self.mfm.moveFile(path, moveTo)
-                print("movedFile. remaining: " + str(self.mfm.countFiles(path)))
 
     @measureTime
     def genererateTestFiles():
-
+        global runningProcesses
         processes = []
         for i in range(cfg.get_threads()):
             processes.append(DataCreator())
         for pro in processes:
+            print("Starting " + str(pro))
             pro.start()
+            runningProcesses.append(pro)
+
         for po in processes:
             po.join()
+            runningProcesses.remove(po)
 
-    @measureTime
-    def moveAllTest():
-        processes = []
-        for i in range(cfg.get_threads()):
-            processes.append(Movement())
-            # print("appended")
-        for pro in processes:
-            pro.start()
-            # print("started")
-        for po in processes:
-            po.join()
 
-    @measureTime
-    def generateAndMove(create, move):
-        processesC = []
-        processesM = []
-        for i in range(create):
-            processesC.append(DataCreator())
-        for j in range(move):
-            processesM.append(Movement())
-        for i in processesC:
-            i.start()
-        for j in processesM:
-            j.start()
-        for i in processesC:
-            i.join()
-        for j in processesM:
-            j.interrupt()
-            j.join()
 
     # print(data)
     # print_statistics()
+    print("Start Generating")
     genererateTestFiles()
     # moveAllTest()
     # generateAndMove(3,1)
@@ -201,13 +176,23 @@ def test(number_of_points):
 
 if __name__ == "__main__":
     clearLog()
+
+    with open("DebugLog.txt", "w") as log:
+        log.write(" ")
     #Files.FileManager.clearFolder(os.path.join(os.getcwd(), "bildordner"))
     #Files.FileManager.clearFolder(os.path.join(os.getcwd(), "Daten"))
+    if Files.FileManager.countFiles(os.path.join(os.getcwd(), "bildordner2")) > 0:
+        Files.FileManager.clearFolder(os.path.join(os.getcwd(), "bildordner2"))
+        Files.FileManager.clearFolder(os.path.join(os.path.join(os.getcwd(), "Daten2")))
     Files.FileManager.moveAll(os.path.join(os.getcwd(), "bildordner"), os.path.join(os.getcwd(), "bildordner2"))
     Files.FileManager.moveAll(os.path.join(os.getcwd(), "Daten"), os.path.join(os.getcwd(), "Daten2"))
     # test()
     # compare_points_per_image()
     # compareThreadCount()
     # compare_points_per_image()
-    compareImageSize()
+    try:
+        compareImageSize()
+    except KeyboardInterrupt:
+        for pr in runningProcesses:
+            pr.stopNow()
     evaluateLog()

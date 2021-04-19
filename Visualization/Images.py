@@ -15,6 +15,10 @@ func = Functions.Functions()
 aspectRange = 3
 aspectRange = 3
 
+def print(st):
+    with open("DebugLog.txt", "a") as log:
+        log.write(str(st) + "\n")
+
 
 class Images:
     width = cfg.get_width()
@@ -80,14 +84,35 @@ class Images:
 
     @measureTime
     def createImage(self, data):
+        print("Inside CreateImg")
         cfg.setup()
         self.newImage()
-        coos = []
+        # coos = []
         #dummyData = data.clone()
+        print("öööööööööööööööööö     " + str(len(data)))
+
         while data.hasPoints():
             # coos.append(data.getPoint())
+            print("---Add point")
             self.addPoint(data.getPoint())
         # self.addPoints(coos)
+        print("updating Image")
+        self.updateImage()
+
+    def createImageTest(self, data, id):
+        print("Inside CreateImgTest")
+        cfg.setup()
+        self.newImage()
+        # coos = []
+        # dummyData = data.clone()
+        print("Laenge von Data eingesehen von " + id + str(len(data)))
+
+        while data.hasPoints():
+            # coos.append(data.getPoint())
+            print("---Add point-" + id)
+            self.addPoint(data.getPoint())
+        # self.addPoints(coos)
+        print("updating Image-" + id )
         self.updateImage()
 
     @measureTime

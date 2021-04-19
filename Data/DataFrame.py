@@ -18,6 +18,10 @@ class DataFrame:
         return self.points
 
     @measureTime
+    def __len__(self):
+        return len(self.points)
+
+    @measureTime
     def save(self, index):
         self.index = index
         filename = self.name + str(index) + self.suffix
