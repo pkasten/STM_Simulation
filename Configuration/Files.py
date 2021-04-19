@@ -5,6 +5,8 @@ from multiprocessing import Lock as mpLock
 from Maths.Functions import measureTime
 
 
+
+
 class FileManager:
     index = 0
     defaultFolder = os.getcwd()

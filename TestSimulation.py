@@ -1,9 +1,9 @@
 from Data import Simulation as sim
 from Data import DataFrame as frame
 from Visualization import Images
-from Configuration import Files, Configuration
+from Configuration import Files, Configuration as cfg
 import os, time
-from multiprocessing import Process, Lock, Manager, Semaphore
+from multiprocessing import Process, Semaphore
 from multiprocessing.managers import BaseManager
 from Maths.Functions import measureTime, clearLog, evaluateLog
 import matplotlib.pyplot as plt
@@ -15,10 +15,10 @@ def compareThreadCount():
     # times[0] = 0
     times.append(0)
     imagesperRun = 480
-    Configuration.ConfigManager.set_images_pt(25)
+    cfg.set_images_pt(25)
     for i in range(1, 32):
-        Configuration.ConfigManager.set_threads(i)
-        Configuration.ConfigManager.set_images_pt(math.ceil(imagesperRun / i))
+        cfg.set_threads(i)
+        cfg.set_images_pt(math.ceil(imagesperRun / i))
         times.append(test(10))
 
     x = []
@@ -39,12 +39,12 @@ def compareImageSize():
     times.append(0)
     imagesperRun = 16
 
-    Configuration.ConfigManager.set_threads(os.cpu_count())
-    Configuration.ConfigManager.set_images_pt(math.ceil(imagesperRun / os.cpu_count()))
+    cfg.set_threads(os.cpu_count())
+    cfg.set_images_pt(math.ceil(imagesperRun / os.cpu_count()))
     x = []
     for i in range(100, 8000, 100):
-        Configuration.ConfigManager.set_width(i)
-        Configuration.ConfigManager.set_heigth(i)
+        cfg.set_width(i)
+        cfg.set_heigth(i)
         times.append(test(10))
         x.append(i*i)
 
@@ -64,11 +64,11 @@ def compare_points_per_image():
     times.append(0)
     imagesperRun = 10
 
-    Configuration.ConfigManager.set_threads(os.cpu_count())
-    Configuration.ConfigManager.set_images_pt(math.ceil(imagesperRun / 2))
+    cfg.set_threads(os.cpu_count())
+    cfg.set_images_pt(math.ceil(imagesperRun / 2))
     x = []
-    Configuration.ConfigManager.set_width(800)
-    Configuration.ConfigManager.set_heigth(800)
+    cfg.set_width(800)
+    cfg.set_heigth(800)
     for i in range(10, 100, 10):
         times.append(test(i))
         x.append(i)
@@ -89,12 +89,12 @@ def test():
 
 
 def test(number_of_points):
-    # Configuration.MultiConfigManager.set_images_pt(250)
+    # cfg.set_images_pt(250)
 
     global nop
     nop = number_of_points
     start = time.perf_counter()
-    # Configuration.MultiConfigManager.set_threads(4)
+    # cfg.set_threads(4)
     # path = os.getcwd() + "/bildordner"
     path = os.path.join(os.getcwd(), "bildordner")
     # moveTo = os.getcwd() + "/bildordner2"
@@ -111,11 +111,11 @@ def test(number_of_points):
     filemanager.start()
     fn_generator = filemanager.FilenameGenerator(path, ".png")
 
-    # Configuration.MultiConfigManager.set_images_pt(25)
+    # cfg.set_images_pt(25)
 
     class DataCreator(Process):
         def run(self):
-            for i in range(Configuration.MultiConfigManager.get_images_pt()):
+            for i in range(cfg.get_images_pt()):
                 img = Images.Images(Files.MultiFileManager(), fn_generator)
                 data = frame.DataFrame()
 
@@ -151,7 +151,7 @@ def test(number_of_points):
     def genererateTestFiles():
 
         processes = []
-        for i in range(Configuration.MultiConfigManager.get_threads()):
+        for i in range(cfg.get_threads()):
             processes.append(DataCreator())
         for pro in processes:
             pro.start()
@@ -161,7 +161,7 @@ def test(number_of_points):
     @measureTime
     def moveAllTest():
         processes = []
-        for i in range(Configuration.MultiConfigManager.get_threads()):
+        for i in range(cfg.get_threads()):
             processes.append(Movement())
             # print("appended")
         for pro in processes:

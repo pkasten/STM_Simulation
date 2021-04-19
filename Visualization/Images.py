@@ -6,7 +6,7 @@ import numpy as np
 import os
 from Configuration import Files as files
 from Maths import Functions
-from Configuration import Configuration
+from Configuration import Configuration as cfg
 from Maths.Functions import measureTime
 import math, random
 
@@ -17,8 +17,8 @@ aspectRange = 3
 
 
 class Images:
-    width = Configuration.ConfigManager.get_width()
-    height = Configuration.ConfigManager.get_height()
+    width = cfg.get_width()
+    height = cfg.get_height()
     noise = True
     colors = np.zeros((width, height))
     sigma = 5.5
@@ -80,7 +80,7 @@ class Images:
 
     @measureTime
     def createImage(self, data):
-        Configuration.ConfigManager.setup()
+        cfg.setup()
         self.newImage()
         coos = []
         #dummyData = data.clone()
