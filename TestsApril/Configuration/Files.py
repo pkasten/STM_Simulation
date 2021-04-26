@@ -416,13 +416,6 @@ class MultiFileManager(ThreadsafeFileManager):
         return ret
 
 
-class AtomicCounter:
-    index = 0
-
-    @measureTime
-    def incAndGet(self):
-        self.index = self.index + 1
-        return self.index
 
 
 class FilenameGenerator:
