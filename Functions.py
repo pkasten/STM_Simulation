@@ -3,7 +3,7 @@ import time, os, math
 
 # logfile = os.getcwd() + "/log.txt"
 logfile = str(os.path.join(os.getcwd(), "log.txt"))
-MEASURE = True
+MEASURE = False
 
 # statisticsfile = os.getcwd() + "/statistics.txt"
 statisticsfile = str(os.path.join(os.getcwd(), "statistics.txt"))
@@ -43,17 +43,25 @@ def evaluateLog():
             file.write(str(key) + ": {:.3f} ms total\n\n".format(stat_dict_totalTime[key]))
 
 
-def turnMatrix(matrix, theta):  # ToDo: Improve Anti-Aliasing
-    shp = np.shape(matrix) #ToDo: Turn Correctly
+def turnMatrix(mat, theta):  # ToDo: Improve Anti-Aliasing
+    shp = np.shape(mat) #ToDo: Turn Correctly
+    matrix = mat
     w = shp[0]
     h = shp[1]
-    anti_aliasing = False  # ToDo: Ask
+    anti_aliasing = True  # ToDo: Ask
     while True:
         if 0 <= theta < np.pi / 2:
             break
         elif np.pi / 2 <= theta < np.pi:
             theta = theta % (np.pi / 2)
-            matrix.transpose()  # ToDo: possible Error
+            newmat = np.zeros(np.shape(matrix))
+            xlen = np.shape(matrix)[0]
+            ylen = np.shape(matrix)[1]
+            for x in range(xlen):
+                for y in range(ylen):
+                    newmat[x, y] = matrix[y, xlen - x - 1]
+            matrix = newmat
+            #matrix = matrix.transpose(0,1)  # ToDo: possible Error
         elif np.pi <= theta < 3 * np.pi / 2:
             newmat = np.zeros(np.shape(matrix))
             xlen = np.shape(matrix)[0]
@@ -64,17 +72,24 @@ def turnMatrix(matrix, theta):  # ToDo: Improve Anti-Aliasing
                     newmat[x, y] = matrix[x, ylen - y - 1]  # -1 fpr Index Error
 
             theta = theta % np.pi
+            matrix = newmat
         elif 3 * np.pi / 2 <= theta < 2 * np.pi:
             matrix.transpose()
             newmat = np.zeros(np.shape(matrix))
             xlen = np.shape(matrix)[0]
             ylen = np.shape(matrix)[1]
-            # midpoint = ylen/2 + 0.5
             for x in range(xlen):
                 for y in range(ylen):
-                    newmat[x, y] = matrix[x, ylen - y - 1]  # -1 fpr Index Error
+                    newmat[x, y] = matrix[y, xlen - x - 1]
+            matrix = newmat
+            # midpoint = ylen/2 + 0.5
+            newmat = np.zeros(np.shape(matrix))
+            for x in range(xlen):
+                for y in range(ylen):
+                    newmat[x, y] = matrix[xlen - x - 1, ylen - y - 1]  # -1 fpr Index Error
 
             theta = theta % (3 * np.pi / 2)
+            matrix = newmat
 
         else:
             theta = theta % 2 * np.pi

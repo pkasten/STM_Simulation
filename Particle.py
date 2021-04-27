@@ -3,7 +3,7 @@ import Configuration as cfg
 import numpy as np
 from Functions import turnMatrix
 from PIL import Image
-
+from scipy.special import erf
 
 
 class Particle:
@@ -22,7 +22,10 @@ class Particle:
         self.length = cfg.get_part_length()
         self.img_width = cfg.get_width()
         self.img_height = cfg.get_height()
-        self.effect_range = 10  # ToDO: calculate
+        self.max_height = cfg.get_max_height()
+        self.std_deriv = cfg.get_std_deriv()
+        # self.effect_range = np.square(self.std_deriv) * max(self.length, self.width)
+        self.effect_range = max(self.length, self.width)
         if len(cfg.get_image_path()) == 0:
             self.fromImage = False
         else:
@@ -59,7 +62,9 @@ class Particle:
     def visualize(self, x, y):
         #print(x, y)
         if not self.fromImage:
-            return 255 if (abs(x) <= 1 and abs(y) <= 1) else 0
+            opop = self._line_gauss(x, y)
+            #print(opop)
+            return opop
         else:
             cx = self.img.size[0] /2
             cy = self.img.size[1] /2
@@ -68,11 +73,108 @@ class Particle:
             except IndexError:
                 return 0
 
+    def _ball(self, x, y):
+        return 255 if (abs(x) <= 1 and abs(y) <= 1) else 0
+
+    def _line(self, x, y):
+        if -self.width/2 <= x < self.width - self.width/2 and \
+            -self.length/2 <= y < self.length - self.length/2:
+            if y > 0:
+                return self._color(self.height)
+            else:
+                return self._color(self.height/2)
+        else:
+            return 0
+
+    def _line_gauss(self, x, y):
+        if self.std_deriv == 0:
+            return self._line(x, y)
+
+        left_x = -self.width/2
+        right_x = self.width - self.width/2
+        lower_y = -self.length/2
+        upper_y = self.length - self.length/2
+
+        if x < left_x - 3 * np.square(self.std_deriv) or \
+            y < lower_y - 3 * np.square(self.std_deriv) or \
+            x > right_x + 3 * np.square(self.std_deriv) or \
+            y > upper_y + 3 * np.square(self.std_deriv):
+            return 0
+        elif x < 0 and y < 0:
+            return self._color(self.height) * self._gauss(x, left_x, y, lower_y)
+        elif x < 0 and y >= 0:
+            return self._color(self.height) * self._gauss(x, left_x, y, upper_y)
+        elif x >= 0 and y < 0:
+            return self._color(self.height) * self._gauss(x, right_x, y, lower_y)
+        elif x >= 0 and y >= 0:
+            return self._color(self.height) * self._gauss(x, right_x, y, upper_y)
+        else:
+            print(x, y)
+            raise NotImplementedError
+
+    def _gauss(self, x, mu_x, y, mu_y):
+        ret = self._gauss1D(x, mu_x) * self._gauss1D(y, mu_y)
+        return ret
+
+    def _gauss1D(self, x, mu):
+        if x < 0:
+            ret = 0.5 * (1 + erf((x - mu) / (np.sqrt(2) * self.std_deriv)))
+        else:
+            ret = 0.5 * (1 + erf((-x + mu) / (np.sqrt(2) * self.std_deriv)))
+
+        return ret
+
+
+    def _color(self, height):
+        return 255 * height / self.max_height
+
     def get_x(self):
         return self.x
 
     def get_y(self):
         return self.y
+
+    def get_dimension(self):
+        return max(self.width, self.length)
+
+    def true_overlap(self, particle):
+        dx = particle.get_x() - self.get_x()
+        dy = particle.get_y() - self.get_y()
+        if(np.sqrt(np.square(dx) + np.square(dy)) > self.get_dimension() + particle.get_dimension()):
+            return False
+        else:
+            thismat, foo, bar = self.efficient_Matrix_turned()
+            othmat, foo, bar = particle.efficient_Matrix_turned()
+            if np.shape(thismat) != np.shape(othmat):
+                print(np.shape(thismat), np.shape(othmat))
+                small_mat = thismat if np.shape(thismat)[0] < np.shape(othmat)[0] else othmat
+                big_mat = thismat if small_mat is othmat else othmat
+
+
+                shall_w = min(np.shape(othmat)[0], np.shape(thismat)[0])
+                shall_h = min(np.shape(othmat)[1], np.shape(thismat)[1])
+                strip_x = (np.shape(big_mat)[0] - np.shape(small_mat)[0]) / 2
+                strip_y = (np.shape(big_mat)[1] - np.shape(small_mat)[1]) / 2 #ToDo: Fix
+                if small_mat is not thismat:
+                    dx *= -1
+                    dy *= -1
+                reducedmat = big_mat[strip_x:-strip_x, strip_y:-strip_y]
+                for i in range(np.shape(small_mat)[0]):
+                    for j in range(np.shape(small_mat)[1]):
+                        try:
+                            if small_mat[i, j] > 0.2 and reducedmat[i + dx, j + dy] > 0.2:
+                                return True
+                        except IndexError:
+                            continue
+            else:
+                for i in range(np.shape(thismat)[0]):
+                    for j in range(np.shape(thismat)[1]):
+                        try:
+                            if thismat[i, j] > 0.2 and othmat[i + dx, j + dy] > 0.2:
+                                return True
+                        except IndexError:
+                            continue
+        return False
 
     @staticmethod
     def str_Header():

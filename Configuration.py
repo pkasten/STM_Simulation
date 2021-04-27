@@ -42,7 +42,9 @@ def_width_part = 'width', 1
 def_length_part = 'length', 10
 def_height_part = 'height', 1
 def_image_path = 'image_path', ""
-particle_properties_settings = [def_width_part, def_image_path, def_length_part, def_height_part]
+def_part_max_height = 'max_height', 1
+def_std_deriv = 'std_derivate', def_length_part[1] / 5
+particle_properties_settings = [def_width_part, def_image_path, def_length_part, def_height_part, def_std_deriv, def_part_max_height]
 
 
 # Reset parameters to default values
@@ -256,3 +258,15 @@ def get_image_path():
     if not initialized: setupConfigurationManager()
     conf.read(settings_file)
     return conf[cat_particle_properties][def_image_path[0]]
+
+def get_max_height():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return int(conf[cat_particle_properties][def_part_max_height[0]])
+
+def get_std_deriv():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return int(float(conf[cat_particle_properties][def_std_deriv[0]]))

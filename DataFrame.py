@@ -30,9 +30,17 @@ class DataFrame:
         else:
             self.objects.append(part)
 
-    def addParticles(self, n):
-        for i in range(n):
-            self.objects.append(Particle())
+    def addParticles(self, amount=None, coverage=None):
+        if amount is not None:
+            for i in range(amount):
+                self.objects.append(Particle())
+        elif coverage is not None:
+            while self.coverage() < coverage:
+                self.objects.append(Particle())
+        else:
+            for i in range(cfg.get_particles_per_image()):
+                self.objects.append(Particle())
+
 
     @measureTime
     def createImage(self):
@@ -114,6 +122,22 @@ class DataFrame:
         # return not self.points.empty()
         return len(self.objects) > 0
 
+    def coverage(self):
+        area = cfg.get_width() * cfg.get_height()
+        covered = 0
+        for part in self.objects:
+            covered += np.pi * np.square(part.get_dimension())
+        return covered/area
+
+    def has_overlaps(self):
+        for part in self.objects:
+            for part2 in self.objects:
+                if part == part2:
+                    continue
+                if part.true_overlap(part2):
+                    return True
+        return False
+
     def __str__(self):
-        return str(self.points)
+        return str(self.objects)
 

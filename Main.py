@@ -9,12 +9,12 @@ import math
 
 
 def test_frame(data_frame):
-    maxn = len(range(25, cfg.get_width(), 50)) * len(range(25, cfg.get_height(), 50))
+    maxn = len(range(50, cfg.get_width(), 100)) * len(range(50, cfg.get_height(), 100))
     th = 0
-    #dth = 2 * math.pi / maxn
-    dth = 0.05
-    for y in range(25, cfg.get_height(), 50):
-        for x in range(25, cfg.get_width(), 50):
+    dth = 2 * math.pi / maxn
+    # dth = 0.05
+    for y in range(50, cfg.get_height(), 100):
+        for x in range(50, cfg.get_width(), 100):
             data_frame.addParticle(Particle(x, y, th))
             th += dth
 
@@ -26,8 +26,12 @@ if __name__ == "__main__":
     # dat_frame.addParticles(conf.get_particles_per_image())
     # dat_frame.createImage_efficient()
     #dat_frame.addParticle(Particle(200, 200, 3*np.pi/2 + 0.2))
-    test_frame(dat_frame)
+    #test_frame(dat_frame)
+    dat_frame.addParticles(coverage=0.5)
+    print(dat_frame.has_overlaps())
+    #dat_frame.addParticle(Particle(200, 200, 0))
     dat_frame.createImage_efficient_with_new_Turn()
+    print(dat_frame.coverage())
     dat_frame.save()
     evaluateLog()
 
