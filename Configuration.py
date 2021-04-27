@@ -21,7 +21,7 @@ initialized = False
 
 cat_pc = 'computer_settings'
 def_threads = 'threads', os.cpu_count()
-def_images_per_thread = 'imgaes_per_thread', 20
+def_images_per_thread = 'images_per_thread', 20
 def_image_folder = 'image_folder', str(os.path.join(os.getcwd(), "bildordner"))
 def_data_folder = 'data_folder', str(os.path.join(os.getcwd(), "data"))
 pc_settings = [def_threads, def_images_per_thread, def_image_folder, def_data_folder]
@@ -41,7 +41,8 @@ cat_particle_properties = 'particle_properties'
 def_width_part = 'width', 1
 def_length_part = 'length', 10
 def_height_part = 'height', 1
-particle_properties_settings = [def_width_part, def_length_part, def_height_part]
+def_image_path = 'image_path', ""
+particle_properties_settings = [def_width_part, def_image_path, def_length_part, def_height_part]
 
 
 # Reset parameters to default values
@@ -249,3 +250,9 @@ def get_part_length():
     if not initialized: setupConfigurationManager()
     conf.read(settings_file)
     return int(conf[cat_particle_properties][def_length_part[0]])
+
+def get_image_path():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return conf[cat_particle_properties][def_image_path[0]]

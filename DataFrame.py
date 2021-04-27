@@ -24,8 +24,11 @@ class DataFrame:
     def __len__(self):
         return len(self.objects)
 
-    def addParticle(self):
-        self.objects.append(Particle())
+    def addParticle(self, part=None):
+        if part is None:
+            self.objects.append(Particle())
+        else:
+            self.objects.append(part)
 
     def addParticles(self, n):
         for i in range(n):
@@ -55,6 +58,29 @@ class DataFrame:
                 for j in range(mat_h):
                     new_x = x - math.floor((mat_w/2)) + i
                     new_y = y - math.floor(mat_h/2) + j
+                    if not (0 <= new_x < width and 0 <= new_y < height):
+                        continue
+                    matrix[new_x, new_y] += eff_mat[i, j]
+
+        self.img.addMatrix(matrix)
+        self.img.updateImage()
+
+    @measureTime
+    def createImage_efficient_with_new_Turn(self):
+        self.img = MyImage()
+        width = cfg.get_width()
+        height = cfg.get_height()
+        matrix = np.zeros((width, height))
+
+        for part in self.objects:
+            eff_mat, x, y = part.efficient_Matrix_turned()
+            mat_w = eff_mat.shape[0]
+
+            mat_h = eff_mat.shape[1]
+            for i in range(mat_w):
+                for j in range(mat_h):
+                    new_x = x - math.floor((mat_w / 2)) + i
+                    new_y = y - math.floor(mat_h / 2) + j
                     if not (0 <= new_x < width and 0 <= new_y < height):
                         continue
                     matrix[new_x, new_y] += eff_mat[i, j]
