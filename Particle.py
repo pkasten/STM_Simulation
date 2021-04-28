@@ -24,6 +24,7 @@ class Particle:
         self.img_height = cfg.get_height()
         self.max_height = cfg.get_max_height()
         self.std_deriv = cfg.get_std_deriv()
+        self.overlap_threshold = cfg.get_overlap_threshold()
         # self.effect_range = np.square(self.std_deriv) * max(self.length, self.width)
         self.effect_range = max(self.length, self.width)
         if len(cfg.get_image_path()) == 0:
@@ -60,11 +61,9 @@ class Particle:
         return eff_mat_turned, x, y
 
     def visualize(self, x, y):
-        #print(x, y)
         if not self.fromImage:
-            opop = self._line_gauss(x, y)
-            #print(opop)
-            return opop
+            return self._line_gauss(x, y)
+
         else:
             cx = self.img.size[0] /2
             cy = self.img.size[1] /2
@@ -134,8 +133,17 @@ class Particle:
     def get_y(self):
         return self.y
 
+    def get_theta(self):
+        return self.theta
+
+    def set_theta(self, theta):
+        self.theta = theta
+
     def get_dimension(self):
         return max(self.width, self.length)
+
+    def get_distance_to(self, part):
+        return np.sqrt(np.square(self.x - part.get_x()) + np.square(self.y - part.get_y()))
 
     def true_overlap(self, particle):
         dx = particle.get_x() - self.get_x()
@@ -146,23 +154,16 @@ class Particle:
             thismat, foo, bar = self.efficient_Matrix_turned()
             othmat, foo, bar = particle.efficient_Matrix_turned()
             if np.shape(thismat) != np.shape(othmat):
-                print(np.shape(thismat), np.shape(othmat))
                 small_mat = thismat if np.shape(thismat)[0] < np.shape(othmat)[0] else othmat
                 big_mat = thismat if small_mat is othmat else othmat
-
-
-                shall_w = min(np.shape(othmat)[0], np.shape(thismat)[0])
-                shall_h = min(np.shape(othmat)[1], np.shape(thismat)[1])
-                strip_x = (np.shape(big_mat)[0] - np.shape(small_mat)[0]) / 2
-                strip_y = (np.shape(big_mat)[1] - np.shape(small_mat)[1]) / 2 #ToDo: Fix
                 if small_mat is not thismat:
                     dx *= -1
                     dy *= -1
-                reducedmat = big_mat[strip_x:-strip_x, strip_y:-strip_y]
                 for i in range(np.shape(small_mat)[0]):
                     for j in range(np.shape(small_mat)[1]):
                         try:
-                            if small_mat[i, j] > 0.2 and reducedmat[i + dx, j + dy] > 0.2:
+                            if small_mat[i, j] > self.overlap_threshold and \
+                                    big_mat[i + dx, j + dy] > self.overlap_threshold:
                                 return True
                         except IndexError:
                             continue

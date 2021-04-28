@@ -3,7 +3,7 @@ import os
 from TestsApril.Maths.Functions import measureTime
 
 conf = cp.ConfigParser()
-#settings_folder = os.path.join(os.getcwd(), "Configuration")
+# settings_folder = os.path.join(os.getcwd(), "Configuration")
 settings_folder = os.getcwd()
 settings_file = str(os.path.join(settings_folder, "settings.ini"))
 # ovr = 'SETTINGS'
@@ -35,26 +35,35 @@ def_width = 'width', 400
 def_height = 'height', 400
 def_particles = 'no_of_particles', 30
 def_px_overlap = 'pixels_overlap (in px)', 40
-image_basics_settings = [def_prefix_image, def_suffix_image,  def_prefix_data, def_suffix_data, def_width, def_height, def_particles, def_px_overlap]
+def_anti_aliasing = 'Anti-Aliasing', 1
+image_basics_settings = [def_prefix_image, def_suffix_image, def_prefix_data, def_suffix_data, def_width, def_height,
+                         def_particles, def_px_overlap, def_anti_aliasing]
 
 cat_particle_properties = 'particle_properties'
-def_width_part = 'width', 1
-def_length_part = 'length', 10
-def_height_part = 'height', 1
+def_width_part = 'width', 3
+def_length_part = 'length', 30
+def_height_part = 'height', 3
 def_image_path = 'image_path', ""
 def_part_max_height = 'max_height', 1
-def_std_deriv = 'std_derivate', def_length_part[1] / 5
-particle_properties_settings = [def_width_part, def_image_path, def_length_part, def_height_part, def_std_deriv, def_part_max_height]
+def_std_deriv = 'std_derivate_grain_border', def_length_part[1] / 5
+def_angle_characteristic_length = 'Angle Characteristic_relative_length', 0.2
+def_angle_stdderiv = 'std_derivate_angle_correlation', 1
+particle_properties_settings = [def_width_part, def_image_path, def_length_part, def_height_part, def_std_deriv,
+                                def_part_max_height, def_angle_stdderiv, def_angle_characteristic_length]
+
+cat_special = 'special settings'
+def_overlap_threshold = 'overlapping_threshold', 10
+special_settings = [def_overlap_threshold]
 
 
 # Reset parameters to default values
 
 @measureTime
 def _writeDefaults():
-
     conf[cat_pc] = {x[0]: x[1] for x in pc_settings}
     conf[cat_image_basics] = {x[0]: x[1] for x in image_basics_settings}
     conf[cat_particle_properties] = {x[0]: x[1] for x in particle_properties_settings}
+    conf[cat_special] = {x[0]: x[1] for x in special_settings}
     try:
         with open(settings_file, 'w') as settings:
             conf.write(settings)
@@ -199,11 +208,13 @@ def set_heigth(h):
     with open(settings_file, "w") as settings:
         conf.write(settings)
 
+
 def get_particles_per_image():
     global settings_file
     if not initialized: setupConfigurationManager()
     conf.read(settings_file)
     return int(conf[cat_image_basics][def_particles[0]])
+
 
 def get_prefix_image():
     global settings_file
@@ -211,11 +222,13 @@ def get_prefix_image():
     conf.read(settings_file)
     return conf[cat_image_basics][def_prefix_image[0]]
 
+
 def get_prefix_data():
     global settings_file
     if not initialized: setupConfigurationManager()
     conf.read(settings_file)
     return conf[cat_image_basics][def_prefix_data[0]]
+
 
 def get_suffix_image():
     global settings_file
@@ -223,11 +236,13 @@ def get_suffix_image():
     conf.read(settings_file)
     return conf[cat_image_basics][def_suffix_image[0]]
 
+
 def get_suffix_data():
     global settings_file
     if not initialized: setupConfigurationManager()
     conf.read(settings_file)
     return conf[cat_image_basics][def_suffix_data[0]]
+
 
 def get_px_overlap():
     global settings_file
@@ -235,11 +250,20 @@ def get_px_overlap():
     conf.read(settings_file)
     return int(conf[cat_image_basics][def_px_overlap[0]])
 
+
+def get_anti_aliasing():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return bool(int(conf[cat_image_basics][def_anti_aliasing[0]]))
+
+
 def get_part_height():
     global settings_file
     if not initialized: setupConfigurationManager()
     conf.read(settings_file)
     return int(conf[cat_particle_properties][def_height_part[0]])
+
 
 def get_part_width():
     global settings_file
@@ -247,11 +271,13 @@ def get_part_width():
     conf.read(settings_file)
     return int(conf[cat_particle_properties][def_width_part[0]])
 
+
 def get_part_length():
     global settings_file
     if not initialized: setupConfigurationManager()
     conf.read(settings_file)
     return int(conf[cat_particle_properties][def_length_part[0]])
+
 
 def get_image_path():
     global settings_file
@@ -259,14 +285,37 @@ def get_image_path():
     conf.read(settings_file)
     return conf[cat_particle_properties][def_image_path[0]]
 
+
 def get_max_height():
     global settings_file
     if not initialized: setupConfigurationManager()
     conf.read(settings_file)
     return int(conf[cat_particle_properties][def_part_max_height[0]])
 
+
 def get_std_deriv():
     global settings_file
     if not initialized: setupConfigurationManager()
     conf.read(settings_file)
     return int(float(conf[cat_particle_properties][def_std_deriv[0]]))
+
+
+def get_angle_stdderiv():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return float(conf[cat_particle_properties][def_angle_stdderiv[0]])
+
+
+def get_angle_char_len():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return float(conf[cat_particle_properties][def_angle_characteristic_length[0]])
+
+
+def get_overlap_threshold():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return int(conf[cat_special][def_overlap_threshold[0]])

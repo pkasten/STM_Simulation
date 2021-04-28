@@ -1,5 +1,6 @@
 import numpy as np
 import time, os, math
+import Configuration as cfg
 
 # logfile = os.getcwd() + "/log.txt"
 logfile = str(os.path.join(os.getcwd(), "log.txt"))
@@ -48,7 +49,7 @@ def turnMatrix(mat, theta):  # ToDo: Improve Anti-Aliasing
     matrix = mat
     w = shp[0]
     h = shp[1]
-    anti_aliasing = True  # ToDo: Ask
+    anti_aliasing = cfg.get_anti_aliasing()  # ToDo: Ask
     while True:
         if 0 <= theta < np.pi / 2:
             break

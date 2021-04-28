@@ -27,12 +27,10 @@ if __name__ == "__main__":
     # dat_frame.createImage_efficient()
     #dat_frame.addParticle(Particle(200, 200, 3*np.pi/2 + 0.2))
     #test_frame(dat_frame)
-    dat_frame.addParticles(coverage=0.5)
-    print(dat_frame.has_overlaps())
-    #dat_frame.addParticle(Particle(200, 200, 0))
-    dat_frame.createImage_efficient_with_new_Turn()
-    print(dat_frame.coverage())
-    dat_frame.save()
+    for i in range(10):
+        dat_frame.addParticles(amount=10, overlapping=True)
+        dat_frame.get_Image()
+        dat_frame.save()
     evaluateLog()
 
 
