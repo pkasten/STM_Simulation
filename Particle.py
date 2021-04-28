@@ -4,6 +4,7 @@ import numpy as np
 from Functions import turnMatrix
 from PIL import Image
 from scipy.special import erf
+import matplotlib.pyplot as plt
 
 
 class Particle:
@@ -27,6 +28,11 @@ class Particle:
         self.overlap_threshold = cfg.get_overlap_threshold()
         # self.effect_range = np.square(self.std_deriv) * max(self.length, self.width)
         self.effect_range = max(self.length, self.width)
+        self.dragged = False
+        self.dragged_dist = 0
+        self.dragged_angle = 0
+        self.subp1 = None
+        self.subp2 = None
         if len(cfg.get_image_path()) == 0:
             self.fromImage = False
         else:
@@ -39,7 +45,7 @@ class Particle:
         matrix = np.zeros((self.img_width, self.img_height))
         for i in range(0, self.img_width):
             for j in range(0, self.img_height):
-                matrix[i, j] = self.visualize(i - self.x, j - self.y)  # ToDo: Stick
+                matrix[i, j] = self.visualize_pixel(i - self.x, j - self.y)  # ToDo: Stick
 
         return matrix
 
@@ -48,7 +54,7 @@ class Particle:
         for i in range(-self.effect_range, self.effect_range):
             for j in range(-self.effect_range, self.effect_range):
                 eff_matrix[i + self.effect_range, j + self.effect_range] = \
-                    self.visualize(i, j)
+                    self.visualize_pixel(i, j)
 
 
         return eff_matrix, self.x, self.y
@@ -60,7 +66,83 @@ class Particle:
         # return eff_mat_turned, round(x + cx), round(y + cy)  # ToDo Check if x needs to be manipulated first
         return eff_mat_turned, x, y
 
-    def visualize(self, x, y):
+    def drag(self, speed, angle):
+        self.dragged = True
+        print("Speed: {}".format(speed))
+        drag_dist = random.gauss(speed, 0.1 * speed)  # ToDo: soft_code Stddrtiv
+        self.dragged_dist = drag_dist
+        self.dragged_angle = angle
+
+        rel_height = random.random()
+        h1 = rel_height * self.length
+        h2 = rel_height * (1 - self.length)
+        y_center_p1 = self.y - np.cos(self.theta) * h1/2
+        y_center_p2 = self.y + np.cos(self.theta) * h2/2 + self.dragged_dist * np.cos(self.dragged_angle)
+        x_center_p1 = self.x - np.sin(self.theta) * h1/2
+        x_center_p2 = self.x + np.sin(self.theta) * h1/2 + self.dragged_dist * np.sin(self.dragged_angle)
+
+        p1 = Particle(x_center_p1, y_center_p1, self.theta)
+        p2 = Particle(x_center_p2, y_center_p2, self.theta)
+        p1.set_length(rel_height * self.length)
+        p2.set_length((1 - rel_height) * self.length)
+
+        self.subp1 = p1
+        self.subp2 = p2
+
+    #def visualize_dragged(self):
+
+
+        #self.dragged = True
+
+        #rel_height = random.random()
+        #p1 = Particle(self.x, self.y, self.theta)
+        #p2 = Particle(self.x + self.dragged_dist * np.sin(self.dragged_angle),
+        #              self.y + self.dragged_dist * np.cos(self.dragged_angle), self.theta)
+        #p1.set_length(rel_height * self.length)
+        #p2.set_length((1 - rel_height) * self.length)
+
+        #self.subp1 = p1
+        #self.subp2 = p2
+        #return
+        # New matrix with indizes combined
+        #p1_matrix, p1x, p1y = p1.efficient_Matrix_turned()
+        #p2_matrix, p2x, p2y = p2.efficient_Matrix_turned()
+
+        #newmat_w = math.ceil(0.5 * np.shape(p1_matrix)[0] + 0.5 * np.shape(p2_matrix)[0] + math.fabs(p1x - p2x))
+        #newmat_h = math.ceil(0.5 * np.shape(p1_matrix)[1] + 0.5 * np.shape(p2_matrix)[1] + math.fabs(p1y - p2y))
+        ##print(newmat_h, newmat_w)
+        #newmat = np.zeros((newmat_w, newmat_h))
+        #newmat2 = np.zeros((newmat_w, newmat_h))
+        #for i in range(np.shape(p1_matrix)[0]):
+        #    for j in range(np.shape(p1_matrix)[1]):
+        #        i_tilt = i - math.ceil(np.shape(p1_matrix)[0]/2) # + p1x
+        #        j_tilt = j - math.ceil(np.shape(p1_matrix)[1]/2) # + p1y
+        #        print(i, i_tilt, j, j_tilt, newmat_w, newmat_h)
+        #        newmat[i_tilt, j_tilt] = p1_matrix[i, j]
+
+        #for i in range(np.shape(p2_matrix)[0]):
+        #    for j in range(np.shape(p2_matrix)[1]):
+        #        i_tilt = i - math.ceil(np.shape(p2_matrix)[0]/2) + int(np.round(math.fabs(p2x - p1x))) # + p2x
+        #        j_tilt = j - math.ceil(np.shape(p2_matrix)[1]/2) + int(np.round(math.fabs(p2y - p1y))) # + p2y
+        #        print(i, i_tilt, j, j_tilt, newmat_w, newmat_h)
+        #        newmat2[i_tilt, j_tilt] = p2_matrix[i, j]
+
+        #plt.imshow(newmat)
+        #plt.show()
+        #plt.imshow(newmat2)
+        #plt.show()
+
+        #print("newmat:")
+        #print(np.max(newmat))
+        #self.width = np.shape(newmat)[0]
+        #self.height = np.shape(newmat)[1]
+        #self.effect_range = max(self.length, self.width)
+
+        #return newmat, self.x, self.y
+
+
+
+    def visualize_pixel(self, x, y):
         if not self.fromImage:
             return self._line_gauss(x, y)
 
@@ -139,6 +221,9 @@ class Particle:
     def set_theta(self, theta):
         self.theta = theta
 
+    def set_length(self, length):
+        self.length = length
+
     def get_dimension(self):
         return max(self.width, self.length)
 
@@ -177,10 +262,23 @@ class Particle:
                             continue
         return False
 
+    def get_visualization(self):
+        ret = []
+        if not self.dragged:
+            ret.append(self.efficient_Matrix_turned())
+            return ret
+        else:
+            for vis in self.subp1.get_visualization():
+                ret.append(vis)
+            for vis in self.subp2.get_visualization():
+                ret.append(vis)
+        return ret
+
+
     @staticmethod
     def str_Header():
-        return "x, y, theta, width, height, length\n"
+        return "x, y, theta, width, height, length, dragged, dragged_dist\n"
 
     def __str__(self):
-        args = [self.x, self.y, self.theta, self.width, self.height, self.length]
+        args = [self.x, self.y, self.theta, self.width, self.height, self.length, self.dragged, self.dragged_dist]
         return ", ".join(str(arg) for arg in args)

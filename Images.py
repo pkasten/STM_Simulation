@@ -1,28 +1,31 @@
 from PIL import Image
 import numpy as np
 import Configuration as cfg
-import os
+import os, random
 # import Particle
 
 
 class MyImage:
     width = cfg.get_width()
     height = cfg.get_height()
-    noise = True
+    # noise = True
     colors = np.zeros((width, height))
     sigma = 5.5
+
 
     img = ""
     filename_generator = ""
 
     def __init__(self):
         self.img = self.newImage()
+        self.noised = False
 
     def getWidth(self):
         return self.width
 
     def getHeight(self):
         return self.height
+
 
     def addParticle(self, particle):
         self.colors = self.colors + particle.toMatrix()
@@ -42,6 +45,16 @@ class MyImage:
     def newImage(self):
         img = Image.new('RGB', (self.width, self.height), 0)
         return img
+
+    # Add Noise to image
+    # currently random dirstibuted, possibly change to normal?
+    def noise(self, mu, sigma):
+        if self.noised:
+            return
+        self.noised = True
+        self.colors += np.random.normal(mu, sigma, np.shape(self.colors))
+
+
 
     def showImage(self):
         self.img.show()

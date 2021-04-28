@@ -1,5 +1,5 @@
 import configparser as cp
-import os
+import os, numpy as np
 from TestsApril.Maths.Functions import measureTime
 
 conf = cp.ConfigParser()
@@ -36,8 +36,10 @@ def_height = 'height', 400
 def_particles = 'no_of_particles', 30
 def_px_overlap = 'pixels_overlap (in px)', 40
 def_anti_aliasing = 'Anti-Aliasing', 1
+def_noise_mu = 'Image-noise_Average', 0
+def_noise_std_deriv = 'Image-noise-Standard_derivation', 0.1 * def_noise_mu[1]
 image_basics_settings = [def_prefix_image, def_suffix_image, def_prefix_data, def_suffix_data, def_width, def_height,
-                         def_particles, def_px_overlap, def_anti_aliasing]
+                         def_particles, def_px_overlap, def_anti_aliasing, def_noise_mu, def_noise_std_deriv]
 
 cat_particle_properties = 'particle_properties'
 def_width_part = 'width', 3
@@ -48,12 +50,20 @@ def_part_max_height = 'max_height', 1
 def_std_deriv = 'std_derivate_grain_border', def_length_part[1] / 5
 def_angle_characteristic_length = 'Angle Characteristic_relative_length', 0.2
 def_angle_stdderiv = 'std_derivate_angle_correlation', 1
+def_angle_range_min = 'minimum angle (degree)', 0
+def_angle_range_max = 'maximum angle (degree)', 0
+def_angle_range_usage = 'use angle range?', 0
 particle_properties_settings = [def_width_part, def_image_path, def_length_part, def_height_part, def_std_deriv,
-                                def_part_max_height, def_angle_stdderiv, def_angle_characteristic_length]
+                                def_part_max_height, def_angle_range_usage, def_angle_range_min, def_angle_range_max,
+                                def_angle_stdderiv, def_angle_characteristic_length]
 
 cat_special = 'special settings'
 def_overlap_threshold = 'overlapping_threshold', 10
-special_settings = [def_overlap_threshold]
+def_dragging_error = 'dragging errors', 0
+def_dragging_speed = 'dragging speed', 0.1 * def_width[1]
+def_dragging_possibility = 'dragging possibility', 0
+def_raster_angle = 'raster_angle (degrees)', 0
+special_settings = [def_overlap_threshold, def_dragging_error, def_dragging_speed, def_dragging_possibility, def_raster_angle]
 
 
 # Reset parameters to default values
@@ -258,6 +268,20 @@ def get_anti_aliasing():
     return bool(int(conf[cat_image_basics][def_anti_aliasing[0]]))
 
 
+def get_image_noise_mu():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return float(conf[cat_image_basics][def_noise_mu[0]])
+
+
+def get_image_noise_std_deriv():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return float(conf[cat_image_basics][def_noise_std_deriv[0]])
+
+
 def get_part_height():
     global settings_file
     if not initialized: setupConfigurationManager()
@@ -314,8 +338,55 @@ def get_angle_char_len():
     return float(conf[cat_particle_properties][def_angle_characteristic_length[0]])
 
 
+def get_angle_range_min():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return np.pi * float(conf[cat_particle_properties][def_angle_range_min[0]]) / 180
+
+
+def get_angle_range_max():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return np.pi * float(conf[cat_particle_properties][def_angle_range_max[0]]) / 180
+
+
+def get_angle_range_usage():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return bool(int((conf[cat_particle_properties][def_angle_range_usage[0]])))
+
+
 def get_overlap_threshold():
     global settings_file
     if not initialized: setupConfigurationManager()
     conf.read(settings_file)
     return int(conf[cat_special][def_overlap_threshold[0]])
+
+
+def get_dragging_error():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return bool(int(conf[cat_special][def_dragging_error[0]]))
+
+def get_raster_angle():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return np.pi * float(conf[cat_special][def_raster_angle[0]]) / 180
+
+def get_dragging_speed():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return float(conf[cat_special][def_dragging_speed[0]])
+
+
+def get_dragging_possibility():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return float(conf[cat_special][def_dragging_possibility[0]])

@@ -12,6 +12,7 @@ from Functions import measureTime
 
 class DataFrame:
 
+    # Constructor. Reads Config into local variables
     def __init__(self, fn_gen):
         self.objects = []
         self.fn_gen = fn_gen
@@ -21,19 +22,33 @@ class DataFrame:
         self.angle_correlation_std = cfg.get_angle_stdderiv()
         self.area = cfg.get_width() * cfg.get_height()
         self.max_dist = np.sqrt(np.square(cfg.get_height()) + np.square(cfg.get_width()))
+        self.min_angle = cfg.get_angle_range_min()
+        self.max_angle = cfg.get_angle_range_max()
+        self.use_range = cfg.get_angle_range_usage()
+        self.image_noise_mu = cfg.get_image_noise_mu()
+        self.image_noise_sigma = cfg.get_image_noise_std_deriv()
+        self.use_noise = self.image_noise_sigma != 0
+        self.use_dragging = cfg.def_dragging_error
+        self.dragging_possibility = cfg.get_dragging_possibility()
+        self.dragging_speed = cfg.get_dragging_speed()
+        self.raster_angle = cfg.get_raster_angle()
 
+    #returns iterator over Particles
     def getIterator(self):
         return self.objects
 
+    #gets number of particles
     def __len__(self):
         return len(self.objects)
 
+    # adds a given particle or, if not provided a random one
     def addParticle(self, part=None):
         if part is None:
             self.objects.append(Particle())
         else:
             self.objects.append(part)
 
+    #checks wheather part overlaps any existing particle
     def _overlaps_any(self, part):
         if len(self.objects) == 0:
             return False
@@ -42,6 +57,7 @@ class DataFrame:
                 return True
         return False
 
+    #returns random particle, that does not overlap with any other
     def _get_thatnot_overlaps(self, maximumtries=1000):
         if len(self.objects) == 0:
             return Particle()
@@ -53,12 +69,14 @@ class DataFrame:
                 return p
         return p
 
-    def _calc_angle_weight(self, part1, part2):
+    # calculates particles weight for importance in surrounding particles
+    def _calc_angle_weight(self, part1, part2): # ToDo: Still very sketchy
         drel = part1.get_distance_to(part2) / self.max_dist
         #return np.exp(-self.angle_char_len/drel)
         return self.angle_char_len/drel
 
-    def _calc_angle_for_particle(self, particle):
+    # calculates a random angle for partilce depending on its surrounding with correlation
+    def _calc_angle_for_particle(self, particle): # ToDo: Still very sketchy
         if len(self.objects) == 0:
             return np.pi * 2 * random.random()
         amount = 0
@@ -73,80 +91,135 @@ class DataFrame:
         med = angles / amount
         std = len(self.objects) * self.angle_correlation_std / amount
         exp_std = np.exp(std) - 1
-        print("Particle {} has weighted distance of {}, total distance of {} resulting in sigma={}, expSigma of {}".format(len(self.objects) + 1, amount, distances, std, exp_std))
+        #print("Particle {} has weighted distance of {}, total distance of {} resulting in sigma={}, expSigma of {}".format(len(self.objects) + 1, amount, distances, std, exp_std))
         return random.gauss(med, exp_std)
 
+    # returns rand
+    def _random_angle_range(self):
+        if self.min_angle > self.max_angle:
+            shiftl = 2 * np.pi - self.min_angle
+            ret = random.random() * self.max_angle + shiftl
+            ret -= shiftl
+            return ret
+        else:
+            return random.uniform(self.min_angle, self.max_angle)
 
 
     def addParticles(self, amount=None, coverage=None, overlapping=True, maximum_tries=1000):
         #widthout angle correlation
-        if self.angle_char_len == 0:
-            if not overlapping:
-                if amount is not None:
-                    for i in range(amount):
-                        self.objects.append(self._get_thatnot_overlaps(maximum_tries))
-                elif coverage is not None:
-                    self.objects.append(self._get_thatnot_overlaps(maximum_tries))
+        if not self.use_range:
+            if self.angle_char_len == 0:
+                if not overlapping:
+                    if amount is not None:
+                        for i in range(amount):
+                            p = self._get_thatnot_overlaps(maximum_tries)
+                            self.objects.append(p)
+                    elif coverage is not None:
+                        while self.coverage() < coverage:
+                            p = self._get_thatnot_overlaps(maximum_tries)
+                            self.objects.append(p)
+                    else:
+                        for i in range(cfg.get_particles_per_image()):
+                            p = self._get_thatnot_overlaps(maximum_tries)
+                            self.objects.append(p)
+                #w/ angle, w/o overlapping
                 else:
-                    for i in range(cfg.get_particles_per_image()):
-                        self.objects.append(self._get_thatnot_overlaps(maximum_tries))
-            #w/ angle, w/o overlapping
+                    if amount is not None:
+                        for i in range(amount):
+                            self.objects.append(Particle())
+                    elif coverage is not None:
+                        while self.coverage() < coverage:
+                            self.objects.append(Particle())
+                    else:
+                        for i in range(cfg.get_particles_per_image()):
+                            self.objects.append(Particle())
+            #w/ angle correlation
             else:
-                if amount is not None:
-                    for i in range(amount):
-                        self.objects.append(Particle())
-                elif coverage is not None:
-                    while self.coverage() < coverage:
-                        self.objects.append(Particle())
+                if not overlapping:
+                    if amount is not None:
+                        for i in range(amount):
+                            p = self._get_thatnot_overlaps(maximum_tries)
+                            p.set_theta(self._calc_angle_for_particle(p))
+                            self.objects.append(p)
+                    elif coverage is not None:
+                        while self.coverage() < coverage:
+                            p = self._get_thatnot_overlaps(maximum_tries)
+                            p.set_theta(self._calc_angle_for_particle(p))
+                            self.objects.append(p)
+                    else:
+                        for i in range(cfg.get_particles_per_image()):
+                            p = self._get_thatnot_overlaps(maximum_tries)
+                            p.set_theta(self._calc_angle_for_particle(p))
+                            self.objects.append(p)
+                #w/ angle, w/o overlapping
                 else:
-                    for i in range(cfg.get_particles_per_image()):
-                        self.objects.append(Particle())
-        #w/ angle correlation
+                    if amount is not None:
+                        for i in range(amount):
+                            p = Particle()
+                            p.set_theta(self._calc_angle_for_particle(p))
+                            self.objects.append(p)
+                    elif coverage is not None:
+                        while self.coverage() < coverage:
+                            p = Particle()
+                            p.set_theta(self._calc_angle_for_particle(p))
+                            self.objects.append(p)
+                    else:
+                        for i in range(cfg.get_particles_per_image()):
+                            p = Particle()
+                            p.set_theta(self._calc_angle_for_particle(p))
+                            self.objects.append(p)
+        #use angle range
         else:
             if not overlapping:
                 if amount is not None:
                     for i in range(amount):
                         p = self._get_thatnot_overlaps(maximum_tries)
-                        p.set_theta(self._calc_angle_for_particle(p))
+                        p.set_theta(self._random_angle_range())
                         self.objects.append(p)
                 elif coverage is not None:
                     while self.coverage() < coverage:
                         p = self._get_thatnot_overlaps(maximum_tries)
-                        p.set_theta(self._calc_angle_for_particle(p))
+                        p.set_theta(self._random_angle_range())
                         self.objects.append(p)
                 else:
                     for i in range(cfg.get_particles_per_image()):
                         p = self._get_thatnot_overlaps(maximum_tries)
-                        p.set_theta(self._calc_angle_for_particle(p))
+                        p.set_theta(self._random_angle_range())
                         self.objects.append(p)
             #w/ angle, w/o overlapping
             else:
                 if amount is not None:
                     for i in range(amount):
                         p = Particle()
-                        p.set_theta(self._calc_angle_for_particle(p))
+                        p.set_theta(self._random_angle_range())
                         self.objects.append(p)
                 elif coverage is not None:
                     while self.coverage() < coverage:
                         p = Particle()
-                        p.set_theta(self._calc_angle_for_particle(p))
+                        p.set_theta(self._random_angle_range())
                         self.objects.append(p)
                 else:
                     for i in range(cfg.get_particles_per_image()):
                         p = Particle()
-                        p.set_theta(self._calc_angle_for_particle(p))
+                        p.set_theta(self._random_angle_range())
                         self.objects.append(p)
 
+    #deprecated
     @measureTime
     def createImage(self):
+        print("Deprecated 3154251534")
         self.img = MyImage()
         for part in self.objects:
             self.img.addParticle(part)
-        self.img.updateImage()
+
+
+        self.img.updateImage() #Always call last
         #img.noise....etc
 
+    # deprecated
     @measureTime
     def createImage_efficient(self):
+        print("Deprecated 46541741")
         self.img = MyImage()
         width = cfg.get_width()
         height = cfg.get_height()
@@ -170,6 +243,7 @@ class DataFrame:
 
     @measureTime
     def createImage_efficient_with_new_Turn(self):
+        print("Deprecated 453643")
         self.img = MyImage()
         width = cfg.get_width()
         height = cfg.get_height()
@@ -189,10 +263,46 @@ class DataFrame:
                     matrix[new_x, new_y] += eff_mat[i, j]
 
         self.img.addMatrix(matrix)
-        self.img.updateImage()
+        #self.img.updateImage()
+
+    def create_Image_Visualization(self):
+        self.img = MyImage()
+        width = cfg.get_width()
+        height = cfg.get_height()
+        matrix = np.zeros((width, height))
+
+        for part in self.objects:
+            for tuple in part.get_visualization():
+                eff_mat, x, y = tuple
+                mat_w = eff_mat.shape[0]
+
+                #ToDo: possible failure
+                x = int(np.round(x))
+                y = int(np.round(y))
+
+                mat_h = eff_mat.shape[1]
+                for i in range(mat_w):
+                    for j in range(mat_h):
+                        new_x = x - math.floor((mat_w / 2)) + i
+                        new_y = y - math.floor(mat_h / 2) + j
+                        if not (0 <= new_x < width and 0 <= new_y < height):
+                            continue
+                        matrix[new_x, new_y] += eff_mat[i, j]
+
+        self.img.addMatrix(matrix) #Indentd  too far right
+
+    def _drag_particles(self):
+        for part in self.objects:
+            if random.random() < self.dragging_possibility:
+                part.drag(self.dragging_speed, self.raster_angle)
 
     def get_Image(self):
-        self.createImage_efficient_with_new_Turn()
+        if self.use_dragging:
+            self._drag_particles()
+        self.create_Image_Visualization()
+        if self.use_noise:
+            self.img.noise(self.image_noise_mu, self.image_noise_sigma)
+        self.img.updateImage()
 
     def createText(self):
         strings = [Particle.str_Header()]
