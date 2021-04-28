@@ -297,8 +297,8 @@ class DataFrame:
                 part.drag(self.dragging_speed, self.raster_angle)
 
     def get_Image(self):
-        if self.use_dragging:
-            self._drag_particles()
+        #if self.use_dragging: #ToDo: Removed only for testing
+        #    self._drag_particles()
         self.create_Image_Visualization()
         if self.use_noise:
             self.img.noise(self.image_noise_mu, self.image_noise_sigma)
