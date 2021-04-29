@@ -68,26 +68,43 @@ class Particle:
 
     def drag(self, speed, angle):
         self.dragged = True
-        print("Speed: {}".format(speed))
+        #print("Speed: {}".format(speed))
         drag_dist = random.gauss(speed, 0.1 * speed)  # ToDo: soft_code Stddrtiv
         self.dragged_dist = drag_dist
         self.dragged_angle = angle
 
-        rel_height = random.random()
-        h1 = rel_height * self.length
-        h2 = rel_height * (1 - self.length)
-        y_center_p1 = self.y - np.cos(self.theta) * h1/2
-        y_center_p2 = self.y + np.cos(self.theta) * h2/2 + self.dragged_dist * np.cos(self.dragged_angle)
-        x_center_p1 = self.x - np.sin(self.theta) * h1/2
-        x_center_p2 = self.x + np.sin(self.theta) * h1/2 + self.dragged_dist * np.sin(self.dragged_angle)
+        #rel_height = random.random()
+        #h1 = rel_height * self.length
+        #h2 = rel_height * (1 - self.length)
+        #y_center_p1 = self.y - np.cos(self.theta) * h1/2
+        #y_center_p2 = self.y + np.cos(self.theta) * h2/2 + self.dragged_dist * np.cos(self.dragged_angle)
+        #x_center_p1 = self.x - np.sin(self.theta) * h1/2
+        #x_center_p2 = self.x + np.sin(self.theta) * h1/2 + self.dragged_dist * np.sin(self.dragged_angle)
 
-        p1 = Particle(x_center_p1, y_center_p1, self.theta)
-        p2 = Particle(x_center_p2, y_center_p2, self.theta)
-        p1.set_length(rel_height * self.length)
-        p2.set_length((1 - rel_height) * self.length)
+        #p1 = Particle(x_center_p1, y_center_p1, self.theta)
+        #p2 = Particle(x_center_p2, y_center_p2, self.theta)
+        #p1.set_length(rel_height * self.length)
+        #p2.set_length((1 - rel_height) * self.length)
+        matrix, x, y = self.efficient_Matrix_turned()
+        lmat = np.zeros(np.shape(matrix))
+        rmat = np.zeros(np.shape(matrix))
+        c_x = np.shape(matrix)[0]/2
+        c_y = np.shape(matrix)[1]/2
+        c_x_alt = c_x + (random.random() - 0.5) * self.length * np.sin(self.theta)
+        c_y_alt = c_y + (random.random() - 0.5) * self.length * np.cos(self.theta)
+        f = lambda x:np.tan(self.dragged_angle)*(x - c_x_alt) + c_y_alt
+        for i in range(np.shape(matrix)[0]):
+            for j in range(np.shape(matrix)[1]):
+                if j < f(i):
+                    lmat[i, j] = matrix[i, j]
+                    rmat[i, j] = 0
+                else:
+                    lmat[i, j] = 0
+                    rmat[i, j] = matrix[i, j]
 
-        self.subp1 = p1
-        self.subp2 = p2
+
+        self.subp1 = lmat, x, y
+        self.subp2 = rmat, x +self.dragged_dist * np.cos(self.dragged_angle), y + self.dragged_dist * np.sin(self.dragged_angle)
 
     #def visualize_dragged(self):
 
@@ -145,7 +162,6 @@ class Particle:
     def visualize_pixel(self, x, y):
         if not self.fromImage:
             return self._line_gauss(x, y)
-
         else:
             cx = self.img.size[0] /2
             cy = self.img.size[1] /2
@@ -160,10 +176,10 @@ class Particle:
     def _line(self, x, y):
         if -self.width/2 <= x < self.width - self.width/2 and \
             -self.length/2 <= y < self.length - self.length/2:
-            if y > 0:
-                return self._color(self.height)
-            else:
-                return self._color(self.height/2)
+            #if y > 0:
+            return self._color(self.height)
+            #else:
+            #    return self._color(self.height/2)
         else:
             return 0
 
@@ -202,7 +218,6 @@ class Particle:
             ret = 0.5 * (1 + erf((x - mu) / (np.sqrt(2) * self.std_deriv)))
         else:
             ret = 0.5 * (1 + erf((-x + mu) / (np.sqrt(2) * self.std_deriv)))
-
         return ret
 
 
@@ -268,10 +283,13 @@ class Particle:
             ret.append(self.efficient_Matrix_turned())
             return ret
         else:
-            for vis in self.subp1.get_visualization():
-                ret.append(vis)
-            for vis in self.subp2.get_visualization():
-                ret.append(vis)
+            #print("appending")
+            ret.append(self.subp1)
+            ret.append(self.subp2)
+            #for vis in self.subp1:
+            #    ret.append(vis)
+            #for vis in self.subp2:
+            #    ret.append(vis)
         return ret
 
 

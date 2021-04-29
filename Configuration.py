@@ -63,7 +63,8 @@ def_dragging_error = 'dragging errors', 0
 def_dragging_speed = 'dragging speed', 0.1 * def_width[1]
 def_dragging_possibility = 'dragging possibility', 0
 def_raster_angle = 'raster_angle (degrees)', 0
-special_settings = [def_overlap_threshold, def_dragging_error, def_dragging_speed, def_dragging_possibility, def_raster_angle]
+def_doubletip_possibility= 'possibility of two tips', 0
+special_settings = [def_overlap_threshold, def_dragging_error, def_dragging_speed, def_dragging_possibility, def_raster_angle, def_doubletip_possibility]
 
 
 # Reset parameters to default values
@@ -390,3 +391,9 @@ def get_dragging_possibility():
     if not initialized: setupConfigurationManager()
     conf.read(settings_file)
     return float(conf[cat_special][def_dragging_possibility[0]])
+
+def get_double_tip_possibility():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return float(conf[cat_special][def_doubletip_possibility[0]])

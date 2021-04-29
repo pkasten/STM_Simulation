@@ -7,6 +7,7 @@ from Images import MyImage
 #from Configuration.Files import MultiFileManager as fm
 import Configuration as cfg
 import numpy as np
+import matplotlib.pyplot as plt
 from Functions import measureTime
 
 
@@ -32,6 +33,8 @@ class DataFrame:
         self.dragging_possibility = cfg.get_dragging_possibility()
         self.dragging_speed = cfg.get_dragging_speed()
         self.raster_angle = cfg.get_raster_angle()
+        self.double_tip_poss = cfg.get_double_tip_possibility()
+        self.passed_args = None
 
     #returns iterator over Particles
     def getIterator(self):
@@ -43,6 +46,12 @@ class DataFrame:
 
     # adds a given particle or, if not provided a random one
     def addParticle(self, part=None):
+        if self.passed_args is None:
+            self.passed_args = (1, None, True, 1000)
+        else:
+            if self.passed_args[0] is None:
+                self.passed_args = (len(self.objects), self.passed_args[1], self.passed_args[2], self.passed_args[3])
+            self.passed_args[0] += 1
         if part is None:
             self.objects.append(Particle())
         else:
@@ -107,6 +116,7 @@ class DataFrame:
 
     def addParticles(self, amount=None, coverage=None, overlapping=True, maximum_tries=1000):
         #widthout angle correlation
+        self.passed_args = (amount, coverage, overlapping, maximum_tries)
         if not self.use_range:
             if self.angle_char_len == 0:
                 if not overlapping:
@@ -273,13 +283,16 @@ class DataFrame:
 
         for part in self.objects:
             for tuple in part.get_visualization():
+                #print("Tupel:{}".format(tuple))
                 eff_mat, x, y = tuple
                 mat_w = eff_mat.shape[0]
 
                 #ToDo: possible failure
                 x = int(np.round(x))
                 y = int(np.round(y))
-
+                #plt.imshow(eff_mat)
+                #plt.show()
+                #print(np.max(eff_mat))
                 mat_h = eff_mat.shape[1]
                 for i in range(mat_w):
                     for j in range(mat_h):
@@ -297,9 +310,19 @@ class DataFrame:
                 part.drag(self.dragging_speed, self.raster_angle)
 
     def get_Image(self):
-        #if self.use_dragging: #ToDo: Removed only for testing
-        #    self._drag_particles()
+        if self.use_dragging:
+            self._drag_particles()
         self.create_Image_Visualization()
+
+        if random.random() < self.double_tip_poss:
+            surrounding_frames = []
+            for i in range(4):
+                df_a = DataFrame(self.fn_gen)
+                df_a.addParticles(self.passed_args[0], self.passed_args[1], self.passed_args[2], self.passed_args[3])
+                df_a.double_tip_poss = 0
+                df_a.create_Image_Visualization()
+                surrounding_frames.append(df_a)
+            self.img.doubletip(random.random(), random.random(), np.pi * random.random(), surrounding_frames)
         if self.use_noise:
             self.img.noise(self.image_noise_mu, self.image_noise_sigma)
         self.img.updateImage()
@@ -312,7 +335,8 @@ class DataFrame:
 
     def save(self):
         if self.img is None:
-            self.createImage_efficient()
+            #self.createImage_efficient()
+            self.get_Image()
         if len(self.text) == 0:
             self.createText()
         img_path, dat_path, index = self.fn_gen.generate_Tuple()

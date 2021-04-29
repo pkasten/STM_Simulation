@@ -33,6 +33,18 @@ class MyImage:
     def addMatrix(self, matrix):
         self.colors = self.colors + matrix
 
+    def double_tip(self, strength, rel_dist, angle, surrounding): #ToDo: neues Bild damit auch links oben etc was ist
+        #ToDo: Use surrounding Pictures
+        vec_x = np.floor(np.sqrt(np.square(self.width) + np.square(self.height)) * rel_dist * np.sin(angle))
+        vec_y = np.floor(np.sqrt(np.square(self.width) + np.square(self.height)) * rel_dist * np.cos(angle))
+        for i in range(np.shape(self.colors)[0]):
+            for j in range(np.shape(self.colors)[1]):
+                try:
+                    self.colors[i + vec_x, j + vec_y] += strength * self.colors[i, j]
+                except IndexError:
+                    pass
+
+
     def __str__(self):
         return str(self.colors)
 
