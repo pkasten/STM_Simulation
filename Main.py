@@ -44,7 +44,7 @@ if __name__ == "__main__":
     #dat_frame.addParticle(Particle(200, 200, dat_frame._random_angle_range()))
     #test_frame(dat_frame)
     #for i in range(10):
-    dat_frame.addParticles(amount=5, overlapping=False)
+    dat_frame.addParticles(coverage=0.2, overlapping=False)
         #dat_frame.addParticles(amount=3)
     #dat_frame._drag_particles()
     #dat_frame.addParticle(Particle(100 ,200, 0))

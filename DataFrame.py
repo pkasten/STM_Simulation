@@ -321,8 +321,8 @@ class DataFrame:
                 df_a.addParticles(self.passed_args[0], self.passed_args[1], self.passed_args[2], self.passed_args[3])
                 df_a.double_tip_poss = 0
                 df_a.create_Image_Visualization()
-                surrounding_frames.append(df_a)
-            self.img.doubletip(random.random(), random.random(), np.pi * random.random(), surrounding_frames)
+                surrounding_frames.append(df_a.img.colors)
+            self.img.double_tip(random.random(), random.random(), np.pi * random.random(), surrounding_frames)
         if self.use_noise:
             self.img.noise(self.image_noise_mu, self.image_noise_sigma)
         self.img.updateImage()
