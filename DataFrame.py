@@ -322,7 +322,7 @@ class DataFrame:
                 df_a.double_tip_poss = 0
                 df_a.create_Image_Visualization()
                 surrounding_frames.append(df_a.img.colors)
-            self.img.double_tip(random.random(), random.random(), np.pi * random.random(), surrounding_frames)
+            self.img.double_tip(0.3, 0.1, 2 * np.pi * random.random(), surrounding_frames)
         if self.use_noise:
             self.img.noise(self.image_noise_mu, self.image_noise_sigma)
         self.img.updateImage()
