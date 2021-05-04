@@ -24,10 +24,17 @@ class Particle:
         self.img_width = cfg.get_width()
         self.img_height = cfg.get_height()
         self.max_height = cfg.get_max_height()
-        self.std_deriv = cfg.get_std_deriv()
+        #self.std_deriv = cfg.get_std_deriv()
+        self.fermi_exp = cfg.get_fermi_exp()
+        self.effect_range = max(self.length, self.width)
+        if self.fermi_exp != 0:
+            self.fermi_range_w = np.log(99)/self.fermi_exp + self.width / 2 #ToDo: Soft Code percentile
+            self.fermi_range_h = np.log(99)/self.fermi_exp + self.height / 2
+            self.effect_range = int(max(self.length + self.fermi_range_h/2, self.width + self.fermi_range_w/2))
+            print(self.fermi_range_w, self.fermi_range_h)
         self.overlap_threshold = cfg.get_overlap_threshold()
         # self.effect_range = np.square(self.std_deriv) * max(self.length, self.width)
-        self.effect_range = max(self.length, self.width)
+
         self.dragged = False
         self.dragged_dist = 0
         self.dragged_angle = 0
@@ -68,23 +75,10 @@ class Particle:
 
     def drag(self, speed, angle):
         self.dragged = True
-        #print("Speed: {}".format(speed))
         drag_dist = random.gauss(speed, 0.1 * speed)  # ToDo: soft_code Stddrtiv
         self.dragged_dist = drag_dist
         self.dragged_angle = angle
 
-        #rel_height = random.random()
-        #h1 = rel_height * self.length
-        #h2 = rel_height * (1 - self.length)
-        #y_center_p1 = self.y - np.cos(self.theta) * h1/2
-        #y_center_p2 = self.y + np.cos(self.theta) * h2/2 + self.dragged_dist * np.cos(self.dragged_angle)
-        #x_center_p1 = self.x - np.sin(self.theta) * h1/2
-        #x_center_p2 = self.x + np.sin(self.theta) * h1/2 + self.dragged_dist * np.sin(self.dragged_angle)
-
-        #p1 = Particle(x_center_p1, y_center_p1, self.theta)
-        #p2 = Particle(x_center_p2, y_center_p2, self.theta)
-        #p1.set_length(rel_height * self.length)
-        #p2.set_length((1 - rel_height) * self.length)
         matrix, x, y = self.efficient_Matrix_turned()
         lmat = np.zeros(np.shape(matrix))
         rmat = np.zeros(np.shape(matrix))
@@ -106,62 +100,13 @@ class Particle:
         self.subp1 = lmat, x, y
         self.subp2 = rmat, x +self.dragged_dist * np.cos(self.dragged_angle), y + self.dragged_dist * np.sin(self.dragged_angle)
 
-    #def visualize_dragged(self):
-
-
-        #self.dragged = True
-
-        #rel_height = random.random()
-        #p1 = Particle(self.x, self.y, self.theta)
-        #p2 = Particle(self.x + self.dragged_dist * np.sin(self.dragged_angle),
-        #              self.y + self.dragged_dist * np.cos(self.dragged_angle), self.theta)
-        #p1.set_length(rel_height * self.length)
-        #p2.set_length((1 - rel_height) * self.length)
-
-        #self.subp1 = p1
-        #self.subp2 = p2
-        #return
-        # New matrix with indizes combined
-        #p1_matrix, p1x, p1y = p1.efficient_Matrix_turned()
-        #p2_matrix, p2x, p2y = p2.efficient_Matrix_turned()
-
-        #newmat_w = math.ceil(0.5 * np.shape(p1_matrix)[0] + 0.5 * np.shape(p2_matrix)[0] + math.fabs(p1x - p2x))
-        #newmat_h = math.ceil(0.5 * np.shape(p1_matrix)[1] + 0.5 * np.shape(p2_matrix)[1] + math.fabs(p1y - p2y))
-        ##print(newmat_h, newmat_w)
-        #newmat = np.zeros((newmat_w, newmat_h))
-        #newmat2 = np.zeros((newmat_w, newmat_h))
-        #for i in range(np.shape(p1_matrix)[0]):
-        #    for j in range(np.shape(p1_matrix)[1]):
-        #        i_tilt = i - math.ceil(np.shape(p1_matrix)[0]/2) # + p1x
-        #        j_tilt = j - math.ceil(np.shape(p1_matrix)[1]/2) # + p1y
-        #        print(i, i_tilt, j, j_tilt, newmat_w, newmat_h)
-        #        newmat[i_tilt, j_tilt] = p1_matrix[i, j]
-
-        #for i in range(np.shape(p2_matrix)[0]):
-        #    for j in range(np.shape(p2_matrix)[1]):
-        #        i_tilt = i - math.ceil(np.shape(p2_matrix)[0]/2) + int(np.round(math.fabs(p2x - p1x))) # + p2x
-        #        j_tilt = j - math.ceil(np.shape(p2_matrix)[1]/2) + int(np.round(math.fabs(p2y - p1y))) # + p2y
-        #        print(i, i_tilt, j, j_tilt, newmat_w, newmat_h)
-        #        newmat2[i_tilt, j_tilt] = p2_matrix[i, j]
-
-        #plt.imshow(newmat)
-        #plt.show()
-        #plt.imshow(newmat2)
-        #plt.show()
-
-        #print("newmat:")
-        #print(np.max(newmat))
-        #self.width = np.shape(newmat)[0]
-        #self.height = np.shape(newmat)[1]
-        #self.effect_range = max(self.length, self.width)
-
-        #return newmat, self.x, self.y
 
 
 
     def visualize_pixel(self, x, y):
         if not self.fromImage:
-            return self._line_gauss(x, y)
+            #return self._line_gauss(x, y)
+            return self._line_fermi(x, y)
         else:
             cx = self.img.size[0] /2
             cy = self.img.size[1] /2
@@ -183,8 +128,35 @@ class Particle:
         else:
             return 0
 
-    def _line_gauss(self, x, y):
-        if self.std_deriv == 0:
+    #def _line_gauss(self, x, y):
+    #    if self.std_deriv == 0:
+    #        return self._line(x, y)
+    #
+     #   left_x = -self.width/2
+      #  right_x = self.width - self.width/2
+       # lower_y = -self.length/2
+        #upper_y = self.length - self.length/2
+#
+ #       if x < left_x - 3 * np.square(self.std_deriv) or \
+  #          y < lower_y - 3 * np.square(self.std_deriv) or \
+   #         x > right_x + 3 * np.square(self.std_deriv) or \
+    #        y > upper_y + 3 * np.square(self.std_deriv):
+     #       return 0
+#        elif x < 0 and y < 0:
+ #           return self._color(self.height) * self._gauss(x, left_x, y, lower_y)
+  #      elif x < 0 and y >= 0:
+   #         return self._color(self.height) * self._gauss(x, left_x, y, upper_y)
+    #    elif x >= 0 and y < 0:
+     #       return self._color(self.height) * self._gauss(x, right_x, y, lower_y)
+      #  elif x >= 0 and y >= 0:
+       #     return self._color(self.height) * self._gauss(x, right_x, y, upper_y)
+        #else:#
+#            print(x, y)
+ #           raise NotImplementedError
+
+    def _line_fermi(self, x, y):
+
+        if self.fermi_exp == 0:
             return self._line(x, y)
 
         left_x = -self.width/2
@@ -192,33 +164,46 @@ class Particle:
         lower_y = -self.length/2
         upper_y = self.length - self.length/2
 
-        if x < left_x - 3 * np.square(self.std_deriv) or \
-            y < lower_y - 3 * np.square(self.std_deriv) or \
-            x > right_x + 3 * np.square(self.std_deriv) or \
-            y > upper_y + 3 * np.square(self.std_deriv):
+
+
+        if x < left_x - self.fermi_range_w or \
+            y < lower_y - self.fermi_range_h or \
+            x > right_x + self.fermi_range_w or \
+            y > upper_y + self.fermi_range_h:
+
             return 0
         elif x < 0 and y < 0:
-            return self._color(self.height) * self._gauss(x, left_x, y, lower_y)
+            return self._color(self.height) * self._fermi(x, left_x, y, lower_y)
         elif x < 0 and y >= 0:
-            return self._color(self.height) * self._gauss(x, left_x, y, upper_y)
+            return self._color(self.height) * self._fermi(x, left_x, y, upper_y)
         elif x >= 0 and y < 0:
-            return self._color(self.height) * self._gauss(x, right_x, y, lower_y)
+            return self._color(self.height) * self._fermi(x, right_x, y, lower_y)
         elif x >= 0 and y >= 0:
-            return self._color(self.height) * self._gauss(x, right_x, y, upper_y)
+            return self._color(self.height) * self._fermi(x, right_x, y, upper_y)
         else:
             print(x, y)
-            raise NotImplementedError
+        raise NotImplementedError
 
-    def _gauss(self, x, mu_x, y, mu_y):
-        ret = self._gauss1D(x, mu_x) * self._gauss1D(y, mu_y)
+    def _fermi(self, x, mu_x, y, mu_y):
+        ret = self._fermi1D(x, mu_x) * self._fermi1D(y, mu_y)
         return ret
 
-    def _gauss1D(self, x, mu):
+    def _fermi1D(self, x, mu):
         if x < 0:
-            ret = 0.5 * (1 + erf((x - mu) / (np.sqrt(2) * self.std_deriv)))
+            return 1/(np.exp(self.fermi_exp * (-x + mu)) + 1)
         else:
-            ret = 0.5 * (1 + erf((-x + mu) / (np.sqrt(2) * self.std_deriv)))
-        return ret
+            return 1/(np.exp(self.fermi_exp * (x - mu)) + 1)
+
+    #def _gauss(self, x, mu_x, y, mu_y):
+    #    ret = self._gauss1D(x, mu_x) * self._gauss1D(y, mu_y)
+    #    return ret
+
+    #def _gauss1D(self, x, mu):
+    #    if x < 0:
+    #        ret = 0.5 * (1 + erf((x - mu) / (np.sqrt(2) * self.std_deriv)))
+    #    else:
+    #        ret = 0.5 * (1 + erf((-x + mu) / (np.sqrt(2) * self.std_deriv)))
+    #    return ret
 
 
     def _color(self, height):

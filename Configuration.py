@@ -48,12 +48,13 @@ def_height_part = 'height', 3
 def_image_path = 'image_path', ""
 def_part_max_height = 'max_height', 1
 def_std_deriv = 'std_derivate_grain_border', def_length_part[1] / 5
+def_fermi_exp = '1/kbT', 0.5
 def_angle_characteristic_length = 'Angle Characteristic_relative_length', 0.2
 def_angle_stdderiv = 'std_derivate_angle_correlation', 1
 def_angle_range_min = 'minimum angle (degree)', 0
 def_angle_range_max = 'maximum angle (degree)', 0
 def_angle_range_usage = 'use angle range?', 0
-particle_properties_settings = [def_width_part, def_image_path, def_length_part, def_height_part, def_std_deriv,
+particle_properties_settings = [def_width_part, def_image_path, def_length_part, def_height_part, def_fermi_exp,
                                 def_part_max_height, def_angle_range_usage, def_angle_range_min, def_angle_range_max,
                                 def_angle_stdderiv, def_angle_characteristic_length]
 
@@ -318,11 +319,17 @@ def get_max_height():
     return int(conf[cat_particle_properties][def_part_max_height[0]])
 
 
-def get_std_deriv():
+#def get_std_deriv():
+#    global settings_file
+#    if not initialized: setupConfigurationManager()
+#    conf.read(settings_file)
+#    return int(float(conf[cat_particle_properties][def_std_deriv[0]]))
+
+def get_fermi_exp():
     global settings_file
     if not initialized: setupConfigurationManager()
     conf.read(settings_file)
-    return int(float(conf[cat_particle_properties][def_std_deriv[0]]))
+    return float(conf[cat_particle_properties][def_fermi_exp[0]])
 
 
 def get_angle_stdderiv():
