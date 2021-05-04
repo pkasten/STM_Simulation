@@ -24,14 +24,13 @@ class Particle:
         self.img_width = cfg.get_width()
         self.img_height = cfg.get_height()
         self.max_height = cfg.get_max_height()
-        #self.std_deriv = cfg.get_std_deriv()
+        # self.std_deriv = cfg.get_std_deriv()
         self.fermi_exp = cfg.get_fermi_exp()
         self.effect_range = max(self.length, self.width)
         if self.fermi_exp != 0:
-            self.fermi_range_w = np.log(99)/self.fermi_exp + self.width / 2 #ToDo: Soft Code percentile
-            self.fermi_range_h = np.log(99)/self.fermi_exp + self.height / 2
-            self.effect_range = int(max(self.length + self.fermi_range_h/2, self.width + self.fermi_range_w/2))
-            print(self.fermi_range_w, self.fermi_range_h)
+            self.fermi_range_w = np.log(99) / self.fermi_exp + self.width / 2  # ToDo: Soft Code percentile
+            self.fermi_range_h = np.log(99) / self.fermi_exp + self.height / 2
+            self.effect_range = int(max(self.length + self.fermi_range_h / 2, self.width + self.fermi_range_w / 2))
         self.overlap_threshold = cfg.get_overlap_threshold()
         # self.effect_range = np.square(self.std_deriv) * max(self.length, self.width)
 
@@ -47,8 +46,8 @@ class Particle:
             self.pixels = self.img.convert("L").load()
             self.fromImage = True
 
-
     def toMatrix(self):
+        print("Deprecated 1231453")
         matrix = np.zeros((self.img_width, self.img_height))
         for i in range(0, self.img_width):
             for j in range(0, self.img_height):
@@ -62,7 +61,6 @@ class Particle:
             for j in range(-self.effect_range, self.effect_range):
                 eff_matrix[i + self.effect_range, j + self.effect_range] = \
                     self.visualize_pixel(i, j)
-
 
         return eff_matrix, self.x, self.y
 
@@ -82,11 +80,11 @@ class Particle:
         matrix, x, y = self.efficient_Matrix_turned()
         lmat = np.zeros(np.shape(matrix))
         rmat = np.zeros(np.shape(matrix))
-        c_x = np.shape(matrix)[0]/2
-        c_y = np.shape(matrix)[1]/2
+        c_x = np.shape(matrix)[0] / 2
+        c_y = np.shape(matrix)[1] / 2
         c_x_alt = c_x + (random.random() - 0.5) * self.length * np.sin(self.theta)
         c_y_alt = c_y + (random.random() - 0.5) * self.length * np.cos(self.theta)
-        f = lambda x:np.tan(self.dragged_angle)*(x - c_x_alt) + c_y_alt
+        f = lambda x: np.tan(self.dragged_angle) * (x - c_x_alt) + c_y_alt
         for i in range(np.shape(matrix)[0]):
             for j in range(np.shape(matrix)[1]):
                 if j < f(i):
@@ -96,20 +94,17 @@ class Particle:
                     lmat[i, j] = 0
                     rmat[i, j] = matrix[i, j]
 
-
         self.subp1 = lmat, x, y
-        self.subp2 = rmat, x +self.dragged_dist * np.cos(self.dragged_angle), y + self.dragged_dist * np.sin(self.dragged_angle)
-
-
-
+        self.subp2 = rmat, x + self.dragged_dist * np.cos(self.dragged_angle), y + self.dragged_dist * np.sin(
+            self.dragged_angle)
 
     def visualize_pixel(self, x, y):
         if not self.fromImage:
-            #return self._line_gauss(x, y)
+            # return self._line_gauss(x, y)
             return self._line_fermi(x, y)
         else:
-            cx = self.img.size[0] /2
-            cy = self.img.size[1] /2
+            cx = self.img.size[0] / 2
+            cy = self.img.size[1] / 2
             try:
                 return self.pixels[x + cx, y + cy]
             except IndexError:
@@ -119,57 +114,55 @@ class Particle:
         return 255 if (abs(x) <= 1 and abs(y) <= 1) else 0
 
     def _line(self, x, y):
-        if -self.width/2 <= x < self.width - self.width/2 and \
-            -self.length/2 <= y < self.length - self.length/2:
-            #if y > 0:
+        if -self.width / 2 <= x < self.width - self.width / 2 and \
+                -self.length / 2 <= y < self.length - self.length / 2:
+            # if y > 0:
             return self._color(self.height)
-            #else:
+            # else:
             #    return self._color(self.height/2)
         else:
             return 0
 
-    #def _line_gauss(self, x, y):
+    # def _line_gauss(self, x, y):
     #    if self.std_deriv == 0:
     #        return self._line(x, y)
     #
-     #   left_x = -self.width/2
-      #  right_x = self.width - self.width/2
-       # lower_y = -self.length/2
-        #upper_y = self.length - self.length/2
-#
- #       if x < left_x - 3 * np.square(self.std_deriv) or \
-  #          y < lower_y - 3 * np.square(self.std_deriv) or \
-   #         x > right_x + 3 * np.square(self.std_deriv) or \
+    #   left_x = -self.width/2
+    #  right_x = self.width - self.width/2
+    # lower_y = -self.length/2
+    # upper_y = self.length - self.length/2
+    #
+    #       if x < left_x - 3 * np.square(self.std_deriv) or \
+    #          y < lower_y - 3 * np.square(self.std_deriv) or \
+    #         x > right_x + 3 * np.square(self.std_deriv) or \
     #        y > upper_y + 3 * np.square(self.std_deriv):
-     #       return 0
-#        elif x < 0 and y < 0:
- #           return self._color(self.height) * self._gauss(x, left_x, y, lower_y)
-  #      elif x < 0 and y >= 0:
-   #         return self._color(self.height) * self._gauss(x, left_x, y, upper_y)
+    #       return 0
+    #        elif x < 0 and y < 0:
+    #           return self._color(self.height) * self._gauss(x, left_x, y, lower_y)
+    #      elif x < 0 and y >= 0:
+    #         return self._color(self.height) * self._gauss(x, left_x, y, upper_y)
     #    elif x >= 0 and y < 0:
-     #       return self._color(self.height) * self._gauss(x, right_x, y, lower_y)
-      #  elif x >= 0 and y >= 0:
-       #     return self._color(self.height) * self._gauss(x, right_x, y, upper_y)
-        #else:#
-#            print(x, y)
- #           raise NotImplementedError
+    #       return self._color(self.height) * self._gauss(x, right_x, y, lower_y)
+    #  elif x >= 0 and y >= 0:
+    #     return self._color(self.height) * self._gauss(x, right_x, y, upper_y)
+    # else:#
+    #            print(x, y)
+    #           raise NotImplementedError
 
     def _line_fermi(self, x, y):
 
         if self.fermi_exp == 0:
             return self._line(x, y)
 
-        left_x = -self.width/2
-        right_x = self.width - self.width/2
-        lower_y = -self.length/2
-        upper_y = self.length - self.length/2
-
-
+        left_x = -self.width / 2
+        right_x = self.width - self.width / 2
+        lower_y = -self.length / 2
+        upper_y = self.length - self.length / 2
 
         if x < left_x - self.fermi_range_w or \
-            y < lower_y - self.fermi_range_h or \
-            x > right_x + self.fermi_range_w or \
-            y > upper_y + self.fermi_range_h:
+                y < lower_y - self.fermi_range_h or \
+                x > right_x + self.fermi_range_w or \
+                y > upper_y + self.fermi_range_h:
 
             return 0
         elif x < 0 and y < 0:
@@ -190,21 +183,20 @@ class Particle:
 
     def _fermi1D(self, x, mu):
         if x < 0:
-            return 1/(np.exp(self.fermi_exp * (-x + mu)) + 1)
+            return 1 / (np.exp(self.fermi_exp * (-x + mu)) + 1)
         else:
-            return 1/(np.exp(self.fermi_exp * (x - mu)) + 1)
+            return 1 / (np.exp(self.fermi_exp * (x - mu)) + 1)
 
-    #def _gauss(self, x, mu_x, y, mu_y):
+    # def _gauss(self, x, mu_x, y, mu_y):
     #    ret = self._gauss1D(x, mu_x) * self._gauss1D(y, mu_y)
     #    return ret
 
-    #def _gauss1D(self, x, mu):
+    # def _gauss1D(self, x, mu):
     #    if x < 0:
     #        ret = 0.5 * (1 + erf((x - mu) / (np.sqrt(2) * self.std_deriv)))
     #    else:
     #        ret = 0.5 * (1 + erf((-x + mu) / (np.sqrt(2) * self.std_deriv)))
     #    return ret
-
 
     def _color(self, height):
         return 255 * height / self.max_height
@@ -233,7 +225,7 @@ class Particle:
     def true_overlap(self, particle):
         dx = particle.get_x() - self.get_x()
         dy = particle.get_y() - self.get_y()
-        if(np.sqrt(np.square(dx) + np.square(dy)) > self.get_dimension() + particle.get_dimension()):
+        if (np.sqrt(np.square(dx) + np.square(dy)) > self.get_dimension() + particle.get_dimension()):
             return False
         else:
             thismat, foo, bar = self.efficient_Matrix_turned()
@@ -268,15 +260,14 @@ class Particle:
             ret.append(self.efficient_Matrix_turned())
             return ret
         else:
-            #print("appending")
+            # print("appending")
             ret.append(self.subp1)
             ret.append(self.subp2)
-            #for vis in self.subp1:
+            # for vis in self.subp1:
             #    ret.append(vis)
-            #for vis in self.subp2:
+            # for vis in self.subp2:
             #    ret.append(vis)
         return ret
-
 
     @staticmethod
     def str_Header():
@@ -285,3 +276,12 @@ class Particle:
     def __str__(self):
         args = [self.x, self.y, self.theta, self.width, self.height, self.length, self.dragged, self.dragged_dist]
         return ", ".join(str(arg) for arg in args)
+
+
+class Double_Particle(Particle):
+    def __init__(self, x=None, y=None, theta=None):
+        super().__init__(x, y, theta)
+        self.x *= 2
+        self.y *= 2
+        self.img_width *= 2
+        self.img_height *= 2

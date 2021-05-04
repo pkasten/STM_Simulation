@@ -1,7 +1,7 @@
 import multiprocessing as mp
 import copy, os
 import math, random
-from Particle import Particle
+from Particle import Particle, Double_Particle
 from Images import MyImage
 #from Maths.Functions import measureTime
 #from Configuration.Files import MultiFileManager as fm
@@ -9,6 +9,7 @@ import Configuration as cfg
 import numpy as np
 import matplotlib.pyplot as plt
 from Functions import measureTime
+#from Doubled import Double_Frame
 
 
 class DataFrame:
@@ -35,6 +36,8 @@ class DataFrame:
         self.raster_angle = cfg.get_raster_angle()
         self.double_tip_poss = cfg.get_double_tip_possibility()
         self.passed_args = None
+        self.img_width = cfg.get_width()
+        self.img_height = cfg.get_height()
 
     #returns iterator over Particles
     def getIterator(self):
@@ -231,8 +234,8 @@ class DataFrame:
     def createImage_efficient(self):
         print("Deprecated 46541741")
         self.img = MyImage()
-        width = cfg.get_width()
-        height = cfg.get_height()
+        width = self.img_width
+        height = self.img_height
         matrix = np.zeros((width, height))
 
         for part in self.objects:
@@ -255,8 +258,8 @@ class DataFrame:
     def createImage_efficient_with_new_Turn(self):
         print("Deprecated 453643")
         self.img = MyImage()
-        width = cfg.get_width()
-        height = cfg.get_height()
+        width = self.img_width
+        height = self.img_width
         matrix = np.zeros((width, height))
 
         for part in self.objects:
@@ -277,8 +280,8 @@ class DataFrame:
 
     def create_Image_Visualization(self):
         self.img = MyImage()
-        width = cfg.get_width()
-        height = cfg.get_height()
+        width = self.img_width
+        height = self.img_height
         matrix = np.zeros((width, height))
 
         for part in self.objects:
@@ -310,19 +313,32 @@ class DataFrame:
                 part.drag(self.dragging_speed, self.raster_angle)
 
     def get_Image(self):
+        if random.random() < self.double_tip_poss:
+            strength = 0.3
+            rel_dist = 0.05
+            angle = 0
+            doubled_frame = Double_Frame(self.fn_gen, strength, rel_dist, angle)
+            doubled_frame.addParticles(self.passed_args[0], self.passed_args[1], self.passed_args[2], self.passed_args[3])
+            if self.use_dragging:
+                doubled_frame._drag_particles()
+            self.img = doubled_frame.extract_Smaller()
+            self.objects = doubled_frame.get_objects()
+            self.img.updateImage()
+            return
+
         if self.use_dragging:
             self._drag_particles()
         self.create_Image_Visualization()
 
-        if random.random() < self.double_tip_poss:
-            surrounding_frames = []
-            for i in range(4):
-                df_a = DataFrame(self.fn_gen)
-                df_a.addParticles(self.passed_args[0], self.passed_args[1], self.passed_args[2], self.passed_args[3])
-                df_a.double_tip_poss = 0
-                df_a.create_Image_Visualization()
-                surrounding_frames.append(df_a.img.colors)
-            self.img.double_tip(0.3, 0.1, 2 * np.pi * random.random(), surrounding_frames)
+        #if random.random() < self.double_tip_poss:
+        #    surrounding_frames = []
+        #    for i in range(4):
+        #        df_a = DataFrame(self.fn_gen)
+        #        df_a.addParticles(self.passed_args[0], self.passed_args[1], self.passed_args[2], self.passed_args[3])
+        #        df_a.double_tip_poss = 0
+        #        df_a.create_Image_Visualization()
+        #        surrounding_frames.append(df_a.img.colors)
+        #    self.img.double_tip(0.3, 0.1, 2 * np.pi * random.random(), surrounding_frames)
         if self.use_noise:
             self.img.noise(self.image_noise_mu, self.image_noise_sigma)
         self.img.updateImage()
@@ -355,7 +371,7 @@ class DataFrame:
         return len(self.objects) > 0
 
     def coverage(self):
-        area = cfg.get_width() * cfg.get_height()
+        area = self.area
         covered = 0
         for part in self.objects:
             covered += np.pi * np.square(part.get_dimension())
@@ -372,4 +388,242 @@ class DataFrame:
 
     def __str__(self):
         return str(self.objects)
+
+
+class Double_Frame(DataFrame):
+    def __init__(self, fn_gen, strength, rel_dist, angle):
+        super().__init__(fn_gen)
+        self.area *= 4
+        self.max_dist *= np.sqrt(2)
+        self.double_tip_poss = 0
+        self.img_width *= 2
+        self.img_height *= 2
+        self.strength = strength
+        self.rel_dist = rel_dist
+        self.dt_angle = angle
+        self.range = None
+        self.shift_x = rel_dist * np.sin(angle)
+        self.shift_y = rel_dist * np.cos(angle)
+        self.overlap = cfg.get_px_overlap()
+
+
+        if self.shift_x > 0:
+            if self.shift_y > 0:
+                self.range = self.img_width, 2 * self.img_width - 1, self.img_height, 2 * \
+                          self.img_height - 1
+            else:
+                self.range = self.img_width, 2 * self.img_width - 1, 0, self.img_height - 1
+        else:
+            if self.shift_y > 0:
+                self.range = 0, self.img_width - 1, 0, self.img_height, 2 * self.img_height - 1
+            else:
+                self.range = 0, self.img_width - 1, 0, self.img_height - 1
+
+
+    def addParticle(self, part=None):
+        if self.passed_args is None:
+            self.passed_args = (1, None, True, 1000)
+        else:
+            if self.passed_args[0] is None:
+                self.passed_args = (len(self.objects), self.passed_args[1], self.passed_args[2], self.passed_args[3])
+            self.passed_args[0] += 1
+        if part is None:
+            self.objects.append(Double_Particle())
+        else:
+            self.objects.append(part)
+
+    def _get_thatnot_overlaps(self, maximumtries=1000):
+        if len(self.objects) == 0:
+            return Double_Particle()
+        p = Double_Particle()
+        for i in range(maximumtries):
+            if self._overlaps_any(p):
+                p = Double_Particle()
+            else:
+                return p
+        return p
+
+    def addParticles(self, amount=None, coverage=None, overlapping=True, maximum_tries=1000):
+        # widthout angle correlation
+        self.passed_args = (amount, coverage, overlapping, maximum_tries)
+        if not self.use_range:
+            if self.angle_char_len == 0:
+                if not overlapping:
+                    if amount is not None:
+                        for i in range(4 * amount):
+                            p = self._get_thatnot_overlaps(maximum_tries)
+                            self.objects.append(p)
+                    elif coverage is not None:
+                        while self.coverage() < coverage:
+                            p = self._get_thatnot_overlaps(maximum_tries)
+                            self.objects.append(p)
+                    else:
+                        for i in range( 4 * cfg.get_particles_per_image()):
+                            p = self._get_thatnot_overlaps(maximum_tries)
+                            self.objects.append(p)
+                # w/ angle, w/o overlapping
+                else:
+                    if amount is not None:
+                        for i in range(4*amount):
+                            self.objects.append(Double_Particle())
+                    elif coverage is not None:
+                        while self.coverage() < coverage:
+                            self.objects.append(Double_Particle())
+                    else:
+                        for i in range(4 * cfg.get_particles_per_image()):
+                            self.objects.append(Double_Particle())
+            # w/ angle correlation
+            else:
+                if not overlapping:
+                    if amount is not None:
+                        for i in range(4 * amount):
+                            p = self._get_thatnot_overlaps(maximum_tries)
+                            p.set_theta(self._calc_angle_for_particle(p))
+                            self.objects.append(p)
+                    elif coverage is not None:
+                        while self.coverage() < coverage:
+                            p = self._get_thatnot_overlaps(maximum_tries)
+                            p.set_theta(self._calc_angle_for_particle(p))
+                            self.objects.append(p)
+                    else:
+                        for i in range(4 * cfg.get_particles_per_image()):
+                            p = self._get_thatnot_overlaps(maximum_tries)
+                            p.set_theta(self._calc_angle_for_particle(p))
+                            self.objects.append(p)
+                # w/ angle, w/o overlapping
+                else:
+                    if amount is not None:
+                        for i in range(4 * amount):
+                            p = Double_Particle()
+                            p.set_theta(self._calc_angle_for_particle(p))
+                            self.objects.append(p)
+                    elif coverage is not None:
+                        while self.coverage() < coverage:
+                            p = Double_Particle()
+                            p.set_theta(self._calc_angle_for_particle(p))
+                            self.objects.append(p)
+                    else:
+                        for i in range(4 * cfg.get_particles_per_image()):
+                            p = Double_Particle()
+                            p.set_theta(self._calc_angle_for_particle(p))
+                            self.objects.append(p)
+        # use angle range
+        else:
+            if not overlapping:
+                if amount is not None:
+                    for i in range(4 * amount):
+                        p = self._get_thatnot_overlaps(maximum_tries)
+                        p.set_theta(self._random_angle_range())
+                        self.objects.append(p)
+                elif coverage is not None:
+                    while self.coverage() < coverage:
+                        p = self._get_thatnot_overlaps(maximum_tries)
+                        p.set_theta(self._random_angle_range())
+                        self.objects.append(p)
+                else:
+                    for i in range(4 * cfg.get_particles_per_image()):
+                        p = self._get_thatnot_overlaps(maximum_tries)
+                        p.set_theta(self._random_angle_range())
+                        self.objects.append(p)
+            # w/ angle, w/o overlapping
+            else:
+                if amount is not None:
+                    for i in range(4 * amount):
+                        p = Double_Particle()
+                        p.set_theta(self._random_angle_range())
+                        self.objects.append(p)
+                elif coverage is not None:
+                    while self.coverage() < coverage:
+                        p = Double_Particle()
+                        p.set_theta(self._random_angle_range())
+                        self.objects.append(p)
+                else:
+                    for i in range(4 * cfg.get_particles_per_image()):
+                        p = Double_Particle()
+                        p.set_theta(self._random_angle_range())
+                        self.objects.append(p)
+
+    def create_Image_Visualization(self):
+        self.img = MyImage()
+        self.img.setWidth(self.img_width)
+        self.img.setHeight(self.img_height)
+        #print("W: {} - {}".format(self.img_width, self.img.getWidth()))
+        #print("H: {} - {}".format(self.img_height, self.img.getHeight()))
+
+        width = self.img_width
+        height = self.img_height
+        matrix = np.zeros((width, height))
+
+        for part in self.objects:
+            for tuple in part.get_visualization():
+                #print("Tupel:{}".format(tuple))
+                eff_mat, x, y = tuple
+                mat_w = eff_mat.shape[0]
+
+                #ToDo: possible failure
+                x = int(np.round(x))
+                y = int(np.round(y))
+                #plt.imshow(eff_mat)
+                #plt.show()
+                #print(np.max(eff_mat))
+                mat_h = eff_mat.shape[1]
+                for i in range(mat_w):
+                    for j in range(mat_h):
+                        new_x = x - math.floor((mat_w / 2)) + i
+                        new_y = y - math.floor(mat_h / 2) + j
+                        if not (0 <= new_x < width and 0 <= new_y < height):
+                            continue
+                        matrix[new_x, new_y] += eff_mat[i, j]
+        #print("img : {}".format(np.shape(self.img.get_matrix())))
+        #print("matrix: {}".format(np.shape(matrix)))
+        #print("Matrix")
+        #plt.imshow(matrix)
+        #plt.show()
+        self.img.addMatrix(matrix) #Indentd  too far right
+
+    def extract_Smaller(self):
+        self.create_Image_Visualization()
+        #print("Start extractSmaller")
+        #plt.imshow(self.img.get_matrix())
+        #plt.show()
+
+        self.img.double_tip(self.strength, self.rel_dist, self.dt_angle)
+        #print("Double-tipped")
+        #plt.imshow(self.img.get_matrix())
+        #plt.show()
+
+        #print(cfg.get_width())
+        #print(type(cfg.get_width()))
+        smaller = np.zeros((cfg.get_width(), cfg.get_height()))
+        bigger = self.img.get_matrix()
+        for x in range(np.shape(smaller)[0]):
+            for y in range(np.shape(smaller)[1]):
+                x_tilt = x + self.range[0]
+                y_tilt = y + self.range[2]
+                smaller[x, y] = bigger[x_tilt, y_tilt]
+        #plt.imshow(smaller)
+        #plt.show()
+        #plt.imshow(bigger)
+        #plt.show()
+        return MyImage(smaller)
+
+    def get_objects(self):
+        ret = []
+        for part in self.objects:
+            if self.range[0] - self.overlap <= part.get_x() <= self.range[1] + self.overlap and \
+                self.range[2] - self.overlap <= part.get_y() <= self.range[3] + self.overlap:
+                ret.append(part)
+
+        return ret
+
+    def get_Image(self):
+        raise NotImplementedError
+
+    def createText(self):
+        raise NotImplementedError
+
+    def save(self):
+        raise NotImplementedError
+
+
 
