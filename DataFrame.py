@@ -82,6 +82,26 @@ class DataFrame:
                 return p
         return p
 
+    def get_dragged_that_mot_overlaps(self, maximumtries, angle=None, setangle=False):
+        def _set_p():
+            p = Particle()
+            if angle is not None:
+                p.set_theta(angle)
+            if setangle:
+                p.set_theta(self._calc_angle_for_particle(p))
+            p.drag(self.dragging_speed, self.raster_angle)
+            return p
+
+        if len(self.objects) == 0:
+            return _set_p()
+        p = _set_p()
+        for i in range(maximumtries):
+            if self._overlaps_any(p):
+                p = _set_p()
+            else:
+                return p
+        return p
+
     # calculates particles weight for importance in surrounding particles
     def _calc_angle_weight(self, part1, part2): # ToDo: Still very sketchy
         drel = part1.get_distance_to(part2) / self.max_dist
@@ -126,81 +146,132 @@ class DataFrame:
                 if not overlapping:
                     if amount is not None:
                         for i in range(amount):
-                            p = self._get_thatnot_overlaps(maximum_tries)
-                            self.objects.append(p)
+                            if random.random() < self.dragging_possibility:
+                                p = self.get_dragged_that_mot_overlaps(maximum_tries)
+                                self.objects.append(p)
+                            else:
+                                p = self._get_thatnot_overlaps(maximum_tries)
+                                self.objects.append(p)
                     elif coverage is not None:
                         while self.coverage() < coverage:
-                            p = self._get_thatnot_overlaps(maximum_tries)
-                            self.objects.append(p)
+                            if random.random() < self.dragging_possibility:
+                                p = self.get_dragged_that_mot_overlaps(maximum_tries)
+                                self.objects.append(p)
+                            else:
+                                p = self._get_thatnot_overlaps(maximum_tries)
+                                self.objects.append(p)
                     else:
                         for i in range(cfg.get_particles_per_image()):
-                            p = self._get_thatnot_overlaps(maximum_tries)
-                            self.objects.append(p)
-                #w/ angle, w/o overlapping
+                            if random.random() < self.dragging_possibility:
+                                p = self.get_dragged_that_mot_overlaps(maximum_tries)
+                                self.objects.append(p)
+                            else:
+                                p = self._get_thatnot_overlaps(maximum_tries)
+                                self.objects.append(p)
+                #w/ angle, w overlapping
                 else:
                     if amount is not None:
                         for i in range(amount):
-                            self.objects.append(Particle())
+                            p = Particle()
+                            if random.random() < self.dragging_possibility:
+                                p.drag(self.dragging_speed, self.raster_angle)
+                            self.objects.append(p)
                     elif coverage is not None:
                         while self.coverage() < coverage:
-                            self.objects.append(Particle())
+                            p = Particle()
+                            if random.random() < self.dragging_possibility:
+                                p.drag(self.dragging_speed, self.raster_angle)
+                            self.objects.append(p)
                     else:
                         for i in range(cfg.get_particles_per_image()):
-                            self.objects.append(Particle())
+                            p = Particle()
+                            if random.random() < self.dragging_possibility:
+                                p.drag(self.dragging_speed, self.raster_angle)
+                            self.objects.append(p)
             #w/ angle correlation
             else:
                 if not overlapping:
                     if amount is not None:
                         for i in range(amount):
-                            p = self._get_thatnot_overlaps(maximum_tries)
-                            p.set_theta(self._calc_angle_for_particle(p))
-                            self.objects.append(p)
+                            if random.random() < self.dragging_possibility:
+                                p = self.get_dragged_that_mot_overlaps(maximum_tries, setangle=True)
+                                self.objects.append(p)
+                            else:
+                                p = self._get_thatnot_overlaps(maximum_tries)
+                                p.set_theta(self._calc_angle_for_particle(p))
+                                self.objects.append(p)
                     elif coverage is not None:
                         while self.coverage() < coverage:
-                            p = self._get_thatnot_overlaps(maximum_tries)
-                            p.set_theta(self._calc_angle_for_particle(p))
-                            self.objects.append(p)
+                            if random.random() < self.dragging_possibility:
+                                p = self.get_dragged_that_mot_overlaps(maximum_tries, setangle=True)
+                                self.objects.append(p)
+                            else:
+                                p = self._get_thatnot_overlaps(maximum_tries)
+                                p.set_theta(self._calc_angle_for_particle(p))
+                                self.objects.append(p)
                     else:
                         for i in range(cfg.get_particles_per_image()):
-                            p = self._get_thatnot_overlaps(maximum_tries)
-                            p.set_theta(self._calc_angle_for_particle(p))
-                            self.objects.append(p)
-                #w/ angle, w/o overlapping
+                            if random.random() < self.dragging_possibility:
+                                p = self.get_dragged_that_mot_overlaps(maximum_tries, setangle=True)
+                                self.objects.append(p)
+                            else:
+                                p = self._get_thatnot_overlaps(maximum_tries)
+                                p.set_theta(self._calc_angle_for_particle(p))
+                                self.objects.append(p)
+                #w/ angle, w overlapping
                 else:
                     if amount is not None:
                         for i in range(amount):
                             p = Particle()
                             p.set_theta(self._calc_angle_for_particle(p))
+                            if random.random() < self.dragging_possibility:
+                                p.drag(self.dragging_speed, self.raster_angle)
                             self.objects.append(p)
                     elif coverage is not None:
                         while self.coverage() < coverage:
                             p = Particle()
                             p.set_theta(self._calc_angle_for_particle(p))
+                            if random.random() < self.dragging_possibility:
+                                p.drag(self.dragging_speed, self.raster_angle)
                             self.objects.append(p)
                     else:
                         for i in range(cfg.get_particles_per_image()):
                             p = Particle()
                             p.set_theta(self._calc_angle_for_particle(p))
+                            if random.random() < self.dragging_possibility:
+                                p.drag(self.dragging_speed, self.raster_angle)
                             self.objects.append(p)
         #use angle range
         else:
             if not overlapping:
                 if amount is not None:
                     for i in range(amount):
-                        p = self._get_thatnot_overlaps(maximum_tries)
-                        p.set_theta(self._random_angle_range())
-                        self.objects.append(p)
+                        if random.random() < self.dragging_possibility:
+                            p = self.get_dragged_that_mot_overlaps(maximum_tries, angle=self._random_angle_range())
+                            self.objects.append(p)
+                        else:
+                            p = self._get_thatnot_overlaps(maximum_tries)
+                            p.set_theta(self._random_angle_range())
+                            self.objects.append(p)
                 elif coverage is not None:
                     while self.coverage() < coverage:
-                        p = self._get_thatnot_overlaps(maximum_tries)
-                        p.set_theta(self._random_angle_range())
-                        self.objects.append(p)
+                        if random.random() < self.dragging_possibility:
+                            p = self.get_dragged_that_mot_overlaps(maximum_tries, angle=self._random_angle_range())
+                            self.objects.append(p)
+                        else:
+                            p = self._get_thatnot_overlaps(maximum_tries)
+                            p.set_theta(self._random_angle_range())
+                            self.objects.append(p)
                 else:
                     for i in range(cfg.get_particles_per_image()):
-                        p = self._get_thatnot_overlaps(maximum_tries)
-                        p.set_theta(self._random_angle_range())
-                        self.objects.append(p)
-            #w/ angle, w/o overlapping
+                        if random.random() < self.dragging_possibility:
+                            p = self.get_dragged_that_mot_overlaps(maximum_tries, angle=self._random_angle_range())
+                            self.objects.append(p)
+                        else:
+                            p = self._get_thatnot_overlaps(maximum_tries)
+                            p.set_theta(self._random_angle_range())
+                            self.objects.append(p)
+            #w/ angle, w/ overlapping
             else:
                 if amount is not None:
                     for i in range(amount):
@@ -309,6 +380,7 @@ class DataFrame:
         self.img.addMatrix(matrix) #Indentd  too far right
 
     def _drag_particles(self):
+        print("Deprecated 6546335416")
         for part in self.objects:
             if random.random() < self.dragging_possibility:
                 part.drag(self.dragging_speed, self.raster_angle)
@@ -320,8 +392,8 @@ class DataFrame:
             angle = 0
             doubled_frame = Double_Frame(self.fn_gen, strength, rel_dist, angle)
             doubled_frame.addParticles(self.passed_args[0], self.passed_args[1], self.passed_args[2], self.passed_args[3])
-            if self.use_dragging:
-                doubled_frame._drag_particles()
+            #if self.use_dragging:
+            #    doubled_frame._drag_particles()
             self.img = doubled_frame.extract_Smaller()
             self.objects = doubled_frame.get_objects()
             self.img.updateImage()
@@ -433,6 +505,9 @@ class Double_Frame(DataFrame):
         else:
             self.objects.append(part)
 
+    def get_dragged_that_mot_overlaps(self):
+        raise NotImplementedError
+
     def _get_thatnot_overlaps(self, maximumtries=1000):
         if len(self.objects) == 0:
             return Double_Particle()
@@ -445,91 +520,142 @@ class Double_Frame(DataFrame):
         return p
 
     def addParticles(self, amount=None, coverage=None, overlapping=True, maximum_tries=1000):
-        # widthout angle correlation
+
         self.passed_args = (amount, coverage, overlapping, maximum_tries)
         if not self.use_range:
             if self.angle_char_len == 0:
                 if not overlapping:
                     if amount is not None:
-                        for i in range(4 * amount):
-                            p = self._get_thatnot_overlaps(maximum_tries)
-                            self.objects.append(p)
+                        for i in range(4*amount):
+                            if random.random() < self.dragging_possibility:
+                                p = self.get_dragged_that_mot_overlaps(maximum_tries)
+                                self.objects.append(p)
+                            else:
+                                p = self._get_thatnot_overlaps(maximum_tries)
+                                self.objects.append(p)
                     elif coverage is not None:
                         while self.coverage() < coverage:
-                            p = self._get_thatnot_overlaps(maximum_tries)
-                            self.objects.append(p)
+                            if random.random() < self.dragging_possibility:
+                                p = self.get_dragged_that_mot_overlaps(maximum_tries)
+                                self.objects.append(p)
+                            else:
+                                p = self._get_thatnot_overlaps(maximum_tries)
+                                self.objects.append(p)
                     else:
-                        for i in range( 4 * cfg.get_particles_per_image()):
-                            p = self._get_thatnot_overlaps(maximum_tries)
-                            self.objects.append(p)
-                # w/ angle, w/o overlapping
+                        for i in range(4*cfg.get_particles_per_image()):
+                            if random.random() < self.dragging_possibility:
+                                p = self.get_dragged_that_mot_overlaps(maximum_tries)
+                                self.objects.append(p)
+                            else:
+                                p = self._get_thatnot_overlaps(maximum_tries)
+                                self.objects.append(p)
+                # w/ angle, w overlapping
                 else:
                     if amount is not None:
                         for i in range(4*amount):
-                            self.objects.append(Double_Particle())
+                            p = Double_Particle()
+                            if random.random() < self.dragging_possibility:
+                                p.drag(self.dragging_speed, self.raster_angle)
+                            self.objects.append(p)
                     elif coverage is not None:
                         while self.coverage() < coverage:
-                            self.objects.append(Double_Particle())
+                            p = Double_Particle()
+                            if random.random() < self.dragging_possibility:
+                                p.drag(self.dragging_speed, self.raster_angle)
+                            self.objects.append(p)
                     else:
-                        for i in range(4 * cfg.get_particles_per_image()):
-                            self.objects.append(Double_Particle())
+                        for i in range(4*cfg.get_particles_per_image()):
+                            p = Double_Particle()
+                            if random.random() < self.dragging_possibility:
+                                p.drag(self.dragging_speed, self.raster_angle)
+                            self.objects.append(p)
             # w/ angle correlation
             else:
                 if not overlapping:
                     if amount is not None:
-                        for i in range(4 * amount):
-                            p = self._get_thatnot_overlaps(maximum_tries)
-                            p.set_theta(self._calc_angle_for_particle(p))
-                            self.objects.append(p)
+                        for i in range(4*amount):
+                            if random.random() < self.dragging_possibility:
+                                p = self.get_dragged_that_mot_overlaps(maximum_tries, setangle=True)
+                                self.objects.append(p)
+                            else:
+                                p = self._get_thatnot_overlaps(maximum_tries)
+                                p.set_theta(self._calc_angle_for_particle(p))
+                                self.objects.append(p)
                     elif coverage is not None:
                         while self.coverage() < coverage:
-                            p = self._get_thatnot_overlaps(maximum_tries)
-                            p.set_theta(self._calc_angle_for_particle(p))
-                            self.objects.append(p)
+                            if random.random() < self.dragging_possibility:
+                                p = self.get_dragged_that_mot_overlaps(maximum_tries, setangle=True)
+                                self.objects.append(p)
+                            else:
+                                p = self._get_thatnot_overlaps(maximum_tries)
+                                p.set_theta(self._calc_angle_for_particle(p))
+                                self.objects.append(p)
                     else:
-                        for i in range(4 * cfg.get_particles_per_image()):
-                            p = self._get_thatnot_overlaps(maximum_tries)
-                            p.set_theta(self._calc_angle_for_particle(p))
-                            self.objects.append(p)
-                # w/ angle, w/o overlapping
+                        for i in range(4*cfg.get_particles_per_image()):
+                            if random.random() < self.dragging_possibility:
+                                p = self.get_dragged_that_mot_overlaps(maximum_tries, setangle=True)
+                                self.objects.append(p)
+                            else:
+                                p = self._get_thatnot_overlaps(maximum_tries)
+                                p.set_theta(self._calc_angle_for_particle(p))
+                                self.objects.append(p)
+                # w/ angle, w overlapping
                 else:
                     if amount is not None:
-                        for i in range(4 * amount):
+                        for i in range(4*amount):
                             p = Double_Particle()
                             p.set_theta(self._calc_angle_for_particle(p))
+                            if random.random() < self.dragging_possibility:
+                                p.drag(self.dragging_speed, self.raster_angle)
                             self.objects.append(p)
                     elif coverage is not None:
                         while self.coverage() < coverage:
                             p = Double_Particle()
                             p.set_theta(self._calc_angle_for_particle(p))
+                            if random.random() < self.dragging_possibility:
+                                p.drag(self.dragging_speed, self.raster_angle)
                             self.objects.append(p)
                     else:
-                        for i in range(4 * cfg.get_particles_per_image()):
+                        for i in range(4*cfg.get_particles_per_image()):
                             p = Double_Particle()
                             p.set_theta(self._calc_angle_for_particle(p))
+                            if random.random() < self.dragging_possibility:
+                                p.drag(self.dragging_speed, self.raster_angle)
                             self.objects.append(p)
         # use angle range
         else:
             if not overlapping:
                 if amount is not None:
-                    for i in range(4 * amount):
-                        p = self._get_thatnot_overlaps(maximum_tries)
-                        p.set_theta(self._random_angle_range())
-                        self.objects.append(p)
+                    for i in range(4*amount):
+                        if random.random() < self.dragging_possibility:
+                            p = self.get_dragged_that_mot_overlaps(maximum_tries, angle=self._random_angle_range())
+                            self.objects.append(p)
+                        else:
+                            p = self._get_thatnot_overlaps(maximum_tries)
+                            p.set_theta(self._random_angle_range())
+                            self.objects.append(p)
                 elif coverage is not None:
                     while self.coverage() < coverage:
-                        p = self._get_thatnot_overlaps(maximum_tries)
-                        p.set_theta(self._random_angle_range())
-                        self.objects.append(p)
+                        if random.random() < self.dragging_possibility:
+                            p = self.get_dragged_that_mot_overlaps(maximum_tries, angle=self._random_angle_range())
+                            self.objects.append(p)
+                        else:
+                            p = self._get_thatnot_overlaps(maximum_tries)
+                            p.set_theta(self._random_angle_range())
+                            self.objects.append(p)
                 else:
-                    for i in range(4 * cfg.get_particles_per_image()):
-                        p = self._get_thatnot_overlaps(maximum_tries)
-                        p.set_theta(self._random_angle_range())
-                        self.objects.append(p)
-            # w/ angle, w/o overlapping
+                    for i in range(4*cfg.get_particles_per_image()):
+                        if random.random() < self.dragging_possibility:
+                            p = self.get_dragged_that_mot_overlaps(maximum_tries, angle=self._random_angle_range())
+                            self.objects.append(p)
+                        else:
+                            p = self._get_thatnot_overlaps(maximum_tries)
+                            p.set_theta(self._random_angle_range())
+                            self.objects.append(p)
+            # w/ angle, w/ overlapping
             else:
                 if amount is not None:
-                    for i in range(4 * amount):
+                    for i in range(4*amount):
                         p = Double_Particle()
                         p.set_theta(self._random_angle_range())
                         self.objects.append(p)
@@ -539,10 +665,110 @@ class Double_Frame(DataFrame):
                         p.set_theta(self._random_angle_range())
                         self.objects.append(p)
                 else:
-                    for i in range(4 * cfg.get_particles_per_image()):
+                    for i in range(4*cfg.get_particles_per_image()):
                         p = Double_Particle()
                         p.set_theta(self._random_angle_range())
                         self.objects.append(p)
+
+        #return
+        # widthout angle correlation
+        #self.passed_args = (amount, coverage, overlapping, maximum_tries)
+        #if not self.use_range:
+         #   if self.angle_char_len == 0:
+          #      if not overlapping:
+           #         if amount is not None:
+            #            for i in range(4 * amount):
+             #               p = self._get_thatnot_overlaps(maximum_tries)
+              #              self.objects.append(p)
+               #     elif coverage is not None:
+                #        while self.coverage() < coverage:
+                 #           p = self._get_thatnot_overlaps(maximum_tries)
+                  #          self.objects.append(p)
+                   # else:
+    #                    for i in range( 4 * cfg.get_particles_per_image()):
+     #                       p = self._get_thatnot_overlaps(maximum_tries)
+      #                      self.objects.append(p)
+       #         # w/ angle, w/o overlapping
+        #        else:
+         #           if amount is not None:
+          #              for i in range(4*amount):
+           #                 self.objects.append(Double_Particle())
+            #        elif coverage is not None:
+             #           while self.coverage() < coverage:
+              #              self.objects.append(Double_Particle())
+               #     else:
+                #        for i in range(4 * cfg.get_particles_per_image()):
+                 #           self.objects.append(Double_Particle())
+            # w/ a#ngle correlation
+    #        else:
+     #           if not overlapping:
+      #              if amount is not None:
+       #                 for i in range(4 * amount):
+        #                    p = self._get_thatnot_overlaps(maximum_tries)
+         #                   p.set_theta(self._calc_angle_for_particle(p))
+          #                  self.objects.append(p)
+           #         elif coverage is not None:
+            #            while self.coverage() < coverage:
+             #               p = self._get_thatnot_overlaps(maximum_tries)
+              #              p.set_theta(self._calc_angle_for_particle(p))
+               #             self.objects.append(p)
+                #    else:
+                 #       for i in range(4 * cfg.get_particles_per_image()):
+                  #          p = self._get_thatnot_overlaps(maximum_tries)
+                   #         p.set_theta(self._calc_angle_for_particle(p))
+                    #        self.objects.append(p)
+                # w/ #angle, w/o overlapping
+     #           else:#
+      #              if amount is not None:
+       #                 for i in range(4 * amount):
+        #                    p = Double_Particle()
+         #                   p.set_theta(self._calc_angle_for_particle(p))
+          #                  self.objects.append(p)
+           #         elif coverage is not None:
+            #            while self.coverage() < coverage:
+             #               p = Double_Particle()
+              #              p.set_theta(self._calc_angle_for_particle(p))
+               #             self.objects.append(p)
+                #    else:
+                 #       for i in range(4 * cfg.get_particles_per_image()):
+                  #          p = Double_Particle()
+                   #         p.set_theta(self._calc_angle_for_particle(p))
+                    #        self.objects.append(p)
+        # use angle r#ange
+ #       else:
+  #          if not overlapping:
+   #             if amount is not None:
+    #                for i in range(4 * amount):
+     #                   p = self._get_thatnot_overlaps(maximum_tries)
+      #                  p.set_theta(self._random_angle_range())
+       #                 self.objects.append(p)
+        #        elif coverage is not None:
+         #           while self.coverage() < coverage:
+          #              p = self._get_thatnot_overlaps(maximum_tries)
+           #             p.set_theta(self._random_angle_range())
+            #            self.objects.append(p)
+             #   else:
+              #      for i in range(4 * cfg.get_particles_per_image()):
+               #         p = self._get_thatnot_overlaps(maximum_tries)
+                #        p.set_theta(self._random_angle_range())
+                 #       self.objects.append(p)
+            # w/ a#ngle, w/o overlapping
+#            else:
+ #               if amount is not None:
+  #                  for i in range(4 * amount):
+   #                     p = Double_Particle()
+    #                    p.set_theta(self._random_angle_range())
+     #                   self.objects.append(p)
+      #          elif coverage is not None:
+       #             while self.coverage() < coverage:
+        #                p = Double_Particle()
+         #               p.set_theta(self._random_angle_range())
+          #              self.objects.append(p)
+           #     else:
+            #        for i in range(4 * cfg.get_particles_per_image()):
+             #           p = Double_Particle()
+              #          p.set_theta(self._random_angle_range())
+               #         self.objects.append(p)
 
     def create_Image_Visualization(self):
         self.img = MyImage()
