@@ -54,7 +54,8 @@ class DataFrame:
         else:
             if self.passed_args[0] is None:
                 self.passed_args = (len(self.objects), self.passed_args[1], self.passed_args[2], self.passed_args[3])
-            self.passed_args[0] += 1
+            newargs = self.passed_args[0] + 1, self.passed_args[1], self.passed_args[2], self.passed_args[3]
+            self.passed_args = newargs
         if part is None:
             self.objects.append(Particle())
         else:
@@ -326,8 +327,8 @@ class DataFrame:
             self.img.updateImage()
             return
 
-        if self.use_dragging:
-            self._drag_particles()
+        #if self.use_dragging: #ToDo: Possibly later
+        #    self._drag_particles()
         self.create_Image_Visualization()
 
         #if random.random() < self.double_tip_poss:
