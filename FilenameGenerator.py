@@ -3,6 +3,7 @@ from multiprocessing import Lock as mpLock
 import Configuration as cfg
 
 
+
 class FilenameGenerator:
     index = 0
     index_lock = None
@@ -20,9 +21,12 @@ class FilenameGenerator:
             self.index = self.index + 1
             return self.index
 
-    def __init__(self):
+    def __init__(self, lock=None):
         self.index = 0
-        self.index_lock = mpLock()
+        if lock is None:
+            self.index_lock = mpLock()
+        else:
+            self.index_lock = lock
         self.counter = self.AtomicCounter()
 
     def generate_Tuple(self):

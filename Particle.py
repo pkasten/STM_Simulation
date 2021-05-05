@@ -216,6 +216,9 @@ class Particle:
     def set_length(self, length):
         self.length = length
 
+    def set_height(self, height):
+        self.height = height
+
     def get_dimension(self):
         return max(self.width, self.length)
 
@@ -224,6 +227,7 @@ class Particle:
 
     def true_overlap(self, particle):
         if not self.dragged and not particle.dragged:
+            #rint("A")
             return self._eval_overlap(particle, self.efficient_Matrix_turned()[0], self.x, self.y)
         elif self.dragged and not particle.dragged:  # Dragged this
             # print("SubP1: {}, SubP2: {}".format(self.subp1, self.subp2))
@@ -232,6 +236,7 @@ class Particle:
             mat, x, y = self.subp2
             ret2 = self._eval_overlap(particle, mat, x, y)
             # print("Ret1: {}, ret2: {}".format(ret1, ret2))
+            #rint("B")
             return ret1 or ret2
         elif particle.dragged and not self.dragged:
             # print("SubP1: {}, SubP2: {}".format(self.subp1, self.subp2))
@@ -240,6 +245,7 @@ class Particle:
             mat, x, y = particle.subp2
             ret2 = self._eval_overlap(self, mat, x, y)
             # print("Ret1: {}, ret2: {}".format(ret1, ret2))
+            #print("C, {} {}".format(ret1, ret2))
             return ret1 or ret2
         else:
             mat1, x1, y1 = self.subp1
@@ -252,6 +258,7 @@ class Particle:
             ret3 = self._eval_overlap_matrizes(mat1, x1, y1, mat2, x2, y2)
             mat2, x2, y2 = particle.subp2
             ret4 = self._eval_overlap_matrizes(mat1, x1, y1, mat2, x2, y2)
+            #print("D")
             return ret1 or ret2 or ret3 or ret4
 
     def _eval_overlap_matrizes(self, mat1, x1, y1, mat2, x2, y2):

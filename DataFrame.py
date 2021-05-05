@@ -1,6 +1,8 @@
 import multiprocessing as mp
 import copy, os
 import math, random
+import time
+
 from Particle import Particle, Double_Particle
 from Images import MyImage
 #from Maths.Functions import measureTime
@@ -38,6 +40,11 @@ class DataFrame:
         self.passed_args = None
         self.img_width = cfg.get_width()
         self.img_height = cfg.get_height()
+        self.use_crystal_orientations = cfg.get_crystal_orientation_usage()
+        self.crystal_directions_num = cfg.get_no_of_orientations()
+        self.crystal_directions = cfg.get_crystal_orientations_array()
+        if self.use_crystal_orientations:
+            self.angle_char_len = 4000
 
     #returns iterator over Particles
     def getIterator(self):
@@ -63,11 +70,19 @@ class DataFrame:
 
     #checks wheather part overlaps any existing particle
     def _overlaps_any(self, part):
+        #start = time.perf_counter()
+
         if len(self.objects) == 0:
+            #print("Overlaps any took {}".format(time.perf_counter() - start))
             return False
         for p in self.objects:
+            if not part.dragged and not p.dragged:
+                if math.dist([p.x, p.y], [part.x, part.y]) > max(part.effect_range, p.effect_range):
+                    continue
             if part.true_overlap(p):
+                #print("Overlaps any took {}".format(time.perf_counter() - start))
                 return True
+        #print("Overlaps any took {}".format(time.perf_counter() - start))
         return False
 
     #returns random particle, that does not overlap with any other
@@ -77,9 +92,11 @@ class DataFrame:
         p = Particle()
         for i in range(maximumtries):
             if self._overlaps_any(p):
+                #print("Retry")
                 p = Particle()
             else:
                 return p
+        #print("MaxTries Exhausted_a")
         return p
 
     def get_dragged_that_mot_overlaps(self, maximumtries, angle=None, setangle=False):
@@ -97,9 +114,11 @@ class DataFrame:
         p = _set_p()
         for i in range(maximumtries):
             if self._overlaps_any(p):
+                #print("Retry_b")
                 p = _set_p()
             else:
                 return p
+        #print("MaxTries Exhausted_b")
         return p
 
     # calculates particles weight for importance in surrounding particles
@@ -108,8 +127,46 @@ class DataFrame:
         #return np.exp(-self.angle_char_len/drel)
         return self.angle_char_len/drel
 
+    def _orients_along_crystal(self, particle):
+        return self._bonding_strength_crystal(particle) < 0.5
+
+    # High if bonds tu particles, low if bonds to crystal
+    def _bonding_strength_crystal(self, particle): #ToDo: improve
+        if len(self.objects) == 0:
+            return 0
+        for part in self.objects:
+            dis = part.get_distance_to(particle)
+            if dis < self.max_dist/np.sqrt(2) * 0.2:
+                return 1
+        return 0
+
+
     # calculates a random angle for partilce depending on its surrounding with correlation
     def _calc_angle_for_particle(self, particle): # ToDo: Still very sketchy
+
+        if self.use_crystal_orientations:
+            if self._orients_along_crystal(particle):
+                #particle.set_height(0.7)
+                #print(self.crystal_directions)
+                return random.choice(self.crystal_directions)
+            else:
+                amount = 0
+                angles = 0
+                distances = 0
+                for part_it in self.objects:
+                    weight = self._calc_angle_weight(particle, part_it)
+                    amount += weight
+                    distances += part_it.get_distance_to(particle)
+                    th = part_it.get_theta()
+                    angles += (th if th < np.pi else -(2 * np.pi - th)) * weight
+                med = angles / amount
+                std = len(self.objects) * self.angle_correlation_std / amount
+                exp_std = np.exp(std) - 1
+                return random.gauss(med, exp_std)
+
+
+        print("WARNING: Not using Crystal Orientation")
+
         if len(self.objects) == 0:
             return np.pi * 2 * random.random()
         amount = 0
@@ -138,7 +195,7 @@ class DataFrame:
             return random.uniform(self.min_angle, self.max_angle)
 
 
-    def addParticles(self, amount=None, coverage=None, overlapping=True, maximum_tries=1000):
+    def addParticles(self, amount=None, coverage=None, overlapping=False, maximum_tries=1000):
         #widthout angle correlation
         self.passed_args = (amount, coverage, overlapping, maximum_tries)
         if not self.use_range:
@@ -387,16 +444,25 @@ class DataFrame:
 
     def get_Image(self):
         if random.random() < self.double_tip_poss:
-            strength = 0.3
-            rel_dist = 0.05
-            angle = 0
+            #print("Double Tipping")
+            strength = random.random()
+            rel_dist = random.random()
+            angle = 2 * np.pi * random.random()
             doubled_frame = Double_Frame(self.fn_gen, strength, rel_dist, angle)
+            #print("Created Double Frame")
             doubled_frame.addParticles(self.passed_args[0], self.passed_args[1], self.passed_args[2], self.passed_args[3])
+            #print("added Particles")
             #if self.use_dragging:
             #    doubled_frame._drag_particles()
             self.img = doubled_frame.extract_Smaller()
+            #print("extracted Smaller")
             self.objects = doubled_frame.get_objects()
+            #print("Got objects")
+            if self.use_noise:
+                self.img.noise(self.image_noise_mu, self.image_noise_sigma)
             self.img.updateImage()
+            #print("updated Image")
+
             return
 
         #if self.use_dragging: #ToDo: Possibly later
@@ -429,6 +495,7 @@ class DataFrame:
         if len(self.text) == 0:
             self.createText()
         img_path, dat_path, index = self.fn_gen.generate_Tuple()
+        #print("Saving No {}".format(index))
         try:
             with open(dat_path, "w") as dat_file:
                 dat_file.write(self.text)
@@ -451,11 +518,9 @@ class DataFrame:
         return covered/area
 
     def has_overlaps(self):
-        for part in self.objects:
-            for part2 in self.objects:
-                if part == part2:
-                    continue
-                if part.true_overlap(part2):
+        for i in range(len(self.objects)):
+            for j in range(i):
+                if self.objects[i].true_overlap(self.objects[j]):
                     return True
         return False
 
@@ -482,15 +547,14 @@ class Double_Frame(DataFrame):
 
         if self.shift_x > 0:
             if self.shift_y > 0:
-                self.range = self.img_width, 2 * self.img_width - 1, self.img_height, 2 * \
-                          self.img_height - 1
+                self.range = int(self.img_width/2), self.img_width, int(self.img_height/2), self.img_height
             else:
-                self.range = self.img_width, 2 * self.img_width - 1, 0, self.img_height - 1
+                self.range = int(self.img_width/2), self.img_width, 0, int(self.img_height/2)
         else:
             if self.shift_y > 0:
-                self.range = 0, self.img_width - 1, 0, self.img_height, 2 * self.img_height - 1
+                self.range = 0, int(self.img_width/2), 0, int(self.img_height/2), self.img_height
             else:
-                self.range = 0, self.img_width - 1, 0, self.img_height - 1
+                self.range = 0, int(self.img_width/2), 0, int(self.img_height/2)
 
 
     def addParticle(self, part=None):
@@ -505,10 +569,29 @@ class Double_Frame(DataFrame):
         else:
             self.objects.append(part)
 
-    def get_dragged_that_mot_overlaps(self):
-        raise NotImplementedError
+    def get_dragged_that_mot_overlaps(self, maximumtries, angle=None, setangle=False):
+        #print("DTNO @len {}".format(len(self.objects)))
+        def _set_p():
+            p = Double_Particle()
+            if angle is not None:
+                p.set_theta(angle)
+            if setangle:
+                p.set_theta(self._calc_angle_for_particle(p))
+            p.drag(self.dragging_speed, self.raster_angle)
+            return p
+
+        if len(self.objects) == 0:
+            return _set_p()
+        p = _set_p()
+        for i in range(maximumtries):
+            if self._overlaps_any(p):
+                p = _set_p()
+            else:
+                return p
+        return p
 
     def _get_thatnot_overlaps(self, maximumtries=1000):
+        #print("TNO @len {}".format(len(self.objects)))
         if len(self.objects) == 0:
             return Double_Particle()
         p = Double_Particle()
@@ -519,9 +602,10 @@ class Double_Frame(DataFrame):
                 return p
         return p
 
-    def addParticles(self, amount=None, coverage=None, overlapping=True, maximum_tries=1000):
+    def addParticles(self, amount=None, coverage=None, overlapping=False, maximum_tries=1000):
 
         self.passed_args = (amount, coverage, overlapping, maximum_tries)
+        #print("Got Args: {}".format(self.passed_args))
         if not self.use_range:
             if self.angle_char_len == 0:
                 if not overlapping:
@@ -815,18 +899,15 @@ class Double_Frame(DataFrame):
         #plt.show()
 
         self.img.double_tip(self.strength, self.rel_dist, self.dt_angle)
-        #print("Double-tipped")
-        #plt.imshow(self.img.get_matrix())
-        #plt.show()
 
-        #print(cfg.get_width())
-        #print(type(cfg.get_width()))
         smaller = np.zeros((cfg.get_width(), cfg.get_height()))
         bigger = self.img.get_matrix()
+        #print(np.shape(smaller), np.shape(bigger))
+        #print(self.range)
         for x in range(np.shape(smaller)[0]):
             for y in range(np.shape(smaller)[1]):
-                x_tilt = x + self.range[0]
-                y_tilt = y + self.range[2]
+                x_tilt = x + self.range[0] - 1
+                y_tilt = y + self.range[2] - 1
                 smaller[x, y] = bigger[x_tilt, y_tilt]
         #plt.imshow(smaller)
         #plt.show()

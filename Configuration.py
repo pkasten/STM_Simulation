@@ -33,7 +33,7 @@ def_prefix_data = 'prefix_data', 'Data'
 def_suffix_data = 'suffix_data', '.txt'
 def_width = 'width', 400
 def_height = 'height', 400
-def_particles = 'no_of_particles', 30
+def_particles = 'no_of_particles', int(def_width[1] * def_height[1] / 16000)
 def_px_overlap = 'pixels_overlap (in px)', 40
 def_anti_aliasing = 'Anti-Aliasing', 1
 def_noise_mu = 'Image-noise_Average', 0
@@ -48,15 +48,23 @@ def_height_part = 'height', 3
 def_image_path = 'image_path', ""
 def_part_max_height = 'max_height', 1
 def_std_deriv = 'std_derivate_grain_border', def_length_part[1] / 5
-def_fermi_exp = '1/kbT', 0.5
+def_fermi_exp = '1/kbT', 0.4
 def_angle_characteristic_length = 'Angle Characteristic_relative_length', 0.2
 def_angle_stdderiv = 'std_derivate_angle_correlation', 1
 def_angle_range_min = 'minimum angle (degree)', 0
 def_angle_range_max = 'maximum angle (degree)', 0
 def_angle_range_usage = 'use angle range?', 0
+def_use_crystal_orientation = 'Use Crystal orientation', 1
+def_no_of_orientations = 'Number of Crystal Orientations', 2
+def_crystal_orientation_1 = 'Crystal Direction 1 (Degrees)', 0
+def_crystal_orientation_2 = 'Crystal Direction 2 (Degrees)', 90
+def_crystal_orientation_3 = 'Crystal Direction 3 (Degrees)', 0
+def_crystal_orientation_4 = 'Crystal Direction 4 (Degrees)', 0
 particle_properties_settings = [def_width_part, def_image_path, def_length_part, def_height_part, def_fermi_exp,
                                 def_part_max_height, def_angle_range_usage, def_angle_range_min, def_angle_range_max,
-                                def_angle_stdderiv, def_angle_characteristic_length]
+                                def_angle_stdderiv, def_angle_characteristic_length, def_use_crystal_orientation,
+                                def_no_of_orientations, def_crystal_orientation_1, def_crystal_orientation_2,
+                                def_crystal_orientation_3, def_crystal_orientation_4]
 
 cat_special = 'special settings'
 def_overlap_threshold = 'overlapping_threshold', 10
@@ -366,6 +374,53 @@ def get_angle_range_usage():
     conf.read(settings_file)
     return bool(int((conf[cat_particle_properties][def_angle_range_usage[0]])))
 
+def get_crystal_orientation_usage():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return bool(int((conf[cat_particle_properties][def_use_crystal_orientation[0]])))
+
+def get_no_of_orientations():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return int((conf[cat_particle_properties][def_no_of_orientations[0]]))
+
+def get_crystal_orientation_1():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return np.pi * float(conf[cat_particle_properties][def_crystal_orientation_1[0]]) / 180
+
+def get_crystal_orientation_2():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return np.pi * float(conf[cat_particle_properties][def_crystal_orientation_2[0]]) / 180
+
+def get_crystal_orientation_3():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return np.pi * float(conf[cat_particle_properties][def_crystal_orientation_3[0]]) / 180
+
+def get_crystal_orientation_4():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    conf.read(settings_file)
+    return np.pi * float(conf[cat_particle_properties][def_crystal_orientation_4[0]]) / 180
+
+def get_crystal_orientations_array():
+    if get_no_of_orientations() == 1:
+        return [get_crystal_orientation_1()]
+    elif get_no_of_orientations() == 2:
+        return [get_crystal_orientation_1(), get_crystal_orientation_2()]
+    elif get_no_of_orientations() == 3:
+        return [get_crystal_orientation_1(), get_crystal_orientation_2(), get_crystal_orientation_3()]
+    elif get_no_of_orientations() == 4:
+        return [get_crystal_orientation_1(), get_crystal_orientation_2(), get_crystal_orientation_3(), get_crystal_orientation_4()]
+    else:
+        raise NotImplementedError
 
 def get_overlap_threshold():
     global settings_file

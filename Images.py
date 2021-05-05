@@ -52,7 +52,6 @@ class MyImage:
 
     def double_tip(self, strength, rel_dist, angle): #ToDo: neues Bild damit auch links oben etc was ist
         #ToDo: Use surrounding Pictures
-        print("Double_Tipping")
         vec_x = np.floor(np.sqrt(np.square(self.width) + np.square(self.height)) * rel_dist * np.sin(angle))
         vec_y = np.floor(np.sqrt(np.square(self.width) + np.square(self.height)) * rel_dist * np.cos(angle))
         vec_x = int(vec_x)
@@ -98,9 +97,9 @@ class MyImage:
     # Add Noise to image
     # currently random dirstibuted, possibly change to normal?
     def noise(self, mu, sigma):
-        if self.noised:
-            return
-        self.noised = True
+        #if self.noised:
+        #    return
+        #self.noised = True
         self.colors += np.random.normal(mu, sigma, np.shape(self.colors))
 
     def get_matrix(self):

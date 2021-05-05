@@ -7,6 +7,8 @@ from Functions import *
 import Configuration as cfg
 import math, time
 import matplotlib.pyplot as plt
+from multiprocessing import Process, Lock, Semaphore
+from multiprocessing.managers import BaseManager
 
 
 def test_frame(data_frame):
@@ -22,11 +24,10 @@ def test_frame(data_frame):
 def measure_speed():
     x = []
     y = []
-    start = time.perf_counter()
-    for i in range(90):
+    for i in range(20):
         start = time.perf_counter()
-        dat_frame = DataFrame(fn_gen)
-        dat_frame.addParticles(amount=i)
+        dat_frame = DataFrame(FilenameGenerator())
+        dat_frame.addParticles(amount=i, overlapping=False)
         dat_frame.get_Image()
         dat_frame.save()
         x.append(i)
@@ -35,32 +36,78 @@ def measure_speed():
     plt.plot(x, y)
     plt.show()
 
-if __name__ == "__main__":
-    clearLog()
-    fn_gen = FilenameGenerator()
+def generate(fn_gen):
     dat_frame = DataFrame(fn_gen)
-    # dat_frame.addParticles(conf.get_particles_per_image())
-    # dat_frame.createImage_efficient()
-    #dat_frame.addParticle(Particle(200, 200, dat_frame._random_angle_range()))
-    #test_frame(dat_frame)
-    #for i in range(10):
-    dat_frame.addParticles(coverage=0.15, overlapping=False)
-    #p1 = Particle(200, 200, 0.01)
-    #p2 = Particle(280, 200, 0.3)
-    #dat_frame.addParticle(p1)
-    #dat_frame._drag_particles()
-    #dat_frame.addParticle(p2)
-    print("Has Overlaps: {}".format(dat_frame.has_overlaps()))
-    #print(p1.true_overlap(p2))
-    #print(p2.true_overlap(p1))
-        #dat_frame.addParticles(amount=3)
-    #dat_frame._drag_particles()
-    #dat_frame.addParticle(Particle(100 ,200, 0))
-    #dat_frame.addParticle(Particle(300, 200, 0))
-    #dat_frame.addParticle(Particle(200, 100, 0))
-    #dat_frame.addParticle(Particle(200, 300, 0))
+    dat_frame.addParticles()
     dat_frame.get_Image()
     dat_frame.save()
+
+def multi_test(t):
+
+    BaseManager.register('FilenameGenerator', FilenameGenerator)
+    filemanager = BaseManager()
+    filemanager.start()
+    fn_generator = filemanager.FilenameGenerator()
+
+    #fn_gen = FilenameGenerator(lo)
+    gens = []
+    for i in range(cfg.get_threads()):
+        gens.append(Generator(fn_generator))
+    for gen in gens:
+        gen.start()
+
+    time.sleep(t)
+    for gen in gens:
+        gen.kill()
+
+
+class Generator(Process):
+    def __init__(self, fn_gen):
+        super().__init__()
+        self.fn_gen = fn_gen
+
+
+
+    def run(self):
+        while True:
+            generate(self.fn_gen)
+
+
+
+
+if __name__ == "__main__":
+    clearLog()
+    #lo = Lock()
+    start = time.perf_counter()
+    fn = FilenameGenerator()
+   # print(time.perf_counter() - start)
+    #dat_frame = DataFrame(fn)
+   # print(time.perf_counter() - start)
+    #dat_frame.addParticles()
+   ## print(time.perf_counter() - start)
+    #dat_frame.get_Image()
+   # print(time.perf_counter() - start)
+    #dat_frame.save()
+   # print(time.perf_counter() - start)
+    #print(dat_frame.has_overlaps())
+    #print(time.perf_counter() - start)
+    multi_test(120)
+    #sd = False
+    #while not sd:
+    #    start = time.perf_counter()
+    #    fn = FilenameGenerator()
+        #rint(time.perf_counter() - start)
+    #   dat_frame = DataFrame(fn)
+    #    #rint(time.perf_counter() - start)
+    #    dat_frame.addParticles()
+    #    #rint(time.perf_counter() - start)
+    #    dat_frame.get_Image()
+    #    #rint(time.perf_counter() - start)
+    #    dat_frame.save()
+    #    #rint(time.perf_counter() - start)
+    #    sd = dat_frame.has_overlaps()
+    #    print(sd)
+        #rint(time.perf_counter() - start)
 
 
     evaluateLog()
