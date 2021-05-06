@@ -82,37 +82,10 @@ if __name__ == "__main__":
     start = time.perf_counter()
     fn = FilenameGenerator()
     filename = "Test_SXM_File.sxm"
-    My_SXM.get_informations(filename)
-    #plt.imshow(My_SXM.get_data(filename))
-    #plt.show()
-   # print(time.perf_counter() - start)
-    #dat_frame = DataFrame(fn)
-   # print(time.perf_counter() - start)
-    #dat_frame.addParticles()
-   ## print(time.perf_counter() - start)
-    #dat_frame.get_Image()
-   # print(time.perf_counter() - start)
-    #dat_frame.save()
-   # print(time.perf_counter() - start)
-    #print(dat_frame.has_overlaps())
-    #print(time.perf_counter() - start)
-    #multi_test(120)
-    #sd = False
-    #while not sd:
-    #    start = time.perf_counter()
-    #    fn = FilenameGenerator()
-        #rint(time.perf_counter() - start)
-    #   dat_frame = DataFrame(fn)
-    #    #rint(time.perf_counter() - start)
-    #    dat_frame.addParticles()
-    #    #rint(time.perf_counter() - start)
-    #    dat_frame.get_Image()
-    #    #rint(time.perf_counter() - start)
-    #    dat_frame.save()
-    #    #rint(time.perf_counter() - start)
-    #    sd = dat_frame.has_overlaps()
-    #    print(sd)
-        #rint(time.perf_counter() - start)
+    with open("SXM_ino.txt", "w") as file:
+        file.write(My_SXM.get_informations(filename))
+    #generate(fn)
+
 
 
     evaluateLog()

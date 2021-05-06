@@ -12,8 +12,8 @@ class My_SXM():
         l = ''
         key = ''
         header = {}
-        ret_str = "Header_Information for File {}\n".format(filename)
-
+        ret_str = []
+        ret_str.append("Header_Information for File {}".format(filename))
         while l != b':SCANIT_END:':
             l = f.readline().rstrip()
             if l[:1] == b':':
@@ -24,10 +24,10 @@ class My_SXM():
                     header[key].append(l.decode('ascii').split())
 
         ret_str.append("Key: {}".format(key))
-        print("header[key]: {}".format(header[key]))
-        print("header:")
+        ret_str.append("header[key]: {}".format(header[key]))
+        ret_str.append("header:")
         for x in header.keys():
-            print("{}: {}".format(x, header[x]))
+            ret_str.append("{}: {}".format(x, header[x]))
 
         while f.read(1) != b'\x1a':
             pass
@@ -51,7 +51,7 @@ class My_SXM():
 
 
 
-        return data
+        return "\n".join(ret_str)
 
     @staticmethod
     def get_data(filename, dontflip=False):
