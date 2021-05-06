@@ -14,7 +14,7 @@ from IPython import display
 
 
 
-filename = "../HOPG-gxy1z1-p2020.sxm"
+filename = "HOPG-gxy1z1-p2020.sxm"
 S = pySPM.SXM(filename)
 S.list_channels()
 fig, ax = plt.subplots(1,1,figsize=(14,7))

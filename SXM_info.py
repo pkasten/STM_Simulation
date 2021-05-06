@@ -113,6 +113,7 @@ def update_params():
     for elem in settings:
         elem[1] = conf[cat][elem[0]]
 
-
+def get_header_info():
+    return settings
 
 

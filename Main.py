@@ -1,3 +1,5 @@
+import os
+
 import Configuration as conf
 from Images import MyImage
 from Particle import Particle
@@ -81,12 +83,12 @@ if __name__ == "__main__":
     #lo = Lock()
     start = time.perf_counter()
     fn = FilenameGenerator()
-    filename = "Test_SXM_File.sxm"
-    with open("SXM_ino.txt", "w") as file:
-        file.write(My_SXM.get_informations(filename))
+    #filename = "Test_SXM_File.sxm"
+    #with open("SXM_ino.txt", "w") as file:
+    #   file.write(My_SXM.get_informations(filename))
     #generate(fn)
-
-
+    #My_SXM.write_header(os.path.join("pySPM_Tests", "test_header_writer.sxm"))
+    print(My_SXM.get_informations("pySPM_Tests/test_header_writer.sxm"))
 
     evaluateLog()
 

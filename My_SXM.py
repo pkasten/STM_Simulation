@@ -1,9 +1,33 @@
 from pySPM.SXM import SXM
 import matplotlib.pyplot as plt
 import numpy as np
-import struct, os
+import struct, os, SXM_info
 
 class My_SXM():
+
+    @staticmethod
+    def write_header(filename):
+        with open(filename, "w") as file:
+            settings = SXM_info.get_header_info()
+            for elem in settings:
+                arg = elem[1]
+                string = ""
+                try:
+                    arg = arg[0]
+                except IndexError:
+                    file.write(":{}:\n\n".format(elem[0]))
+                    continue
+                if len(elem[1]) == 1:
+                    string = "\t".join(arg)
+                    file.write(":{}:\n{}\n".format(elem[0], string))
+                    continue
+                else:
+                    file.write(":{}:\n".format(elem[0]))
+                    for arg in elem[1]:
+                        file.write("{}\n".format("\t".join(arg)))
+
+
+
 
     @staticmethod
     def get_informations(filename):
