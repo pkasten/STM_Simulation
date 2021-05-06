@@ -9,6 +9,7 @@ import math, time
 import matplotlib.pyplot as plt
 from multiprocessing import Process, Lock, Semaphore
 from multiprocessing.managers import BaseManager
+from My_SXM import My_SXM
 
 
 def test_frame(data_frame):
@@ -80,6 +81,10 @@ if __name__ == "__main__":
     #lo = Lock()
     start = time.perf_counter()
     fn = FilenameGenerator()
+    filename = "Test_SXM_File.sxm"
+    My_SXM.get_informations(filename)
+    #plt.imshow(My_SXM.get_data(filename))
+    #plt.show()
    # print(time.perf_counter() - start)
     #dat_frame = DataFrame(fn)
    # print(time.perf_counter() - start)
@@ -91,7 +96,7 @@ if __name__ == "__main__":
    # print(time.perf_counter() - start)
     #print(dat_frame.has_overlaps())
     #print(time.perf_counter() - start)
-    multi_test(120)
+    #multi_test(120)
     #sd = False
     #while not sd:
     #    start = time.perf_counter()
