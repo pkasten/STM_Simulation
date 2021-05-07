@@ -9,10 +9,14 @@ class FilenameGenerator:
     index_lock = None
     image_folder = cfg.get_image_folder()
     data_folder = cfg.get_data_folder()
+    sxm_folder = cfg.get_sxm_folder()
     im_pre = cfg.get_prefix_image()
     im_suf = cfg.get_suffix_image()
     da_pre = cfg.get_prefix_data()
     da_suf = cfg.get_suffix_data()
+    sx_pre = cfg.get_prefix_sxm()
+    sx_suf = cfg.get_suffix_sxm()
+    #print(im_pre, im_suf, da_pre, da_suf, sx_pre, sx_suf)
 
     class AtomicCounter:
         index = 0
@@ -33,7 +37,8 @@ class FilenameGenerator:
         index = self.generateIndex()
         img = str(os.path.join(self.image_folder, self.im_pre + str(index) + self.im_suf))
         dat = str(os.path.join(self.data_folder, self.da_pre + str(index) + self.da_suf))
-        return img, dat, index
+        sxm = str(os.path.join(self.sxm_folder, self.sx_pre + str(index) + self.sx_suf))
+        return img, dat, sxm, index
 
     def generateIndex(self):
         self.index_lock.acquire()

@@ -22,14 +22,16 @@ initialized = False
 cat_pc = 'computer_settings'
 def_threads = 'threads', os.cpu_count()
 def_images_per_thread = 'images_per_thread', 20
-def_image_folder = 'image_folder', str(os.path.join(os.getcwd(), "bildordner"))
-def_data_folder = 'data_folder', str(os.path.join(os.getcwd(), "data"))
-pc_settings = [def_threads, def_images_per_thread, def_image_folder, def_data_folder]
+def_image_folder = 'Image Folder', str(os.path.join(os.getcwd(), "bildordner"))
+def_data_folder = 'Data Folder', str(os.path.join(os.getcwd(), "data"))
+def_sxm_folder = 'SXM Folder', str(os.path.join(os.getcwd(), "sxm"))
+pc_settings = [def_threads, def_images_per_thread, def_image_folder, def_data_folder, def_sxm_folder]
 
 val_threads = None
 val_images_per_thread = None
 val_image_folder = None
 val_data_folder = None
+val_sxm_folder = None
 
 
 cat_image_basics = 'image_settings'
@@ -37,6 +39,8 @@ def_prefix_image = 'prefix_image', 'Image'
 def_suffix_image = 'suffix_image', '.png'
 def_prefix_data = 'prefix_data', 'Data'
 def_suffix_data = 'suffix_data', '.txt'
+def_prefix_sxm = 'prefix_sxm', 'Image'
+def_suffix_sxm = 'suffix_sxm', '.sxm'
 def_width = 'width', 400
 def_height = 'height', 400
 def_particles = 'no_of_particles', int(def_width[1] * def_height[1] / 16000)
@@ -44,7 +48,8 @@ def_px_overlap = 'pixels_overlap (in px)', 40
 def_anti_aliasing = 'Anti-Aliasing', 1
 def_noise_mu = 'Image-noise_Average', 0
 def_noise_std_deriv = 'Image-noise-Standard_derivation', 0.1 * def_noise_mu[1]
-image_basics_settings = [def_prefix_image, def_suffix_image, def_prefix_data, def_suffix_data, def_width, def_height,
+image_basics_settings = [def_prefix_image, def_suffix_image, def_prefix_data, def_suffix_data, def_prefix_sxm,
+                         def_suffix_sxm, def_width, def_height,
                          def_particles, def_px_overlap, def_anti_aliasing, def_noise_mu, def_noise_std_deriv]
 
 
@@ -52,6 +57,8 @@ val_prefix_image = None
 val_suffix_image = None
 val_prefix_data = None
 val_suffix_data = None
+val_prefix_sxm = None
+val_suffix_sxm = None
 val_width = None
 val_height = None
 val_particles = None
@@ -165,17 +172,21 @@ def update_params():
     global val_angle_range_max, val_angle_range_usage, val_use_crystal_orientation, val_no_of_orientations, val_crystal_orientation_1
     global val_crystal_orientation_2, val_crystal_orientation_3, val_crystal_orientation_4, val_overlap_threshold
     global val_dragging_error, val_raster_angle, val_dragging_speed, val_dragging_possibility, val_doubletip_possibility
+    global val_prefix_sxm, val_suffix_sxm, val_sxm_folder
     val_threads = int(conf[cat_pc][def_threads[0]])
     val_images_per_thread = int(conf[cat_pc][def_images_per_thread[0]])
     val_image_folder = conf[cat_pc][def_image_folder[0]]
     val_data_folder = conf[cat_pc][def_data_folder[0]]
+    val_sxm_folder = conf[cat_pc][def_sxm_folder[0]]
     val_width = int(conf[cat_image_basics][def_width[0]])
     val_height = int(conf[cat_image_basics][def_height[0]])
     val_particles = int(conf[cat_image_basics][def_particles[0]])
     val_prefix_image = conf[cat_image_basics][def_prefix_image[0]]
     val_prefix_data = conf[cat_image_basics][def_prefix_data[0]]
+    val_prefix_sxm = conf[cat_image_basics][def_prefix_sxm[0]]
     val_suffix_image = conf[cat_image_basics][def_suffix_image[0]]
     val_suffix_data = conf[cat_image_basics][def_suffix_data[0]]
+    val_suffix_sxm = conf[cat_image_basics][def_suffix_sxm[0]]
     val_px_overlap = int(conf[cat_image_basics][def_px_overlap[0]])
     val_anti_aliasing = bool(int(conf[cat_image_basics][def_anti_aliasing[0]]))
     val_noise_mu = float(conf[cat_image_basics][def_noise_mu[0]])
@@ -285,6 +296,13 @@ def get_data_folder():
     if not initialized: setupConfigurationManager()
     return val_data_folder
 
+@measureTime
+def get_sxm_folder():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    return val_sxm_folder
+
+
 
 @measureTime
 def print_file():
@@ -345,6 +363,11 @@ def get_prefix_data():
     if not initialized: setupConfigurationManager()
     return val_prefix_data
 
+def get_prefix_sxm():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    return val_prefix_sxm
+
 
 def get_suffix_image():
     global settings_file
@@ -356,6 +379,11 @@ def get_suffix_data():
     global settings_file
     if not initialized: setupConfigurationManager()
     return val_suffix_data
+
+def get_suffix_sxm():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    return val_suffix_sxm
 
 
 def get_px_overlap():

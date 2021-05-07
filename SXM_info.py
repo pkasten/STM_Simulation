@@ -1,5 +1,5 @@
 import configparser as cp
-import os, numpy as np
+import os, numpy as np, datetime
 
 conf = cp.ConfigParser()
 settings_folder = os.getcwd()
@@ -107,13 +107,53 @@ def _writeDefaults():
         with open(settings_file, 'w') as settings:
             conf.write(settings)
 
+def rewrite_file():
+    global settings, settings_file
+    conf[cat] = {x[0]: x[1] for x in settings}
+    try:
+        with open(settings_file, 'w') as settings:
+            conf.write(settings)
+    except FileNotFoundError:
+        try:
+            os.mkdir(settings_folder)
+        except FileExistsError:
+            with open(settings_file, 'w') as settings:
+                settings.write("")
+        with open(settings_file, 'w') as settings:
+            conf.write(settings)
+
 def update_params():
     conf.read(settings_file)
     global settings
     for elem in settings:
         elem[1] = conf[cat][elem[0]]
 
-def get_header_info():
+def get_header_arr():
     return settings
+
+def get_header_dict():
+    return {elem[0]: elem[1] for elem in settings}
+
+def updateTime():
+    global def_REC_TIME
+    global def_REC_DATE
+    new_date = def_REC_DATE[0], [[datetime.date.today().strftime("%d.%m.%y")]]
+    new_time = def_REC_TIME[0], [[print(datetime.datetime.now().strftime("%H:%M:%S"))]]
+    def_REC_TIME = new_time
+    def_REC_DATE = new_date
+
+
+def adjust_to_image(data):
+    global def_SCAN_PIXELS
+    width = np.shape(data)[0]
+    height = np.shape(data)[1]
+    new_sp = def_SCAN_PIXELS[0], [[str(width), str(height)]]
+    def_SCAN_PIXELS = new_sp
+    rewrite_file()
+    update_params()
+
+
+
+
 
 

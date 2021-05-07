@@ -83,13 +83,23 @@ if __name__ == "__main__":
     #lo = Lock()
     start = time.perf_counter()
     fn = FilenameGenerator()
+    #filename = "pySPM_Tests/HOPG-gxy1z1-p2020.sxm"
     #filename = "Test_SXM_File.sxm"
     #with open("SXM_ino.txt", "w") as file:
     #   file.write(My_SXM.get_informations(filename))
+    generate(fn)
     #generate(fn)
     #My_SXM.write_header(os.path.join("pySPM_Tests", "test_header_writer.sxm"))
-    print(My_SXM.get_informations("pySPM_Tests/test_header_writer.sxm"))
-
+    #print(My_SXM.get_informations("pySPM_Tests/test_header_writer.sxm"))
+    #plt.imshow(My_SXM.get_data_test("pySPM_Tests/HOPG-gxy1z1-p2020.sxm"))
+    #plt.show()
+    #data = np.random.random((256, 256))
+    #My_SXM.write_header("Test.sxm")
+    #My_SXM.write_image("Test.sxm", data)
+    #My_SXM.get_data_test(filename)
+    #print(My_SXM.get_informations("Test.sxm"))
+    #plt.imshow(My_SXM.get_data("Test.sxm"))
+    #plt.show()
     evaluateLog()
 
 

@@ -2,13 +2,14 @@ from pySPM.SXM import SXM
 import matplotlib.pyplot as plt
 import numpy as np
 import struct, os, SXM_info
+import Configuration as cfg
 
 class My_SXM():
 
     @staticmethod
     def write_header(filename):
         with open(filename, "w") as file:
-            settings = SXM_info.get_header_info()
+            settings = SXM_info.get_header_arr()
             for elem in settings:
                 arg = elem[1]
                 string = ""
@@ -26,7 +27,125 @@ class My_SXM():
                     for arg in elem[1]:
                         file.write("{}\n".format("\t".join(arg)))
 
+    @staticmethod
+    def write_sxm(filename, data):
 
+
+
+        try:
+            with open(filename, "w") as file:
+                file.write("")
+        except FileNotFoundError:
+            os.mkdir(cfg.get_sxm_folder())
+
+        My_SXM.write_header(filename)
+        My_SXM.write_image(filename, data)
+
+
+    @staticmethod
+    def write_image(filename, image):
+        with open(filename, "ab") as file:
+            file.write(b'\n')
+            file.write(b'\x1a')
+            file.write(b'\x04')
+            header = SXM_info.get_header_dict()
+
+            size = dict(pixels={
+                'x': int(header['SCAN_PIXELS'][0][0]),
+                'y': int(header['SCAN_PIXELS'][0][1])
+            }, real={
+                'x': float(header['SCAN_RANGE'][0][0]),
+                'y': float(header['SCAN_RANGE'][0][1]),
+                'unit': 'm'
+            })
+            im_size = size['pixels']['x'] * size['pixels']['y']
+            print(im_size)
+
+            if header['SCANIT_TYPE'][0][1] == 'MSBFIRST':
+                bitorder = '>'
+            else:
+                bitorder = '<'
+            print(bitorder)
+
+            #length = str(im_size)
+            #print(length)
+            length = '1'
+
+            if header['SCANIT_TYPE'][0][0] == 'FLOAT':
+                d_type = 'f'
+            elif header['SCANIT_TYPE'][0][0] == 'INT':
+                d_type = 'i'
+            elif header['SCANIT_TYPE'][0][0] == 'UINT':
+                d_type = 'I'
+            elif header['SCANIT_TYPE'][0][0] == 'DOUBLE':
+                d_type = 'd'
+            else:
+                print("Error reading SCANIT_TYPE. Unexpected: {}".format(header['SCANIT_TYPE'][0][0]))
+                d_type = 'f'
+            print(d_type)
+
+            print("Shape than: {}".format(np.shape(image)))
+            data = image.reshape(im_size,)
+            print("Shape now: {}".format(np.shape(data)))
+
+            format = bitorder + length + d_type
+            print(format)
+            calced_size = struct.calcsize(format)
+            print(calced_size)
+
+
+            for elem in data:
+                file.write(struct.pack(format, elem))
+
+
+
+
+
+
+
+
+
+    @staticmethod
+    def get_data_test(filename):
+        assert os.path.exists(filename)
+        f = open(filename, 'rb')
+        l = ''
+        key = ''
+        header = {}
+        while l != b':SCANIT_END:':
+            l = f.readline().rstrip()
+            if l[:1] == b':':
+                key = l.split(b':')[1].decode('ascii')
+                header[key] = []
+            else:
+                if l:  # remove empty lines
+                    header[key].append(l.decode('ascii').split())
+
+        while f.read(1) != b'\x1a':
+            pass
+        assert f.read(1) == b'\x04'
+        assert header['SCANIT_TYPE'][0][0] in ['FLOAT', 'INT', 'UINT', 'DOUBLE']
+        data_offset = f.tell()
+        size = dict(pixels={
+            'x': int(header['SCAN_PIXELS'][0][0]),
+            'y': int(header['SCAN_PIXELS'][0][1])
+        }, real={
+            'x': float(header['SCAN_RANGE'][0][0]),
+            'y': float(header['SCAN_RANGE'][0][1]),
+            'unit': 'm'
+        })
+
+        im_size = size['pixels']['x'] * size['pixels']['y']
+
+        data = np.array(struct.unpack('<>'['MSBFIRST' == header['SCANIT_TYPE'][0][1]] + str(im_size) +
+                                      {'FLOAT': 'f', 'INT': 'i', 'UINT': 'I', 'DOUBLE': 'd'}[
+                                          header['SCANIT_TYPE'][0][0]],
+                                      f.read(4 * im_size))).reshape((size['pixels']['y'], size['pixels']['x']))
+        print(struct.unpack('>' + str(im_size) + 'f',
+                                      f.read(4 * im_size)))
+
+        data = np.flipud(data)
+        return data
 
 
     @staticmethod

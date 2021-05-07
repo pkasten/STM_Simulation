@@ -11,6 +11,7 @@ import Configuration as cfg
 import numpy as np
 import matplotlib.pyplot as plt
 from Functions import measureTime
+from My_SXM import My_SXM
 #from Doubled import Double_Frame
 
 
@@ -488,13 +489,13 @@ class DataFrame:
             strings.append(str(part))
         self.text = "\n".join(strings)
 
-    def save(self):
+    def save(self, data=True, image=True, sxm=True):
         if self.img is None:
             #self.createImage_efficient()
             self.get_Image()
         if len(self.text) == 0:
             self.createText()
-        img_path, dat_path, index = self.fn_gen.generate_Tuple()
+        img_path, dat_path, sxm_path, index = self.fn_gen.generate_Tuple()
         #print("Saving No {}".format(index))
         try:
             with open(dat_path, "w") as dat_file:
@@ -504,6 +505,7 @@ class DataFrame:
             with open(dat_path, "w") as dat_file:
                 dat_file.write(self.text)
         self.img.saveImage(img_path)
+        My_SXM.write_sxm(sxm_path, self.img.get_matrix())
 
 
     def hasPoints(self):
@@ -769,90 +771,7 @@ class Double_Frame(DataFrame):
                  #           p = self._get_thatnot_overlaps(maximum_tries)
                   #          self.objects.append(p)
                    # else:
-    #                    for i in range( 4 * cfg.get_particles_per_image()):
-     #                       p = self._get_thatnot_overlaps(maximum_tries)
-      #                      self.objects.append(p)
-       #         # w/ angle, w/o overlapping
-        #        else:
-         #           if amount is not None:
-          #              for i in range(4*amount):
-           #                 self.objects.append(Double_Particle())
-            #        elif coverage is not None:
-             #           while self.coverage() < coverage:
-              #              self.objects.append(Double_Particle())
-               #     else:
-                #        for i in range(4 * cfg.get_particles_per_image()):
-                 #           self.objects.append(Double_Particle())
-            # w/ a#ngle correlation
-    #        else:
-     #           if not overlapping:
-      #              if amount is not None:
-       #                 for i in range(4 * amount):
-        #                    p = self._get_thatnot_overlaps(maximum_tries)
-         #                   p.set_theta(self._calc_angle_for_particle(p))
-          #                  self.objects.append(p)
-           #         elif coverage is not None:
-            #            while self.coverage() < coverage:
-             #               p = self._get_thatnot_overlaps(maximum_tries)
-              #              p.set_theta(self._calc_angle_for_particle(p))
-               #             self.objects.append(p)
-                #    else:
-                 #       for i in range(4 * cfg.get_particles_per_image()):
-                  #          p = self._get_thatnot_overlaps(maximum_tries)
-                   #         p.set_theta(self._calc_angle_for_particle(p))
-                    #        self.objects.append(p)
-                # w/ #angle, w/o overlapping
-     #           else:#
-      #              if amount is not None:
-       #                 for i in range(4 * amount):
-        #                    p = Double_Particle()
-         #                   p.set_theta(self._calc_angle_for_particle(p))
-          #                  self.objects.append(p)
-           #         elif coverage is not None:
-            #            while self.coverage() < coverage:
-             #               p = Double_Particle()
-              #              p.set_theta(self._calc_angle_for_particle(p))
-               #             self.objects.append(p)
-                #    else:
-                 #       for i in range(4 * cfg.get_particles_per_image()):
-                  #          p = Double_Particle()
-                   #         p.set_theta(self._calc_angle_for_particle(p))
-                    #        self.objects.append(p)
-        # use angle r#ange
- #       else:
-  #          if not overlapping:
-   #             if amount is not None:
-    #                for i in range(4 * amount):
-     #                   p = self._get_thatnot_overlaps(maximum_tries)
-      #                  p.set_theta(self._random_angle_range())
-       #                 self.objects.append(p)
-        #        elif coverage is not None:
-         #           while self.coverage() < coverage:
-          #              p = self._get_thatnot_overlaps(maximum_tries)
-           #             p.set_theta(self._random_angle_range())
-            #            self.objects.append(p)
-             #   else:
-              #      for i in range(4 * cfg.get_particles_per_image()):
-               #         p = self._get_thatnot_overlaps(maximum_tries)
-                #        p.set_theta(self._random_angle_range())
-                 #       self.objects.append(p)
-            # w/ a#ngle, w/o overlapping
-#            else:
- #               if amount is not None:
-  #                  for i in range(4 * amount):
-   #                     p = Double_Particle()
-    #                    p.set_theta(self._random_angle_range())
-     #                   self.objects.append(p)
-      #          elif coverage is not None:
-       #             while self.coverage() < coverage:
-        #                p = Double_Particle()
-         #               p.set_theta(self._random_angle_range())
-          #              self.objects.append(p)
-           #     else:
-            #        for i in range(4 * cfg.get_particles_per_image()):
-             #           p = Double_Particle()
-              #          p.set_theta(self._random_angle_range())
-               #         self.objects.append(p)
+
 
     def create_Image_Visualization(self):
         self.img = MyImage()
