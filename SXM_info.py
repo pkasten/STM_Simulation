@@ -1,6 +1,7 @@
 import configparser as cp
 import os, numpy as np, datetime
 
+
 conf = cp.ConfigParser()
 settings_folder = os.getcwd()
 settings_file = str(os.path.join(settings_folder, "spm_info.ini"))
@@ -72,7 +73,7 @@ def_DATA_INFO = "DATA_INFO", [['Channel', 'Name', 'Unit', 'Direction', 'Calibrat
                               ['14', 'Z', 'm', 'both', '1.562E-9', '0.000E+0']]
 def_SCANIT_END = "SCANIT_END", []
 
-settings = [
+defaults = [
     def_NANONIS_VERSION, def_SCANIT_TYPE, def_REC_DATE, def_REC_TIME, def_REC_TEMP, def_ACQ_TIME, def_SCAN_PIXELS,
     def_SCAN_FILE, def_SCAN_TIME, def_SCAN_RANGE, def_SCAN_OFFSET, def_SCAN_ANGLE, def_SCAN_DIR, def_BIAS,
     def_Z_CONTROLLER, def_COMMENT, def_Bias_Bias_V, def_Bias_Calibration_V_V, def_Bias_Offset_V, def_Current_Current_A,
@@ -92,67 +93,147 @@ settings = [
     def_SCANIT_END]
 
 
+def _create_header_dict():
+    return {elem[0]: elem[1] for elem in defaults}
+
+
+storage = _create_header_dict()
+
+def get_header_dict():
+    global storage
+    return storage
+
 def _writeDefaults():
-    global settings, settings_file
-    conf[cat] = {x[0]: x[1] for x in settings}
+    global defaults, settings_file
+    conf[cat] = {x[0]: x[1] for x in defaults}
     try:
-        with open(settings_file, 'w') as settings:
-            conf.write(settings)
+        with open(settings_file, 'w') as defaults:
+            conf.write(defaults)
     except FileNotFoundError:
         try:
             os.mkdir(settings_folder)
         except FileExistsError:
-            with open(settings_file, 'w') as settings:
-                settings.write("")
-        with open(settings_file, 'w') as settings:
-            conf.write(settings)
+            with open(settings_file, 'w') as defaults:
+                defaults.write("")
+        with open(settings_file, 'w') as defaults:
+            conf.write(defaults)
+
 
 def rewrite_file():
-    global settings, settings_file
-    conf[cat] = {x[0]: x[1] for x in settings}
+    global settings_file
+    conf[cat] = {key: storage[key] for key in storage.keys()}
     try:
-        with open(settings_file, 'w') as settings:
-            conf.write(settings)
+        with open(settings_file, 'w') as settings_fd:
+            conf.write(settings_fd)
     except FileNotFoundError:
         try:
             os.mkdir(settings_folder)
         except FileExistsError:
-            with open(settings_file, 'w') as settings:
-                settings.write("")
-        with open(settings_file, 'w') as settings:
-            conf.write(settings)
+            with open(settings_file, 'w') as settings_fd:
+                settings_fd.write("")
+        with open(settings_file, 'w') as settings_fd:
+            conf.write(settings_fd)
+
 
 def update_params():
     conf.read(settings_file)
-    global settings
-    for elem in settings:
-        elem[1] = conf[cat][elem[0]]
+    global storage
+    for key in storage.keys():
+        storage[key] = parse_arg(conf[cat][key])
+
+def parse_arg(string):
+    if string == '[]':
+        return []
+    assert string[0] == '[' and string[1] == '['
+    args = []
+    inner_args = []
+    current = ""
+    brace_open = False
+    quote_open = False
+    skipnext = False
+    for i in range(1, len(string) - 1):
+        if skipnext:
+            skipnext = False
+            continue
+        c = string[i]
+        if c == '\\':
+            skipnext = True
+            current += "\\"
+            continue
+        elif c == '[':
+            brace_open = True
+        elif c == ']':
+            brace_open = False
+        elif c == '\'':
+            if not quote_open:
+                quote_open = True
+            else:
+                quote_open = False
+                current = current.strip()
+                inner_args.append(current)
+                current = ""
+        elif c == ',':
+            if brace_open:
+                pass
+            else:
+                args.append(inner_args)
+                inner_args = []
+        else:
+            current += c
+    args.append(inner_args)
+    for set in args:
+        for elem in set:
+            elem.strip()
+    #print("Parsed: {}".format(args))
+    return args
+
+
+
 
 def get_header_arr():
-    return settings
+    header = get_header_dict()
+    return [(key, header[key]) for key in header.keys()]
 
-def get_header_dict():
-    return {elem[0]: elem[1] for elem in settings}
 
 def updateTime():
-    global def_REC_TIME
+    global def_REC_TIME, storage
     global def_REC_DATE
-    new_date = def_REC_DATE[0], [[datetime.date.today().strftime("%d.%m.%y")]]
-    new_time = def_REC_TIME[0], [[print(datetime.datetime.now().strftime("%H:%M:%S"))]]
-    def_REC_TIME = new_time
-    def_REC_DATE = new_date
+    storage[def_REC_DATE[0]] = [[str(datetime.date.today().strftime("%d.%m.%y"))]]
+    storage[def_REC_TIME[0]] = [[str(datetime.datetime.now().strftime("%H:%M:%S"))]]
+    rewrite_file()
+    update_params()
+    #print("update time Storage: {}".format(storage[def_REC_TIME[0]]))
+    # Wirting costs too much performacne i think
+
+def get_time():
+    global storage, def_REC_TIME
+    return storage[def_REC_TIME[0]]
 
 
-def adjust_to_image(data):
-    global def_SCAN_PIXELS
+def set_dimensions(data): #ToDo. Height and width correct?
+    global def_SCAN_PIXELS, storage
     width = np.shape(data)[0]
     height = np.shape(data)[1]
-    new_sp = def_SCAN_PIXELS[0], [[str(width), str(height)]]
-    def_SCAN_PIXELS = new_sp
+    if storage[def_SCAN_PIXELS[0]][0][0] == str(width) and storage[def_SCAN_PIXELS[0]][0][1] == str(height):
+        return
+    storage[def_SCAN_PIXELS[0]][0][0] = str(width)
+    storage[def_SCAN_PIXELS[0]][0][1] = str(height)
+
     rewrite_file()
     update_params()
 
+def set_filename(filename):
+    storage[def_SCAN_FILE[0]][0][0] = os.getcwd()
+    storage[def_SCAN_FILE[0]][0][1] = filename[len(str(os.getcwd())):]
 
+    rewrite_file()
+    update_params()
+
+def adjust_to_image(data, filename):
+    pass
+    set_filename(filename)
+    set_dimensions(data)
+    updateTime()
 
 
 

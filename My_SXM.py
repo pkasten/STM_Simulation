@@ -30,8 +30,10 @@ class My_SXM():
     @staticmethod
     def write_sxm(filename, data):
 
-
-
+        #print(SXM_info.get_time())
+        SXM_info.adjust_to_image(data, filename)
+        #print(SXM_info.get_time())
+        #print(SXM_info.get_header_dict()["REC_TIME"])
         try:
             with open(filename, "w") as file:
                 file.write("")
@@ -48,6 +50,7 @@ class My_SXM():
             file.write(b'\n')
             file.write(b'\x1a')
             file.write(b'\x04')
+
             header = SXM_info.get_header_dict()
 
             size = dict(pixels={
@@ -59,13 +62,13 @@ class My_SXM():
                 'unit': 'm'
             })
             im_size = size['pixels']['x'] * size['pixels']['y']
-            print(im_size)
+            #print(im_size)
 
             if header['SCANIT_TYPE'][0][1] == 'MSBFIRST':
                 bitorder = '>'
             else:
                 bitorder = '<'
-            print(bitorder)
+            #print(bitorder)
 
             #length = str(im_size)
             #print(length)
@@ -82,16 +85,16 @@ class My_SXM():
             else:
                 print("Error reading SCANIT_TYPE. Unexpected: {}".format(header['SCANIT_TYPE'][0][0]))
                 d_type = 'f'
-            print(d_type)
+            #print(d_type)
 
-            print("Shape than: {}".format(np.shape(image)))
+            #print("Shape than: {}".format(np.shape(image)))
             data = image.reshape(im_size,)
-            print("Shape now: {}".format(np.shape(data)))
+            #print("Shape now: {}".format(np.shape(data)))
 
             format = bitorder + length + d_type
-            print(format)
+            #print(format)
             calced_size = struct.calcsize(format)
-            print(calced_size)
+            #print(calced_size)
 
 
             for elem in data:
@@ -236,3 +239,13 @@ class My_SXM():
 
 
         return data
+
+
+    @staticmethod
+    def show_data(filename):
+        #print(My_SXM.get_informations(filename))
+        plt.imshow(My_SXM.get_data(filename))
+        plt.show()
+
+    #@staticmethod
+    #def test():

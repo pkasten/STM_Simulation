@@ -1,6 +1,9 @@
 import os
 
+import numpy as np
+
 import Configuration as conf
+import SXM_info
 from Images import MyImage
 from Particle import Particle
 from FilenameGenerator import FilenameGenerator
@@ -87,15 +90,32 @@ if __name__ == "__main__":
     #filename = "Test_SXM_File.sxm"
     #with open("SXM_ino.txt", "w") as file:
     #   file.write(My_SXM.get_informations(filename))
-    generate(fn)
+    #generate(fn)
+    #data = np.random.random((256, 256))
+    #My_SXM.write_sxm("Test2.sxm", data)
+    #My_SXM.write_header("Test4.sxm")
+    #My_SXM.write_image("Test4.sxm", data)
+    #My_SXM.show_data("Test2.sxm")
     #generate(fn)
     #My_SXM.write_header(os.path.join("pySPM_Tests", "test_header_writer.sxm"))
     #print(My_SXM.get_informations("pySPM_Tests/test_header_writer.sxm"))
     #plt.imshow(My_SXM.get_data_test("pySPM_Tests/HOPG-gxy1z1-p2020.sxm"))
     #plt.show()
-    #data = np.random.random((256, 256))
-    #My_SXM.write_header("Test.sxm")
-    #My_SXM.write_image("Test.sxm", data)
+    #SXM_info.adjust_to_image(data, "Test3.sxm")
+    #My_SXM.write_header("Test3.sxm")
+    #My_SXM.write_image("Test3.sxm", data)
+    #My_SXM.show_data("Test3.sxm")
+    #generate(fn)
+    #data = np.random.random((300, 300))
+    #My_SXM.write_sxm("Test4.sxm", data)
+    generate(fn)
+
+    My_SXM.show_data("sxm/Image1.sxm")
+    #SXM_info.adjust_to_image(data, "Test4.sxm")
+    #My_SXM.write_header("Test4.sxm")
+    #My_SXM.write_image("Test4.sxm", data)
+    #My_SXM.show_data("Test4.sxm")
+    #My_SXM.show_data("Test4.sxm")
     #My_SXM.get_data_test(filename)
     #print(My_SXM.get_informations("Test.sxm"))
     #plt.imshow(My_SXM.get_data("Test.sxm"))
