@@ -108,9 +108,10 @@ if __name__ == "__main__":
     #generate(fn)
     #data = np.random.random((300, 300))
     #My_SXM.write_sxm("Test4.sxm", data)
-    generate(fn)
 
-    My_SXM.show_data("sxm/Image1.sxm")
+
+    generate(fn)
+    #My_SXM.show_data("sxm/Image1.sxm")
     #SXM_info.adjust_to_image(data, "Test4.sxm")
     #My_SXM.write_header("Test4.sxm")
     #My_SXM.write_image("Test4.sxm", data)
@@ -120,6 +121,7 @@ if __name__ == "__main__":
     #print(My_SXM.get_informations("Test.sxm"))
     #plt.imshow(My_SXM.get_data("Test.sxm"))
     #plt.show()
+
     evaluateLog()
 
 
