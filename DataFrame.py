@@ -87,7 +87,28 @@ class DataFrame:
         return False
 
     #returns random particle, that does not overlap with any other
-    def _get_thatnot_overlaps(self, maximumtries=1000):
+    def _get_thatnot_overlaps(self, maximumtries=1000, calcangle=False):
+        if calcangle:
+            if len(self.objects) == 0:
+                p = Particle()
+                p.set_theta(self._calc_angle_for_particle(p))
+                return p
+            p = Particle()
+            p.set_theta(self._calc_angle_for_particle(p))
+            for i in range(maximumtries):
+                if self._overlaps_any(p):
+                    # print("Retry")
+                    p = Particle()
+                    p.set_theta(self._calc_angle_for_particle(p))
+                else:
+                    return p
+            print("MaxTries Exhausted")
+            return p
+
+
+
+
+
         if len(self.objects) == 0:
             return Particle()
         p = Particle()
@@ -199,6 +220,7 @@ class DataFrame:
     def addParticles(self, amount=None, coverage=None, overlapping=False, maximum_tries=1000):
         #widthout angle correlation
         self.passed_args = (amount, coverage, overlapping, maximum_tries)
+        #print("{}, {}, {}".format(self.use_range, self.angle_char_len, overlapping))
         if not self.use_range:
             if self.angle_char_len == 0:
                 if not overlapping:
@@ -255,8 +277,8 @@ class DataFrame:
                                 p = self.get_dragged_that_mot_overlaps(maximum_tries, setangle=True)
                                 self.objects.append(p)
                             else:
-                                p = self._get_thatnot_overlaps(maximum_tries)
-                                p.set_theta(self._calc_angle_for_particle(p))
+                                p = self._get_thatnot_overlaps(maximum_tries, calcangle=True)
+                                #p.set_theta(self._calc_angle_for_particle(p))
                                 self.objects.append(p)
                     elif coverage is not None:
                         while self.coverage() < coverage:
@@ -264,17 +286,18 @@ class DataFrame:
                                 p = self.get_dragged_that_mot_overlaps(maximum_tries, setangle=True)
                                 self.objects.append(p)
                             else:
-                                p = self._get_thatnot_overlaps(maximum_tries)
-                                p.set_theta(self._calc_angle_for_particle(p))
+                                p = self._get_thatnot_overlaps(maximum_tries, calcangle=True)
+                                #p.set_theta(self._calc_angle_for_particle(p))
                                 self.objects.append(p)
                     else:
+                        #print("Normal") Normaldurchlauf
                         for i in range(cfg.get_particles_per_image()):
                             if random.random() < self.dragging_possibility:
                                 p = self.get_dragged_that_mot_overlaps(maximum_tries, setangle=True)
                                 self.objects.append(p)
                             else:
-                                p = self._get_thatnot_overlaps(maximum_tries)
-                                p.set_theta(self._calc_angle_for_particle(p))
+                                p = self._get_thatnot_overlaps(maximum_tries, calcangle=True)
+                                #p.set_theta(self._calc_angle_for_particle(p))
                                 self.objects.append(p)
                 #w/ angle, w overlapping
                 else:
@@ -446,9 +469,11 @@ class DataFrame:
     def get_Image(self):
         if random.random() < self.double_tip_poss:
             #print("Double Tipping")
-            strength = random.random()
-            rel_dist = random.random()
+            strength = 0.3 + 0.5 * random.random()
+            #print(strength)
+            rel_dist = 0.1 * random.random() #ToDO: Let loose
             angle = 2 * np.pi * random.random()
+            #angle = 0
             doubled_frame = Double_Frame(self.fn_gen, strength, rel_dist, angle)
             #print("Created Double Frame")
             doubled_frame.addParticles(self.passed_args[0], self.passed_args[1], self.passed_args[2], self.passed_args[3])
@@ -506,6 +531,8 @@ class DataFrame:
                 dat_file.write(self.text)
         self.img.saveImage(img_path)
         My_SXM.write_sxm(sxm_path, self.img.get_matrix())
+        if self.has_overlaps():
+            print("Overlaps detected @ {}".format(index))
 
 
     def hasPoints(self):
@@ -522,7 +549,10 @@ class DataFrame:
     def has_overlaps(self):
         for i in range(len(self.objects)):
             for j in range(i):
+                #print("Testing overlap {} - {}".format(i, j))
                 if self.objects[i].true_overlap(self.objects[j]):
+                    print("Testing overlap {} - {}".format(i, j))
+                    print("i: x={}, y={}, dg={}; j: x={}, y={}, dg={}".format(self.objects[i].get_x(), self.objects[i].get_y(), self.objects[i].dragged, self.objects[j].get_x(), self.objects[j].get_y(), self.objects[j].dragged))
                     return True
         return False
 

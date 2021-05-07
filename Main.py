@@ -80,7 +80,6 @@ class Generator(Process):
 
 
 
-
 if __name__ == "__main__":
     clearLog()
     #lo = Lock()
@@ -109,8 +108,27 @@ if __name__ == "__main__":
     #data = np.random.random((300, 300))
     #My_SXM.write_sxm("Test4.sxm", data)
 
+    #dat_frame = DataFrame(fn)
+    #generate(fn)
+    #a = Particle(200, 200, 0)
+    #b = Particle(230, 200, 0.3)
+    #dat_frame.addParticle(a)
+    #dat_frame.addParticle(b)
+    #dat_frame.get_Image()
+    #dat_frame.save()
+    #print(dat_frame.has_overlaps())
+    #print(a.true_overlap(b))
+    #print(1)
+    #generate(fn)
+    #print(2)
+    #generate(fn)
+    #print(3)
+    #for i in range(10):
+    #    generate(fn)
+    multi_test(1800
+               )
 
-    generate(fn)
+    #generate(fn)
     #My_SXM.show_data("sxm/Image1.sxm")
     #SXM_info.adjust_to_image(data, "Test4.sxm")
     #My_SXM.write_header("Test4.sxm")
