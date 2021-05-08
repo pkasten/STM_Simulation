@@ -468,7 +468,7 @@ class DataFrame:
 
     def get_Image(self):
         if random.random() < self.double_tip_poss:
-            #print("Double Tipping")
+            print("Double Tipping")
             strength = 0.3 + 0.5 * random.random()
             #print(strength)
             rel_dist = 0.1 * random.random() #ToDO: Let loose
@@ -521,6 +521,7 @@ class DataFrame:
         if len(self.text) == 0:
             self.createText()
         img_path, dat_path, sxm_path, index = self.fn_gen.generate_Tuple()
+        #print("Saving: {}".format(index))
         #print("Saving No {}".format(index))
         try:
             with open(dat_path, "w") as dat_file:

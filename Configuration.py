@@ -456,12 +456,25 @@ def get_angle_stdderiv():
     global settings_file
     if not initialized: setupConfigurationManager()
     return val_angle_stdderiv
+def set_angle_stdderiv(sigmea):
+    if not initialized: setupConfigurationManager()
+    conf[cat_particle_properties][def_angle_stdderiv[0]] = str(sigmea)
+    with open(settings_file, "w") as settings:
+        conf.write(settings)
+    update_params()
 
 
 def get_angle_char_len():
     global settings_file
     if not initialized: setupConfigurationManager()
     return val_angle_characteristic_length
+
+def set_angle_char_len(l):
+    if not initialized: setupConfigurationManager()
+    conf[cat_particle_properties][def_angle_characteristic_length[0]] = str(l)
+    with open(settings_file, "w") as settings:
+        conf.write(settings)
+    update_params()
 
 
 def get_angle_range_min():

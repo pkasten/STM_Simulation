@@ -196,3 +196,4 @@ if __name__ == "__main__":
         for pr in runningProcesses:
             pr.stopNow()
     evaluateLog()
+

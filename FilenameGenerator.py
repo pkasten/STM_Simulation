@@ -25,6 +25,9 @@ class FilenameGenerator:
             self.index = self.index + 1
             return self.index
 
+        def get(self):
+            return self.index
+
     def __init__(self, lock=None):
         self.index = 0
         if lock is None:
@@ -45,3 +48,12 @@ class FilenameGenerator:
         index = self.counter.incAndGet()
         self.index_lock.release()
         return index
+
+    def peekIndex(self):
+        self.index_lock.acquire()
+        index = self.counter.get()
+        self.index_lock.release()
+        return self.index
+
+
+

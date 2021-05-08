@@ -66,6 +66,20 @@ def multi_test(t):
     for gen in gens:
         gen.kill()
 
+def multi_test_fn(t, fgen):
+
+    fn_generator = fgen
+    # fn_gen = FilenameGenerator(lo)
+    gens = []
+    for i in range(cfg.get_threads()):
+        gens.append(Generator(fn_generator))
+    for gen in gens:
+        gen.start()
+
+    time.sleep(t)
+    for gen in gens:
+        gen.kill()
+
 
 class Generator(Process):
     def __init__(self, fn_gen):
@@ -75,8 +89,53 @@ class Generator(Process):
 
 
     def run(self):
+        #i = 0
         while True:
+            #i+= 1
+            #print("{} running for {}th time".format(str(self), i))
             generate(self.fn_gen)
+
+def test_Length_and_Sigma():
+    BaseManager.register('FilenameGenerator', FilenameGenerator)
+    filemanager = BaseManager()
+    filemanager.start()
+    fn_generator = filemanager.FilenameGenerator()
+    l = 0.001
+    inc = 0.001
+    while l < 3:
+        cfg.set_angle_char_len(l)
+        testStdderiv(fn_generator, l)
+        if inc > 1:
+            dinc = 0.2
+        elif inc > 0.1:
+            dinc = 0.01
+        else:
+            dinc = 0.002
+        inc += dinc
+        l += inc
+
+
+def testStdderiv(fn_gen, l):
+    fn = fn_gen
+    s = 0.005
+    inc = 0.01
+    while s < 100:
+        cfg.set_angle_stdderiv(s)
+        print("Sigma = {}, l={} with Index {}".format(s, l, fn.generateIndex()))
+        multi_test_fn(8, fn)
+        if inc >= 2:
+            dinc = 30
+        elif inc >= 10:
+            dinc = 6
+        elif inc > 1:
+            dinc = 0.1
+        elif inc > 0.1:
+            dinc = 0.2
+        else:
+            dinc = 0.02
+        inc += dinc
+        s += inc
+        #print(s)
 
 
 
@@ -107,7 +166,7 @@ if __name__ == "__main__":
     #generate(fn)
     #data = np.random.random((300, 300))
     #My_SXM.write_sxm("Test4.sxm", data)
-
+    multi_test(180)
     #dat_frame = DataFrame(fn)
     #generate(fn)
     #a = Particle(200, 200, 0)
@@ -125,9 +184,7 @@ if __name__ == "__main__":
     #print(3)
     #for i in range(10):
     #    generate(fn)
-    multi_test(1800
-               )
-
+    #multi_test(30)
     #generate(fn)
     #My_SXM.show_data("sxm/Image1.sxm")
     #SXM_info.adjust_to_image(data, "Test4.sxm")
