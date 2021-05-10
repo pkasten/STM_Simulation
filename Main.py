@@ -166,12 +166,37 @@ if __name__ == "__main__":
     #generate(fn)
     #data = np.random.random((300, 300))
     #My_SXM.write_sxm("Test4.sxm", data)
-    multi_test(180)
-    #dat_frame = DataFrame(fn)
-    #generate(fn)
-    #a = Particle(200, 200, 0)
-    #b = Particle(230, 200, 0.3)
+    def deg(x):
+        return x * np.pi / 180
+
+    dat_frame = DataFrame(fn)
+    #for i in range(100):
+    #    generate(fn)
+    #a = Particle(200, 200, deg(110))
+    #b = Particle(215, 230, deg(180))
     #dat_frame.addParticle(a)
+    #dat_frame.addParticle(b)
+    #print("A overlaps b: {}".format(a.true_overlap(b)))
+    #print("DF has overlaps: {}".format(dat_frame.has_overlaps()))
+    #dat_frame.get_Image()
+    #dat_frame.save()
+
+    #dat_frame.addParticle(Particle(100, 100, 0.5))
+    dat_frame.calc_potential_map()
+    dat_frame.add_at_optimum_energy()
+    dat_frame.add_at_optimum_energy([200, 220, deg(180)])
+    dat_frame.add_at_optimum_energy([200, 300, deg(180)])
+    dat_frame.add_at_optimum_energy([250, 240, deg(180)])
+    dat_frame.get_Image()
+    dat_frame.save()
+
+    #dat_frame.potential_map = dat_frame.calc_potential_map()
+    #for i in range(20):
+    #    print(i)
+    #    dat_frame.add_at_optimum_energy()
+    #    dat_frame.potential_map = dat_frame.calc_potential_map()
+    #    dat_frame.get_Image()
+    #    dat_frame.save(sxm=False, data=False)
     #dat_frame.addParticle(b)
     #dat_frame.get_Image()
     #dat_frame.save()

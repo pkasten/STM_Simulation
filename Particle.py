@@ -3,6 +3,7 @@ import Configuration as cfg
 import numpy as np
 from Functions import turnMatrix
 from PIL import Image
+from Charge import Charge
 from scipy.special import erf
 import matplotlib.pyplot as plt
 
@@ -45,6 +46,19 @@ class Particle:
             self.img = Image.open(cfg.get_image_path())
             self.pixels = self.img.convert("L").load()
             self.fromImage = True
+        self.charges = []
+        self.calc_charges()
+
+    def calc_charges(self):
+        #Dipol
+
+        q_plus = Charge(self.x + self.length * 0.5 * np.sin(self.theta), self.y + self.length * 0.5 * np.cos(self.theta), 1)
+        q_minus = Charge(self.x - self.length * 0.5 * np.sin(self.theta), self.y - self.length * 0.5 * np.cos(self.theta), -1)
+        self.charges = []
+        self.charges.append(q_plus)
+        self.charges.append(q_minus)
+
+
 
     def toMatrix(self):
         print("Deprecated 1231453")
@@ -54,6 +68,8 @@ class Particle:
                 matrix[i, j] = self.visualize_pixel(i - self.x, j - self.y)  # ToDo: Stick
 
         return matrix
+
+
 
     def efficient_Matrix(self):
         eff_matrix = np.zeros((2 * self.effect_range, 2 * self.effect_range))
@@ -159,6 +175,8 @@ class Particle:
         lower_y = -self.length / 2
         upper_y = self.length - self.length / 2
 
+        top_fak = 0.7 #ToDO: Remove bzw 1
+
         if x < left_x - self.fermi_range_w or \
                 y < lower_y - self.fermi_range_h or \
                 x > right_x + self.fermi_range_w or \
@@ -168,11 +186,11 @@ class Particle:
         elif x < 0 and y < 0:
             return self._color(self.height) * self._fermi(x, left_x, y, lower_y)
         elif x < 0 and y >= 0:
-            return self._color(self.height) * self._fermi(x, left_x, y, upper_y)
+            return top_fak * self._color(self.height) * self._fermi(x, left_x, y, upper_y)
         elif x >= 0 and y < 0:
             return self._color(self.height) * self._fermi(x, right_x, y, lower_y)
         elif x >= 0 and y >= 0:
-            return self._color(self.height) * self._fermi(x, right_x, y, upper_y)
+            return top_fak * self._color(self.height) * self._fermi(x, right_x, y, upper_y)
         else:
             print(x, y)
         raise NotImplementedError
@@ -207,17 +225,29 @@ class Particle:
     def get_y(self):
         return self.y
 
+    def set_x(self, x):
+        self.x = x
+        self.calc_charges()
+
+    def set_y(self, y):
+        self.y = y
+        self.calc_charges()
+
     def get_theta(self):
         return self.theta
 
     def set_theta(self, theta):
         self.theta = theta
+        self.calc_charges()
 
     def set_length(self, length):
         self.length = length
 
     def set_height(self, height):
         self.height = height
+
+    def get_charges(self):
+        return self.charges
 
     def get_dimension(self):
         return max(self.width, self.length)
@@ -266,8 +296,14 @@ class Particle:
             return ret1 or ret2 or ret3 or ret4
 
     def _eval_overlap_matrizes(self, mat1, x1, y1, mat2, x2, y2):
+        #print(np.max(mat1), np.max(mat2))
+        #plt.imshow(mat1)
+        #plt.show()
+        #plt.imshow(mat2)
+        #plt.show()
         dx = int(x2 - x1)
         dy = int(y2 - y1)
+        #print(dx, dy)
 
 
         if np.sqrt(np.square(dx) + np.square(dy)) > np.sqrt(2) * (
@@ -275,8 +311,8 @@ class Particle:
             #print("Out of Range")
             return False
         else:
-            thismat = mat1
-            othmat = mat2
+            thismat = mat2
+            othmat = mat1
             # print("Thismat")
             # plt.imshow(thismat)
             # plt.show()

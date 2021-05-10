@@ -12,6 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from Functions import measureTime
 from My_SXM import My_SXM
+import scipy.optimize as opt
 #from Doubled import Double_Frame
 
 
@@ -46,6 +47,9 @@ class DataFrame:
         self.crystal_directions = cfg.get_crystal_orientations_array()
         if self.use_crystal_orientations:
             self.angle_char_len = 4000
+        self.potential_map = self.calc_potential_map()
+        self.overlapping_energy = 1000
+        self.overlapping_threshold = cfg.get_overlap_threshold()
 
     #returns iterator over Particles
     def getIterator(self):
@@ -431,6 +435,173 @@ class DataFrame:
         self.img.addMatrix(matrix)
         #self.img.updateImage()
 
+    def calc_potential_map(self):
+
+
+
+        #if len(self.objects) == 0:
+        #    return np.zeros((self.img_width, self.img_height))
+
+        #print("Calcing pot map")
+        charges = []
+        pot = np.zeros((self.img_width, self.img_height))
+
+        for part in self.objects:
+            for q in part.get_charges():
+                #print("Anzahl an charges: {}".format(len(part.get_charges())))
+                charges.append(q)
+
+        #print("Creating map")
+        #print("len(Charges): {}".format(len(charges)))
+        #print("len(objy): {}".format(len(self.objects)))
+        for i in range(self.img_width):
+            for j in range(self.img_height):
+                for q in charges:
+                    #print(i, j)
+                    pot[i, j] += q.calc_Potential(i, j)
+
+        #self.get_Image()
+
+        #mat = self.img.get_matrix()
+        #plt.imshow(mat)
+        #plt.show()
+        #for i in range(self.img_width):
+        #    for j in range(self.img_height): #TODO: Check if Overlaps
+        #        if mat[i, j] > self.overlapping_threshold:
+        #            pot[i, j] = self.overlapping_energy
+
+        #print("Returning map")
+        #plt.imshow(pot)
+        #plt.show()
+        #plt.imshow(self.img.get_matrix())
+        #plt.show()
+
+        return pot
+
+    def calc_pot_Energy_for_particle(self, part, mapchange=False):
+        print("Deprecated 4641635")
+        if mapchange or self.potential_map is None:
+            self.potential_map = self.calc_potential_map()
+        charges = part.get_charges()
+        #pot_map = self.calc_potential_map()
+        e_pot = 0
+        for charge in charges:
+            try:
+                e_pot += charge.q * self.potential_map[int(charge.x), int(charge.y)] #ToDo: Not round but scale by surrrounding
+            except IndexError:
+                print("calc_pot_Energy_for_particle for x={}, y={}".format(int(charge.x), int(charge.y)))
+
+        e_pot += self.is_overlapping(part)
+
+        return e_pot
+
+    def is_overlapping(self, part):
+
+        for p in self.objects:
+            if p.true_overlap(part):
+                return self.overlapping_energy
+        return 0
+
+    def energy_function(self, x, y, theta):
+        #Only for diploe
+        lenge = 60
+        x_plus = int(x + 0.5 * lenge * np.sin(theta))
+        y_plus = int(y + 0.5 * lenge * np.cos(theta))
+        x_minus = int(x - 0.5 * lenge * np.sin(theta))
+        y_minus = int(y - 0.5 * lenge * np.cos(theta)) #ToDo: nicht int sonders berechnen
+        #if len(x) > 1:
+        #    e = []
+        #    for i in range(len(x)):
+        #        e.append(self.potential_map[x_plus[i], y_plus[i]] - self.potential_map[x_minus[i], y_minus[i]])
+        #if self._overlaps_any(Particle(x, y, theta)): #ToDo Readd
+        #    return self.overlapping_energy
+        if(x_plus < 0 or x_minus < 0 or y_minus < 0 or y_plus < 0):
+            return self.overlapping_energy
+        try:
+            a1 = self.potential_map[x_plus, y_plus]
+            a2 = - self.potential_map[x_minus, y_minus]
+            #if np.abs(a1) > self.overlapping_energy / 2 or np.abs(a2) > self.overlapping_energy / 2:
+            #    return self.overlapping_energy
+            #else:
+            #print(a1 - a2)
+            print(a1)
+            print(a2)
+            return a1 + a2
+        except IndexError:
+            return self.overlapping_energy
+
+
+    def opimizable_energy_function(self, x):
+        return self.energy_function(x[0], x[1], x[2])
+
+
+    def add_at_optimum_energy(self, initvals=None): #ToDo: Include crystal structure
+
+        #if len(self.objects) == 0:
+        #    print("Hi")
+        #    self.objects.append(Particle(self.img_width/2, self.img_height/2, 0))
+        #    self.potential_map = self.calc_potential_map()
+        #    return
+
+        #SCIPY
+
+        #initvasl = [self.img_width * random.random(), self.img_height * random.random(), 2 * np.pi * random.random()]
+        if initvals is None:
+            initvasl = [200, 200, np.pi]
+        else:
+            initvasl = initvals
+        #print(fmin(self.opimizable_energy_function, np.array([200,100,0])))
+        vals = opt.fmin(self.opimizable_energy_function, initvasl)
+        print(vals)
+        p = Particle(vals[0], vals[1], vals[2])
+        self.objects.append(p)
+        self.potential_map = self.calc_potential_map()
+        plt.imshow(self.potential_map)
+        plt.show()
+
+        #plt.imshow(self.potential_map)
+        #plt.show()
+
+        #x = 0
+        #y = 0
+        #theta = 0
+        #p = Particle(x, y, theta)
+        #dx = 80
+        #dtheta = np.pi / 2
+        #dy = 80
+        #thetas = []
+        #energies = []
+        #for a in range(4):
+        #    thetas.append(a * dtheta)
+
+        #for x in range(0, self.img_width, dx):
+        #    for y in range(0, self.img_height, dy):
+        #        for theta in thetas:
+        #            p.set_x(x)
+        #            p.set_y(y)
+        #            p.set_theta(theta)
+        #            e_pot = self.calc_pot_Energy_for_particle(p, mapchange=False)
+        #            #
+        #            print(e_pot, x, y, theta)
+        #            energies.append((e_pot, x, y, theta))
+
+        #print("Calced Es")
+        #minimum_e = 15614561
+        #min_args = 0,0,0,0
+        #for e in energies:
+         #   if e[0] < minimum_e:
+         #       min_args = e
+         #       minimum_e = e[0]
+
+        #p.set_x(min_args[1])
+        #p.set_y(min_args[2])
+        #p.set_theta(min_args[3])
+        #self.objects.append(p)
+        #print("Appended at min: {}".format(min_args))#
+
+        #self.potential_map = self.calc_potential_map()
+        #print("Calced Map")
+
     def create_Image_Visualization(self):
         self.img = MyImage()
         width = self.img_width
@@ -532,8 +703,8 @@ class DataFrame:
                 dat_file.write(self.text)
         self.img.saveImage(img_path)
         My_SXM.write_sxm(sxm_path, self.img.get_matrix())
-        if self.has_overlaps():
-            print("Overlaps detected @ {}".format(index))
+        #if self.has_overlaps():
+            #print("Overlaps detected @ {}".format(index))
 
 
     def hasPoints(self):
@@ -552,8 +723,8 @@ class DataFrame:
             for j in range(i):
                 #print("Testing overlap {} - {}".format(i, j))
                 if self.objects[i].true_overlap(self.objects[j]):
-                    print("Testing overlap {} - {}".format(i, j))
-                    print("i: x={}, y={}, dg={}; j: x={}, y={}, dg={}".format(self.objects[i].get_x(), self.objects[i].get_y(), self.objects[i].dragged, self.objects[j].get_x(), self.objects[j].get_y(), self.objects[j].dragged))
+                    #print("Testing overlap {} - {}".format(i, j))
+                    #print("i: x={}, y={}, dg={}; j: x={}, y={}, dg={}".format(self.objects[i].get_x(), self.objects[i].get_y(), self.objects[i].dragged, self.objects[j].get_x(), self.objects[j].get_y(), self.objects[j].dragged))
                     return True
         return False
 
