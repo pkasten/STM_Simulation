@@ -1,4 +1,5 @@
 import numpy as np
+import functools
 
 class Charge:
 
@@ -10,6 +11,7 @@ class Charge:
         self.maxpotential = 1
         self.r = 1
 
+    @functools.lru_cache
     def calc_Potential(self, x, y):
         if self.x == x and self.y == y:
             return self.q * self.maxpotential

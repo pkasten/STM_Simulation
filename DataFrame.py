@@ -14,6 +14,7 @@ from Functions import measureTime
 from My_SXM import My_SXM
 import scipy.optimize as opt
 #from Doubled import Double_Frame
+from Charge import Charge
 
 
 class DataFrame:
@@ -51,6 +52,8 @@ class DataFrame:
         self.overlapping_energy = 1000
         self.overlapping_threshold = cfg.get_overlap_threshold()
         self.part_laenge = cfg.get_part_length()
+        self.oldPotential = []
+        self.add_To_Potential = []
 
     #returns iterator over Particles
     def getIterator(self):
@@ -442,15 +445,39 @@ class DataFrame:
         #self.img.updateImage()
 
     def calc_potential_map(self):
+        start = time.perf_counter()
+        try:
+            print(self.oldPotential[0,1])
+        except TypeError:
+            self.oldPotential = None
+        if self.oldPotential is not None:
+            pot = self.oldPotential
+            for charge in self.add_To_Potential:
+                for i in range(self.img_width):
+                    for j in range(self.img_height):
+                        pot[i, j] += charge.calc_Potential(i, j)
 
-
+            self.add_To_Potential = []
+            self.oldPotential = pot
+            print("Short End at {}".format(time.perf_counter() - start))
+            plt.imshow(pot)
+            plt.show()
+            return pot
 
         #if len(self.objects) == 0:
         #    return np.zeros((self.img_width, self.img_height))
 
         #print("Calcing pot map")
         charges = []
+
+        for i in range(0,self.img_width, 60):
+            for j in range(0, self.img_height, 60):
+                charges.append(Charge(i, j, 0.5 * (-1)**(i+j)))
         pot = np.zeros((self.img_width, self.img_height))
+
+        #for i in range(self.img_width):
+        #    for j in range(self.img_height):
+        #        pot[i, j] += ((i - self.img_width/2)**2 + (j-self.img_height/2)**2 )/((self.img_height/2)**2)
 
 
         for part in self.objects:
@@ -461,9 +488,13 @@ class DataFrame:
         #print("Creating map")
         #print("len(Charges): {}".format(len(charges)))
         #print("len(objy): {}".format(len(self.objects)))
-        for i in range(self.img_width):
-            for j in range(self.img_height):
-                for q in charges:
+        sdf = 0
+        for q in charges:
+            print(sdf)
+            sdf+=1
+            for i in range(self.img_width):
+                for j in range(self.img_height):
+
                     #print(i, j)
                     pot[i, j] += q.calc_Potential(i, j)
 
@@ -478,11 +509,13 @@ class DataFrame:
         #            pot[i, j] = self.overlapping_energy
 
         #print("Returning map")
-        #plt.imshow(pot)
-        #plt.show()
+
         #plt.imshow(self.img.get_matrix())
         #plt.show()
-
+        print("Long End at {}".format(time.perf_counter() - start))
+        self.oldPotential = pot
+        plt.imshow(pot)
+        plt.show()
         return pot
 
     def calc_pot_Energy_for_particle(self, part, mapchange=False):
@@ -562,6 +595,7 @@ class DataFrame:
         print(vals)
         p = Particle(vals[0], vals[1], vals[2])
         self.objects.append(p)
+        self.add_To_Potential.append(p)
         self.potential_map = self.calc_potential_map()
         #plt.imshow(self.potential_map)
         #plt.show()
@@ -695,7 +729,7 @@ class DataFrame:
             else:
                 break
         self.objects.append(p)
-
+        self.add_To_Potential.append(p)
         self.potential_map = self.calc_potential_map()
         #plt.imshow(self.potential_map)
         #plt.show()
