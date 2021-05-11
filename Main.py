@@ -4,6 +4,7 @@ import numpy as np
 
 import Configuration as conf
 import SXM_info
+import random
 from Images import MyImage
 from Particle import Particle
 from FilenameGenerator import FilenameGenerator
@@ -79,6 +80,24 @@ def multi_test_fn(t, fgen):
     time.sleep(t)
     for gen in gens:
         gen.kill()
+
+def every_thread_one():
+    BaseManager.register('FilenameGenerator', FilenameGenerator)
+    filemanager = BaseManager()
+    filemanager.start()
+    fn = filemanager.FilenameGenerator()
+    class Gen1(Process):
+        def __init__(self, fn):
+            super().__init__()
+            self.fn  =fn
+        def run(self) -> None:
+            generate(self.fn)
+
+    ts = []
+    for i in range(cfg.get_threads()):
+        ts.append(Gen1(fn))
+    for t in ts:
+        t.start()
 
 
 class Generator(Process):
@@ -171,7 +190,7 @@ if __name__ == "__main__":
 
     #for theta in range(44, 45, 1):
     #multi_test(180)
-    dat_frame = DataFrame(fn)
+    #dat_frame = DataFrame(fn)
     #for i in range(100):
     #    generate(fn)
     #multi_test(300)
@@ -185,21 +204,17 @@ if __name__ == "__main__":
     #print("DF has overlaps: {}".format(dat_frame.has_overlaps()))
      #   dat_frame.get_Image()
      #   dat_frame.save()
-
+    every_thread_one()
     #dat_frame.addParticle(Particle(100, 100, 0.5))
-    dat_frame.add_at_optimum_energy_new(100, 100, 0)
-    print(1)
-    dat_frame.add_at_optimum_energy_new(120, 150, 0)
-    #dat_frame.calc_potential_map()
-    print(2)
-    dat_frame.add_at_optimum_energy_new(100,240,0)
-    print(3)
+    #for i in range(5):
+    #    dat_frame.add_at_optimum_energy_new(100 + 400 * random.random(), 100 + 400 * random.random(), 2* np.pi * random.random())
     #dat_frame.add_at_optimum_energy_new(200, 260, deg(180))
     #print(4)
     #dat_frame.add_at_optimum_energy([200, 300, deg(180)])
     #dat_frame.add_at_optimum_energy([250, 240, deg(180)])
-    dat_frame.get_Image()
-    dat_frame.save()
+    #dat_frame.get_Image()
+    #dat_frame.save()
+    #generate(fn)
 
     #dat_frame.potential_map = dat_frame.calc_potential_map()
     #for i in range(20):

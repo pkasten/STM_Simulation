@@ -13,6 +13,8 @@ class Charge:
 
     @functools.lru_cache
     def calc_Potential(self, x, y):
+        #if np.abs(self.x - x) > 100 or np.abs(self.y - y) > 100: #ToDo: Remove
+        #    return 0
         if self.x == x and self.y == y:
             return self.q * self.maxpotential
         d = np.sqrt(np.square(self.x - x) + np.square(self.y - y))
