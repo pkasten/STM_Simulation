@@ -8,7 +8,7 @@ class Charge:
         self.y = y
         self.q = q
         self.maxpotential = 1
-        self.r = 5
+        self.r = 1
 
     def calc_Potential(self, x, y):
         if self.x == x and self.y == y:
@@ -17,4 +17,7 @@ class Charge:
         if d < self.r:
             return self.q * self.maxpotential
         return self.q / d
+
+    def has_negative_index(self):
+        return self.x < 0 or self.y < 0
 

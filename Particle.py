@@ -52,8 +52,8 @@ class Particle:
     def calc_charges(self):
         #Dipol
 
-        q_plus = Charge(self.x + self.length * 0.5 * np.sin(self.theta), self.y + self.length * 0.5 * np.cos(self.theta), 1)
-        q_minus = Charge(self.x - self.length * 0.5 * np.sin(self.theta), self.y - self.length * 0.5 * np.cos(self.theta), -1)
+        q_plus = Charge(self.x + self.length * 0.45 * np.sin(self.theta), self.y + self.length * 0.45 * np.cos(self.theta), 1)
+        q_minus = Charge(self.x - self.length * 0.45 * np.sin(self.theta), self.y - self.length * 0.45 * np.cos(self.theta), -1)
         self.charges = []
         self.charges.append(q_plus)
         self.charges.append(q_minus)
@@ -139,31 +139,7 @@ class Particle:
         else:
             return 0
 
-    # def _line_gauss(self, x, y):
-    #    if self.std_deriv == 0:
-    #        return self._line(x, y)
-    #
-    #   left_x = -self.width/2
-    #  right_x = self.width - self.width/2
-    # lower_y = -self.length/2
-    # upper_y = self.length - self.length/2
-    #
-    #       if x < left_x - 3 * np.square(self.std_deriv) or \
-    #          y < lower_y - 3 * np.square(self.std_deriv) or \
-    #         x > right_x + 3 * np.square(self.std_deriv) or \
-    #        y > upper_y + 3 * np.square(self.std_deriv):
-    #       return 0
-    #        elif x < 0 and y < 0:
-    #           return self._color(self.height) * self._gauss(x, left_x, y, lower_y)
-    #      elif x < 0 and y >= 0:
-    #         return self._color(self.height) * self._gauss(x, left_x, y, upper_y)
-    #    elif x >= 0 and y < 0:
-    #       return self._color(self.height) * self._gauss(x, right_x, y, lower_y)
-    #  elif x >= 0 and y >= 0:
-    #     return self._color(self.height) * self._gauss(x, right_x, y, upper_y)
-    # else:#
-    #            print(x, y)
-    #           raise NotImplementedError
+
 
     def _line_fermi(self, x, y):
 
@@ -205,16 +181,6 @@ class Particle:
         else:
             return 1 / (np.exp(self.fermi_exp * (x - mu)) + 1)
 
-    # def _gauss(self, x, mu_x, y, mu_y):
-    #    ret = self._gauss1D(x, mu_x) * self._gauss1D(y, mu_y)
-    #    return ret
-
-    # def _gauss1D(self, x, mu):
-    #    if x < 0:
-    #        ret = 0.5 * (1 + erf((x - mu) / (np.sqrt(2) * self.std_deriv)))
-    #    else:
-    #        ret = 0.5 * (1 + erf((-x + mu) / (np.sqrt(2) * self.std_deriv)))
-    #    return ret
 
     def _color(self, height):
         return 255 * height / self.max_height
@@ -259,6 +225,7 @@ class Particle:
         if not self.dragged and not particle.dragged:
             #if(self._eval_overlap(particle, self.efficient_Matrix_turned()[0], self.x, self.y)):
             #    print("A")
+            #print("Here shall I Be TO")
             return self._eval_overlap(particle, self.efficient_Matrix_turned()[0], self.x, self.y)
         elif self.dragged and not particle.dragged:  # Dragged this
             # print("SubP1: {}, SubP2: {}".format(self.subp1, self.subp2))
@@ -295,75 +262,120 @@ class Particle:
                 #print("B")
             return ret1 or ret2 or ret3 or ret4
 
+    def overlap_amnt(self, particle):
+
+        def eval_overlap_amount(particle, mat, x, y):
+            a, b, c = particle.efficient_Matrix_turned()
+            return matrix_overlap_amount(a, b, c, mat, x, y)
+
+        def matrix_overlap_amount(mat1, x1, y1, mat2, x2, y2):
+            bigmatw = int(np.shape(mat1)[0] / 2 + np.shape(mat2)[0] / 2 + np.abs(x1 - x2))
+            bigmath = int(np.shape(mat1)[1] / 2 + np.shape(mat2)[1] / 2 + np.abs(x1 - x2))
+            ret = 0
+            # bigmat = np.zeros((bigmatw, bigmath))
+
+            origin_x = x1 - np.shape(mat1)[0] / 2 if x1 < x2 else x2 - np.shape(mat2)[0] / 2
+            origin_y = y1 - np.shape(mat1)[1] / 2 if y1 < y2 else y2 - np.shape(mat2)[1] / 2
+
+            d_x_1 = x1 - origin_x
+            d_y_1 = y1 - origin_y
+
+            d_x_2 = x2 - origin_x
+            d_y_2 = y2 - origin_y
+
+            dd_x_1 = np.shape(mat1)[0] / 2
+            dd_y_1 = np.shape(mat1)[1] / 2
+            dd_x_2 = np.shape(mat2)[0] / 2
+            dd_y_2 = np.shape(mat2)[1] / 2
+
+            for i in range(bigmatw):
+                for j in range(bigmath):
+                    i_t_1 = int(i - d_x_1 + dd_x_1)
+                    i_t_2 = int(i - d_x_2 + dd_x_2)
+                    j_t_1 = int(j - d_y_1 + dd_y_1)
+                    j_t_2 = int(j - d_y_2 + dd_y_2)
+
+                    try:
+                        if 0 <= i_t_1 and 0 <= j_t_1:
+                            if mat1[i_t_1, j_t_1] > self.overlap_threshold:
+                                if 0 <= i_t_2 and 0 <= j_t_2:
+                                    if mat2[i_t_2, j_t_2] > self.overlap_threshold:
+                                        ret += mat1[i_t_1, j_t_1] + mat2[i_t_2, j_t_2]
+                    except IndexError:
+                        continue
+            return ret
+
+        if not self.dragged and not particle.dragged:
+            return eval_overlap_amount(particle, self.efficient_Matrix_turned()[0], self.x, self.y)
+        elif self.dragged and not particle.dragged:  # Dragged this
+            mat, x, y = self.subp1
+            ret1 = eval_overlap_amount(particle, mat, x, y)
+            mat, x, y = self.subp2
+            ret2 = eval_overlap_amount(particle, mat, x, y)
+            return ret1 + ret2
+        elif particle.dragged and not self.dragged:
+            mat, x, y = particle.subp1
+            ret1 = eval_overlap_amount(self, mat, x, y)
+            mat, x, y = particle.subp2
+            ret2 = eval_overlap_amount(self, mat, x, y)
+            return ret1 + ret2
+        else:
+            mat1, x1, y1 = self.subp1
+            mat2, x2, y2 = particle.subp1
+            ret1 = matrix_overlap_amount(mat1, x1, y1, mat2, x2, y2)
+            mat2, x2, y2 = particle.subp2
+            ret2 = matrix_overlap_amount(mat1, x1, y1, mat2, x2, y2)
+            mat1, x1, y2 = self.subp2
+            mat2, x2, y2 = particle.subp1
+            ret3 = matrix_overlap_amount(mat1, x1, y1, mat2, x2, y2)
+            mat2, x2, y2 = particle.subp2
+            ret4 = matrix_overlap_amount(mat1, x1, y1, mat2, x2, y2)
+            #if ret1 or ret2 or ret3 or ret4:
+                #print("B")
+            return ret1 + ret2 + ret3 + ret4
+
     def _eval_overlap_matrizes(self, mat1, x1, y1, mat2, x2, y2):
         #print(np.max(mat1), np.max(mat2))
-        #plt.imshow(mat1)
-        #plt.show()
-        #plt.imshow(mat2)
-        #plt.show()
-        dx = int(x2 - x1)
-        dy = int(y2 - y1)
-        #print(dx, dy)
+
+        #test
+        bigmatw = int(np.shape(mat1)[0]/2 + np.shape(mat2)[0]/2 + np.abs(x1 - x2))
+        bigmath = int(np.shape(mat1)[1]/2 + np.shape(mat2)[1]/2 + np.abs(x1 - x2))
+
+        #bigmat = np.zeros((bigmatw, bigmath))
 
 
-        if np.sqrt(np.square(dx) + np.square(dy)) > np.sqrt(2) * (
-                max(np.shape(mat1)) + max(np.shape(mat2))):
-            #print("Out of Range")
-            return False
-        else:
-            thismat = mat2
-            othmat = mat1
-            # print("Thismat")
-            # plt.imshow(thismat)
-            # plt.show()
+        origin_x = x1 - np.shape(mat1)[0] / 2 if x1 < x2 else x2 - np.shape(mat2)[0] / 2
+        origin_y = y1 - np.shape(mat1)[1] / 2 if y1 < y2 else y2 - np.shape(mat2)[1] / 2
 
-            # print("Othmat")
-            # plt.imshow(othmat)
-            # plt.show()
+        d_x_1 = x1 - origin_x
+        d_y_1 = y1 - origin_y
 
-            if np.shape(thismat) != np.shape(othmat):
-                small_mat = thismat if np.shape(thismat)[0] < np.shape(othmat)[0] else othmat
-                big_mat = thismat if small_mat is othmat else othmat
-                if small_mat is not thismat:
-                    dx *= -1
-                    dy *= -1
-                for i in range(np.shape(small_mat)[0]):
-                    for j in range(np.shape(small_mat)[1]):
-                        try:
-                            if small_mat[i, j] > self.overlap_threshold and \
-                                    big_mat[i + dx, j + dy] > self.overlap_threshold:
-                                if i+dx < 0 or j+dy < 0:
-                                    continue
-                                #print("True 1")
-                                #print("i: {}, dx: {}, j: {}, dy: {}".format(i, dx, j, dy))
-                                #plt.imshow(small_mat)
-                                #plt.show()
-                                #plt.imshow(big_mat)
-                                #plt.show()
-                                return True
-                        except IndexError as ie:
-                            # print(ie)
-                            continue
-            else:
-                for i in range(np.shape(thismat)[0]):
-                    for j in range(np.shape(thismat)[1]):
-                        try:
-                            if thismat[i, j] > self.overlap_threshold and othmat[
-                                i + dx, j + dy] > self.overlap_threshold:
-                                if i+dx < 0 or j+dy < 0:
-                                    continue
-                                #print("True2")
-                                #print("True 2")
-                                #print("i: {}, dx: {}, j: {}, dy: {}".format(i, dx, j, dy))
-                                #plt.imshow(thismat)
-                                #plt.show()
-                                #plt.imshow(othmat)
-                                #plt.show()
-                                return True
-                        except IndexError as ie:
-                            # print(ie)
-                            continue
+        d_x_2 = x2 - origin_x
+        d_y_2 = y2 - origin_y
+
+        dd_x_1 = np.shape(mat1)[0] / 2
+        dd_y_1 = np.shape(mat1)[1] / 2
+        dd_x_2 = np.shape(mat2)[0] / 2
+        dd_y_2 = np.shape(mat2)[1] / 2
+
+
+        for i in range(bigmatw):
+            for j in range(bigmath):
+                i_t_1 = int(i - d_x_1 + dd_x_1)
+                i_t_2 = int(i - d_x_2 + dd_x_2)
+                j_t_1 = int(j - d_y_1 + dd_y_1)
+                j_t_2 = int(j - d_y_2 + dd_y_2)
+
+                try:
+                    if 0 <= i_t_1 and 0 <= j_t_1:
+                        if mat1[i_t_1, j_t_1] > self.overlap_threshold:
+                            if 0 <= i_t_2 and 0 <= j_t_2:
+                                if mat2[i_t_2, j_t_2] > self.overlap_threshold:
+                                    return True
+                except IndexError:
+                    continue
         return False
+
 
     def _eval_overlap(self, particle, mat, x, y):
         a, b, c = particle.efficient_Matrix_turned()
@@ -372,95 +384,7 @@ class Particle:
 
         return self._eval_overlap_matrizes(a, b, c, mat, x, y)
 
-       # dx = int(particle.get_x() - x)
-      #  dy = int(particle.get_y() - y)
-        # print("Self.x: {}, dx: {}, dy:{}".format(x, dx, dy))
 
-        #if (np.sqrt(np.square(dx) + np.square(dy)) > self.get_dimension() + particle.get_dimension()):
-         #   # print("Out of Range")
-          #  return False
-        #else:
-         #   thismat = mat
-          #  othmat, foo, bar = particle.efficient_Matrix_turned()
-            # print("Thismat")
-            # plt.imshow(thismat)
-            # plt.show()
-
-            # print("Othmat")
-            # plt.imshow(othmat)
-            # plt.show()
-
-        #    if np.shape(thismat) != np.shape(othmat):
-         #       small_mat = thismat if np.shape(thismat)[0] < np.shape(othmat)[0] else othmat
-          #      big_mat = thismat if small_mat is othmat else othmat
-           #     if small_mat is not thismat:
-            #        dx *= -1
-             #       dy *= -1
-              #  for i in range(np.shape(small_mat)[0]):
-               #     for j in range(np.shape(small_mat)[1]):
-                #        try:
-                 #           if small_mat[i, j] > self.overlap_threshold and \
-                  #                  big_mat[i + dx, j + dy] > self.overlap_threshold:
-                  ##              return True
-                  #      except IndexError as ie:
-                    #        # print(ie)
-                     #       continue
-#            else:#
- #               for i in range(np.shape(thismat)[0]):
-  #                  for j in range(np.shape(thismat)[1]):
-   #                     try:
-    #                        if thismat[i, j] > self.overlap_threshold and othmat[
-     #                           i + dx, j + dy] > self.overlap_threshold:
-      #                          return True
-       #                 except IndexError as ie:
-        #                    # print(ie)
-         #                   continue
-        #return False
-        # dx = particle.get_x() - x
-        # dy = particle.get_y() - y
-        # print("Self.x: {}, dx: {}, dy:{}".format(self.x, dx, dy))
-        # if (np.sqrt(np.square(dx) + np.square(dy)) > self.get_dimension() + particle.get_dimension()):
-        #    print("Out of range")
-        #    return False
-        # else:
-        #    #thismat, foo, bar = self.efficient_Matrix_turned()
-        #    thismat = mat
-        #    othmat, foo, bar = particle.efficient_Matrix_turned()
-        #    if np.shape(thismat) != np.shape(othmat):
-        #        small_mat = thismat if np.shape(thismat)[0] < np.shape(othmat)[0] else othmat
-        #        big_mat = thismat if small_mat is othmat else othmat
-        #        if small_mat is not thismat:
-        #            dx *= -1
-        #            dy *= -1
-        #        for i in range(np.shape(small_mat)[0]):
-        #            for j in range(np.shape(small_mat)[1]):
-        #                if i > 0 and j > 0 and i + dx > 0 and j + dy > 0:
-        #                    try:
-        #                        if small_mat[i, j] > particle.overlap_threshold and \
-        #                                big_mat[i + dx, j + dy] > particle.overlap_threshold:
-        #                            return True
-        #                    except IndexError:
-        #                        continue
-        ##                else:
-        #                    continue
-        #    else:
-        #        for i in range(np.shape(thismat)[0]):
-        #            for j in range(np.shape(thismat)[1]):
-        #                if i > 0 and j > 0 and i + dx > 0 and j + dy > 0:
-        #                    try:
-        #                        if thismat[i, j] > self.overlap_threshold and othmat[i + dx, j + dy] > \
-        #                                self.overlap_threshold:
-        #                            # print("Bigger: thismat[i, j]: {}, i{}, j{}, othmat {}, i+dx{}, j+dy{}".format(thismat[i, j], i, j, othmat[i+dx, j+dy], i+dx, j+dy))
-        #                            return True
-        #                        else:
-        ##                            pass
-        #                            # print("Smaller")
-        #                    except IndexError:
-        #                        continue
-        #                else:
-        #                    # print("Continuing")
-        #                    continue
-        # return False
 
     def get_visualization(self):
         ret = []
