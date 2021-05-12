@@ -52,8 +52,8 @@ class Particle:
     def calc_charges(self):
         #Dipol
 
-        q_plus = Charge(self.x + self.length * 0.45 * np.sin(self.theta), self.y + self.length * 0.45 * np.cos(self.theta), 1)
-        q_minus = Charge(self.x - self.length * 0.45 * np.sin(self.theta), self.y - self.length * 0.45 * np.cos(self.theta), -1)
+        q_plus = Charge(self.x - self.length * 0.45 * np.sin(self.theta), self.y + self.length * 0.45 * np.cos(self.theta), 1)
+        q_minus = Charge(self.x + self.length * 0.45 * np.sin(self.theta), self.y - self.length * 0.45 * np.cos(self.theta), -1)
         self.charges = []
         self.charges.append(q_plus)
         self.charges.append(q_minus)

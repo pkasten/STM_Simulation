@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 from multiprocessing import Process, Lock, Semaphore
 from multiprocessing.managers import BaseManager
 from My_SXM import My_SXM
+import matplotlib.pyplot as plt
 
 
 def test_frame(data_frame):
@@ -204,7 +205,37 @@ if __name__ == "__main__":
     #print("DF has overlaps: {}".format(dat_frame.has_overlaps()))
      #   dat_frame.get_Image()
      #   dat_frame.save()
-    every_thread_one()
+    #every_thread_one()
+    #generate(fn)
+    #for i in range(360):
+    #    dat = DataFrame(fn)
+    #    dat.addParticle(Particle(300, 300, deg(i)))
+    #    dat.calc_potential_map()
+    #    img = MyImage()
+    #    mat = np.zeros((600, 600))
+    #    for i in range(600):
+    #        for j in range(600):
+    #            mat[i, j] = 125 + 125 * dat.potential_map[i, j]
+    #    img.addMatrix(mat)
+    #    img.updateImage()
+    #    img.saveImage(fn.generate_Tuple()[0])
+
+        #plt.imshow(dat.potential_map.transpose())
+        #plt.savefig()
+    #    dat.get_Image()
+    #    dat.save()
+
+
+    dat = DataFrame(fn)
+    for i in range(60, cfg.get_width() - 60, 60):
+        for j in range(60, cfg.get_height() - 60, 60):
+            dat.add_at_optimum_energy_new(100 + 400 * random.random(), 100 + 400 * random.random(), 6.28 * random.random())
+            dat.get_Image()
+            dat.save()
+    #dat.add_ALL_at_optimum_energy_new(10)
+    dat.get_Image()
+    dat.save()
+
     #dat_frame.addParticle(Particle(100, 100, 0.5))
     #for i in range(5):
     #    dat_frame.add_at_optimum_energy_new(100 + 400 * random.random(), 100 + 400 * random.random(), 2* np.pi * random.random())
