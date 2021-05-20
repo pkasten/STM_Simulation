@@ -29,7 +29,7 @@ class Ag_Atom:
         self.pos = pos
 
 
-    def show(self):
+    def show_mat(self):
         radius = 3
         height = 1
         mat = np.zeros((img_w.px, img_h.px))
@@ -102,12 +102,14 @@ class Atom:
         nearest = {}
         for atom in gitter:
             if np.linalg.norm(atom.pos - self.abspos) < threshold:
-                nearest[atom] = np.linalg.norm(atom.pos - self.abspos)
+                temp = np.linalg.norm(atom.pos - self.abspos)
+                nearest[atom] = temp
                 if len(nearest) > 3:
                     maxlen = max(nearest.values())
                     for elem in nearest.keys():
                         if nearest[elem] == maxlen:
                             del nearest[elem]
+                            threshold = max(nearest.values())
                             break
 
         #print("Len(nearest) {} mit {}".format(len(nearest.keys()), nearest.values()))
@@ -118,15 +120,27 @@ class Atom:
         nearest = {}
         for atom in gitter:
             if np.linalg.norm(atom.pos - self.abspos) < threshold:
-                nearest[atom] = np.linalg.norm(atom.pos - self.abspos)
+                temp = np.linalg.norm(atom.pos - self.abspos)
+                nearest[atom] = temp
                 if len(nearest) > 3:
                     maxlen = max(nearest.values())
                     for elem in nearest.keys():
                         if nearest[elem] == maxlen:
                             del nearest[elem]
+                            threshold = max(nearest.values())
                             break
 
         #print("Len(nearest) {} mit {}".format(len(nearest.keys()), nearest.values()))
+        return nearest
+
+    def find_nearest_atom(self, gitter):
+        threshold = 10000
+        nearest = None
+        for atom in gitter:
+            if np.linalg.norm(atom.pos - self.abspos) < threshold:
+                nearest = atom
+                threshold = np.linalg.norm(atom.pos - self.abspos)
+
         return nearest
 
     @staticmethod
@@ -274,6 +288,87 @@ def create_pot_map(gitter):
         pickle.dump(mat, p)
     return mat
 
+class Lookup_Table:
+
+    class Couple:
+        def __init__(self, pos, angle, energy):
+            self.pos = pos
+            self.angle = angle
+            self.energy = energy
+
+
+    couples = []
+
+    def __init__(self, dist_step, angle_step):
+        self.dist_step = dist_step
+        self.angle_step = angle_step
+
+    def add(self, pos, angle, energy):
+        self.couples.append(self.Couple(pos, angle, energy))
+
+    def get_nearest_Energy(self, pos, angle):
+        nearest = None
+        min_d = 1000
+        for c in self.couples:
+            d = np.square(np.linalg.norm(pos - c.pos)/self.dist_step) \
+                + np.square(abs(c.angle - angle)/self.angle_step)
+
+            if d < min_d:
+                min_d = d
+                nearest = c
+
+        return nearest.energy, min_d, nearest
+
+
+
+
+
+
+
+
+def create_Molecule_lookup_table(gitter, Testclass, name):
+
+    if os.path.isfile(name + ".data"):
+        return pickle.load(open(name + ".data", "rb"))
+
+    anglesteps = 10
+    angle_step = 360/anglesteps
+
+    center = Ag_Atom(np.array([img_w.px/2, img_h.px/2]))
+
+    maxdist = (np.sqrt(0.75) - 0.25) * nn_dist.px
+    diststeps = 10
+    dist_step = maxdist / diststeps
+
+    def bog(deg):
+        return deg/180 * np.pi
+
+    angles = [bog(i*angle_step) for i in range(anglesteps)]
+    distances = [i * dist_step for i in range(diststeps)]
+    molecule_angles = [bog(i*angle_step) for i in range(anglesteps)]
+
+    table = Lookup_Table(dist_step, angle_step)
+
+    vecs = []
+
+    for angle in angles:
+        turnmat = np.array([[np.cos(angle), -np.sin(angle)],
+                            [np.sin(angle), np.cos(angle)]])
+        for dist in distances:
+            vec1 = np.array([dist, 0])
+            vecs.append(center.pos + np.matmul(vec1, turnmat))
+
+    print(vecs)
+
+    for pos in vecs:
+        for theta in molecule_angles:
+            table.add(pos, theta, Testclass(pos, theta).get_pot(gitter))
+
+    with open(name + ".data", "wb") as p:
+        pickle.dump(table, p)
+
+    return table
+
 
 
 def test_pot_map():
@@ -292,7 +387,7 @@ def test_pot_map():
     start = end
 
     fig, (ax1, ax2) = plt.subplots(2, 1)
-    fig.suptitle('A tale of 2 subplots')
+    fig.suptitle('Potential und Gitterstruktur')
 
     ax1.imshow(showmat)
     ax1.set_ylabel("Gitter")
@@ -316,7 +411,24 @@ def test_pot_map():
 
 
 if __name__ == "__main__":
-    test_pot_map()
+    gitter = create_gitter()
+    table = create_Molecule_lookup_table(gitter, Molecule, "testTable10")
+
+    for i in range(3):
+        for j in range(3):
+            for a in range(4):
+                t = a * np.pi / 3
+                x = 180 + i * 15
+                y = 175 + j * 15
+                e, err, nst = table.get_nearest_Energy(np.array([x, y]), t)
+                print("Energy for {} {}, theta ={:.2f} is {:.2f} with error {:.2f} and nearest x={:.2f}, y={:.2f}, a={:.2f}".format(
+                    x, y, t, e, err, nst.pos[0], nst.pos[1], nst.angle
+                ))
+    exit()
+
+    #test_pot_map()
+    gitter = create_gitter()
+    create_Molecule_lookup_table(gitter, Molecule)
     exit()
     gitter = create_gitter()
     showmat = show_gitter(gitter, True)
@@ -341,6 +453,13 @@ if __name__ == "__main__":
 
 
     plt.imshow(nearestshow + showmat + tsm + 2*msm)
+    plt.show()
+
+    atti = Atom(np.array([320, 320]))
+    verynearest = atti.find_nearest_atom(gitter)
+    matti = verynearest.show_mat()
+    attimap = atti.show_mat()
+    plt.imshow(showmat + attimap + matti)
     plt.show()
 
     print("Potential of Molecule: {}".format(test.get_pot(gitter)))
