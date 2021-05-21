@@ -6,6 +6,16 @@ import time
 
 px_durch_ang = 20
 
+logfile = None
+def init_log():
+    global logfile
+    logfile = open("log.txt", "w")
+
+def log(text):
+    logfile.write(text + "\n")
+
+def end_log():
+    logfile.close()
 
 class Distance:
 
@@ -197,17 +207,16 @@ class Atom:
 
 
 class Molecule:
+    molecule_class = "Single"
 
     def __init__(self, pos, theta):
         self.atoms = []
         self.pos = pos
         self.theta = theta
 
-        molecule_class = "Single"
-
-        if molecule_class == "Single":
+        if self.molecule_class == "Single":
             self.atoms.append(Atom(np.array([0, 0])))
-        elif molecule_class == "CO2":
+        elif self.molecule_class == "CO2":
             co_len = Distance(True, 1)
             self.atoms.append(Atom(np.array([0, 0])))
             self.atoms.append(Atom(np.array([-co_len.px, 0])))
@@ -215,6 +224,13 @@ class Molecule:
 
         for atom in self.atoms:
             atom.calc_abs_pos(self.pos, self.theta)
+
+    def __str__(self):
+        return self.molecule_class
+
+    @staticmethod
+    def str():
+        return Molecule.molecule_class
 
     def show(self, x, y):
         ret = 0
@@ -290,34 +306,98 @@ def create_pot_map(gitter):
 
 class Lookup_Table:
 
-    class Couple:
-        def __init__(self, pos, angle, energy):
+    def log(self):
+        log("Lookup_table: ")
+        for pair in self.pairs:
+            log("Pair {} :".format(pair.pos))
+            pair.log()
+
+    def __str__(self):
+        s = ""
+        s += "Lookup_table: \n"
+        for pair in self.pairs:
+            s += "Pair {} :\n".format(pair.pos)
+            s += pair.__str__()
+        return s
+
+
+    class Pair:
+        def __init__(self, pos):
             self.pos = pos
-            self.angle = angle
-            self.energy = energy
+            self.ang_dict = {}
 
+        def log(self):
+            for angle in self.ang_dict.keys():
+                log("\t\t  {:.3f} : E= {:.3f}".format(angle, self.ang_dict[angle]))
 
-    couples = []
+        def __str__(self):
+            s = ""
+            for angle in self.ang_dict.keys():
+                s += "\t\t  {:.3f} : E= {:.3f} \n".format(angle, self.ang_dict[angle])
+            return s
+        def add(self, angle, energy):
+            self.ang_dict[angle] = energy
+
+    pairs = []
+
+    @staticmethod
+    def equalVec(a, b):
+        if len(a) != len(b):
+            return False
+        for i in range(len(a)):
+            if(a[i] != b[i]):
+                return False
+        return True
+
 
     def __init__(self, dist_step, angle_step):
         self.dist_step = dist_step
         self.angle_step = angle_step
 
     def add(self, pos, angle, energy):
-        self.couples.append(self.Couple(pos, angle, energy))
+        exists = False
+        for p in [p.pos for p in self.pairs]:
+            if self.equalVec(p, pos):
+                exists = True
+                break
+        if not exists:
+            self.pairs.append(self.Pair(pos))
+
+        for pair in self.pairs:
+            if self.equalVec(pair.pos, pos):
+                pair.add(angle, energy)
+                return
+        print("Error")
+
+
+
 
     def get_nearest_Energy(self, pos, angle):
         nearest = None
-        min_d = 1000
-        for c in self.couples:
-            d = np.square(np.linalg.norm(pos - c.pos)/self.dist_step) \
-                + np.square(abs(c.angle - angle)/self.angle_step)
+        min_d = np.infty
+        for p in self.pairs:
+            d = np.abs(np.linalg.norm(pos - p.pos)/self.dist_step)
 
             if d < min_d:
                 min_d = d
-                nearest = c
+                nearest = p
 
-        return nearest.energy, min_d, nearest
+        min_ang = np.infty
+        nearest_energy = None
+        nearest_ang = None
+        if nearest is None:
+            return None, None, None
+        for a in nearest.ang_dict.keys():
+            d = min(abs(a-angle), abs(2*np.pi + a - angle))
+
+            if d < min_ang:
+                min_ang = d
+                nearest_ang = a
+                nearest_energy = nearest.ang_dict[a]
+
+
+        return nearest_energy, min(abs(nearest_ang-angle), abs(2*np.pi + nearest_ang - angle)), \
+               np.linalg.norm(pos - nearest.pos)
 
 
 
@@ -326,10 +406,19 @@ class Lookup_Table:
 
 
 
-def create_Molecule_lookup_table(gitter, Testclass, name):
+def create_Molecule_lookup_table(gitter, Testclass, name=None):
+    if name is None:
+        name = Testclass.str() + "_lookup"
+        print(name)
+
 
     if os.path.isfile(name + ".data"):
-        return pickle.load(open(name + ".data", "rb"))
+        table = pickle.load(open(name + ".data", "rb"))
+        print(type(table))
+        print(table.pairs)
+        print("Loaded: ")
+        print(table)
+        return table
 
     anglesteps = 10
     angle_step = 360/anglesteps
@@ -409,21 +498,29 @@ def test_pot_map():
 
     plt.show()
 
-
-if __name__ == "__main__":
+def test_Lookup_Table():
+    init_log()
     gitter = create_gitter()
-    table = create_Molecule_lookup_table(gitter, Molecule, "testTable10")
-
+    table = create_Molecule_lookup_table(gitter, Molecule)
+    table.log()
+    end_log()
     for i in range(3):
         for j in range(3):
             for a in range(4):
                 t = a * np.pi / 3
                 x = 180 + i * 15
                 y = 175 + j * 15
-                e, err, nst = table.get_nearest_Energy(np.array([x, y]), t)
-                print("Energy for {} {}, theta ={:.2f} is {:.2f} with error {:.2f} and nearest x={:.2f}, y={:.2f}, a={:.2f}".format(
-                    x, y, t, e, err, nst.pos[0], nst.pos[1], nst.angle
+                e, adist, pdist = table.get_nearest_Energy(np.array([x, y]), t)
+                if e is None:
+                    print("None")
+                    continue
+                print("Energy for {} {}, theta ={:.2f} is {:.2f} with Angerror {:.2f} and PosError {:.2f}".format(
+                    x, y, t, e, adist, pdist
                 ))
+
+
+if __name__ == "__main__":
+    test_Lookup_Table()
     exit()
 
     #test_pot_map()
