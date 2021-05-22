@@ -3,6 +3,7 @@ import copy, os
 import math, random
 import time
 
+from Molecule import Molecule
 from Particle import Particle, Double_Particle
 from Images import MyImage
 # from Maths.Functions import measureTime
@@ -15,6 +16,7 @@ from My_SXM import My_SXM
 import scipy.optimize as opt
 # from Doubled import Double_Frame
 from Charge import Charge
+from Distance import Distance
 import pickle
 
 
@@ -29,7 +31,7 @@ class DataFrame:
         self.angle_char_len = cfg.get_angle_char_len()
         self.angle_correlation_std = cfg.get_angle_stdderiv()
         self.area = cfg.get_width() * cfg.get_height()
-        self.max_dist = np.sqrt(np.square(cfg.get_height()) + np.square(cfg.get_width()))
+        self.max_dist = Distance(True, np.sqrt(np.square(cfg.get_height().ang) + np.square(cfg.get_width().ang)))
         self.min_angle = cfg.get_angle_range_min()
         self.max_angle = cfg.get_angle_range_max()
         self.use_range = cfg.get_angle_range_usage()
@@ -51,7 +53,7 @@ class DataFrame:
             self.angle_char_len = 4000
         self.oldPotential = None
         self.add_To_Potential = []
-        self.potential_map = self.calc_potential_map()
+        #self.potential_map = self.calc_potential_map()
         self.overlapping_energy = 1000
         self.overlapping_threshold = cfg.get_overlap_threshold()
         self.part_laenge = cfg.get_part_length()
@@ -90,7 +92,7 @@ class DataFrame:
             return False
         for p in self.objects:
             if not part.dragged and not p.dragged:
-                if math.dist([p.x, p.y], [part.x, part.y]) > max(part.effect_range, p.effect_range):
+                if math.dist([p.x.px, p.y.px], [part.x.px, part.y.px]) > np.sqrt(2) * max(part.effect_range, p.effect_range):
                     continue
             if part.true_overlap(p):
                 # print("Overlaps any took {}".format(time.perf_counter() - start))
@@ -151,29 +153,12 @@ class DataFrame:
         # print("MaxTries Exhausted_b")
         return p
 
-    # calculates particles weight for importance in surrounding particles
-    def _calc_angle_weight(self, part1, part2):  # ToDo: Still very sketchy
-        drel = part1.get_distance_to(part2) / self.max_dist
-        # return np.exp(-self.angle_char_len/drel)
-        return self.angle_char_len / drel
-
-    def _orients_along_crystal(self, particle):
-        return self._bonding_strength_crystal(particle) < 0.5
-
-    # High if bonds tu particles, low if bonds to crystal
-    def _bonding_strength_crystal(self, particle):  # ToDo: improve
-        if len(self.objects) == 0:
-            return 0
-        for part in self.objects:
-            dis = part.get_distance_to(particle)
-            if dis < self.max_dist / np.sqrt(2) * 0.2:
-                return 1
-        return 0
 
     # calculates a random angle for partilce depending on its surrounding with correlation
     def _calc_angle_for_particle(self, particle):  # ToDo: Still very sketchy
 
         if self.use_crystal_orientations:
+            print("Deprecated 132813")
             if self._orients_along_crystal(particle):
                 # particle.set_height(0.7)
                 # print(self.crystal_directions)
@@ -222,9 +207,10 @@ class DataFrame:
         else:
             return random.uniform(self.min_angle, self.max_angle)
 
-    def addParticles(self, optimumEnergy=True, amount=None, coverage=None, overlapping=False, maximum_tries=1000):
+    def addParticles(self, optimumEnergy=False, amount=None, coverage=None, overlapping=False, maximum_tries=1000):
 
         if optimumEnergy:
+            print("Deprecated 8414813")
             if amount is not None:
                 for i in range(amount):
                     self.add_at_optimum_energy_new(self.img_width * random.random(), self.img_height * random.random(),
@@ -391,188 +377,572 @@ class DataFrame:
                         p.set_theta(self._random_angle_range())
                         self.objects.append(p)
 
-    # deprecated
-    @measureTime
-    @DeprecationWarning
-    def createImage(self):
-        print("Deprecated 3154251534")
-        self.img = MyImage()
-        for part in self.objects:
-            self.img.addParticle(part)
+    def addObject(self, ob):
+        self.objects.append(ob)
 
-        self.img.updateImage()  # Always call last
-        # img.noise....etc
+    def addObjects(self, Object=Molecule, amount=None, coverage=None, overlapping=False, maximum_tries=1000):
 
-    # deprecated
-    @measureTime
-    @DeprecationWarning
-    def createImage_efficient(self):
-        print("Deprecated 46541741")
-        self.img = MyImage()
-        width = self.img_width
-        height = self.img_height
-        matrix = np.zeros((width, height))
+        def get_dragged_that_not_overlaps(maximumtries):
+            def _set_p():
+                p = Object()
+                p.drag(self.dragging_speed, self.raster_angle)
+                return p
 
-        for part in self.objects:
-            eff_mat, x, y = part.efficient_Matrix()
-            mat_w = eff_mat.shape[0]
+            if len(self.objects) == 0:
+                return _set_p()
+            p = _set_p()
+            for i in range(maximumtries):
+                if self._overlaps_any(p):
+                    p = _set_p()
+                else:
+                    return p
+            return p
 
-            mat_h = eff_mat.shape[1]
-            for i in range(mat_w):
-                for j in range(mat_h):
-                    new_x = x - math.floor((mat_w / 2)) + i
-                    new_y = y - math.floor(mat_h / 2) + j
-                    if not (0 <= new_x < width and 0 <= new_y < height):
-                        continue
-                    matrix[new_x, new_y] += eff_mat[i, j]
-
-        self.img.addMatrix(matrix)
-        self.img.updateImage()
-
-    @measureTime
-    @DeprecationWarning
-    def createImage_efficient_with_new_Turn(self):
-        print("Deprecated 453643")
-        self.img = MyImage()
-        width = self.img_width
-        height = self.img_width
-        matrix = np.zeros((width, height))
-
-        for part in self.objects:
-            eff_mat, x, y = part.efficient_Matrix_turned()
-            mat_w = eff_mat.shape[0]
-
-            mat_h = eff_mat.shape[1]
-            for i in range(mat_w):
-                for j in range(mat_h):
-                    new_x = x - math.floor((mat_w / 2)) + i
-                    new_y = y - math.floor(mat_h / 2) + j
-                    if not (0 <= new_x < width and 0 <= new_y < height):
-                        continue
-                    matrix[new_x, new_y] += eff_mat[i, j]
-
-        self.img.addMatrix(matrix)
-        # self.img.updateImage()
-
-    def calc_potential_map(self):  # ToDo: Nicht Multithreading safe mit pickle dump
-        start = time.perf_counter()
-        if self.oldPotential is not None:
-            pot = self.oldPotential
-            for charge in self.add_To_Potential:
-                for i in range(self.img_width):
-                    for j in range(self.img_height):
-                        pot[i, j] += charge.calc_Potential(i, j)
-
-            self.add_To_Potential = []
-            self.oldPotential = pot
-            print("Short End at {}".format(time.perf_counter() - start))
-            # plt.imshow(pot)
-            # plt.show()
-            return pot
-
-        if os.path.isfile("pot.data"):
-            pot = pickle.load(open("pot.data", "rb"))
-            self.oldPotential = pot
-
-            # plt.imshow(pot)
-            # plt.show()
-            if np.shape(pot) == (self.img_width, self.img_height):
-                print("Long End at {}".format(time.perf_counter() - start))
-                return pot
-
-        def gitter():
-            charges = []
-            kappa = 1
-            for i in range(0, self.img_width, 40):
-                # kappa += 1
-                for j in range(0, self.img_height, 40):
-                    kappa += 1
-                    charges.append(Charge(i, j, 0.7))
-            pot = np.zeros((self.img_width, self.img_height))
-
-            for part in self.objects:
-                for q in part.get_charges():
-                    charges.append(q)
-
-            sdf = 0
-            for q in charges:
-                print(sdf)
-                sdf += 1
-                for i in range(self.img_width):
-                    for j in range(self.img_height):
-                        # print(i, j)
-                        pot[i, j] += q.calc_Potential(i, j)
-            return pot
-        def alternating():
-            charges = []
-            kappa = 1
-            for i in range(0, self.img_width, 40):
-                kappa += 1
-                for j in range(0, self.img_height, 40):
-                    kappa += 1
-                    charges.append(Charge(i, j, 0.7 * (-1)**kappa))
-            pot = np.zeros((self.img_width, self.img_height))
-
-            for part in self.objects:
-                for q in part.get_charges():
-                    charges.append(q)
-
-            sdf = 0
-            for q in charges:
-                print(sdf)
-                sdf += 1
-                for i in range(self.img_width):
-                    for j in range(self.img_height):
-                        # print(i, j)
-                        pot[i, j] += q.calc_Potential(i, j)
-            return pot
-
-        def slope():
-            pot = np.zeros((self.img_width, self.img_height))
-            for i in range(self.img_width):
-                for j in range(self.img_width):
-                    pot[i, j] = 100 * i / self.img_width
-
-            return pot
-
-        def ohne():
-            return np.zeros((self.img_width, self.img_height))
-
-        pot = ohne()
+        def _get_thatnot_overlaps(maximumtries):
+            print("#Obj: {}, has Overlaps: {}".format(len(self.objects), self.has_overlaps()))
+            if len(self.objects) == 0:
+                return Object()
+            p = Object()
+            for i in range(maximumtries):
+                print("Added at x={}, y= {}".format(p.pos[0].px, p.pos[1].px))
+                if self._overlaps_any(p):
+                    print("Retry")
+                    p = Object()
+                else:
+                    return p
+            print("MaxTries Exhausted_a")
+            print("#Obj: {}, has Overlaps: {}".format(len(self.objects), self.has_overlaps()))
+            return p
 
 
-        print("Long End at {}".format(time.perf_counter() - start))
-        with open("pot.data", "wb") as p:
-            pickle.dump(pot, p)
-        self.oldPotential = pot
-        # plt.imshow(pot)
-        # plt.show()
-        return pot
 
-    @DeprecationWarning
-    def calc_pot_Energy_for_particle(self, part, mapchange=False):
-        print("Deprecated 4641635")
-        if mapchange or self.potential_map is None:
-            self.potential_map = self.calc_potential_map()
-        charges = part.get_charges()
-        # pot_map = self.calc_potential_map()
-        e_pot = 0
-        for charge in charges:
-            try:
-                e_pot += charge.q * self.potential_map[
-                    int(charge.x), int(charge.y)]  # ToDo: Not round but scale by surrrounding
-            except IndexError:
-                print("calc_pot_Energy_for_particle for x={}, y={}".format(int(charge.x), int(charge.y)))
+        self.passed_args = (amount, coverage, overlapping, maximum_tries)
+        # print("{}, {}, {}".format(self.use_range, self.angle_char_len, overlapping))
+        if amount is not None:
+            for i in range(amount):
+                if random.random() < self.dragging_possibility:
+                    p = get_dragged_that_not_overlaps(maximum_tries)
+                    self.objects.append(p)
+                else:
+                    p = _get_thatnot_overlaps(maximum_tries)
+                    self.objects.append(p)
+        elif coverage is not None:
+            while self.coverage() < coverage:
+                if random.random() < self.dragging_possibility:
+                    p = get_dragged_that_not_overlaps(maximum_tries)
+                    self.objects.append(p)
+                else:
+                    p = _get_thatnot_overlaps(maximum_tries)
+                    self.objects.append(p)
+            else:
+                for i in range(cfg.get_particles_per_image()):
+                    if random.random() < self.dragging_possibility:
+                        p = get_dragged_that_not_overlaps(maximum_tries)
+                        self.objects.append(p)
+                    else:
+                        p = _get_thatnot_overlaps(maximum_tries)
+                        self.objects.append(p)
 
-        e_pot += self.is_overlapping(part)
 
-        return e_pot
 
     def is_overlapping(self, part):
         for p in self.objects:
             if p.true_overlap(part):
                 return self.overlapping_energy
         return 0
+
+
+    def create_Image_Visualization(self):
+        self.img = MyImage()
+        width = self.img_width
+        height = self.img_height
+        matrix = np.zeros((int(np.ceil(width.px)), int(np.ceil(height.px))))
+
+        for part in self.objects:
+            for tuple in part.get_visualization():
+                # print("Tupel:{}".format(tuple))
+                eff_mat, x, y = tuple
+                mat_w = eff_mat.shape[0]
+
+                # ToDo: possible failure
+                x = int(np.round(x.px))
+                y = int(np.round(y.px))
+                # plt.imshow(eff_mat)
+                # plt.show()
+                # print(np.max(eff_mat))
+                mat_h = eff_mat.shape[1]
+                for i in range(mat_w):
+                    for j in range(mat_h):
+                        new_x = x - math.floor((mat_w / 2)) + i
+                        new_y = y - math.floor(mat_h / 2) + j
+                        if not (0 <= new_x < width.px and 0 <= new_y < height.px):
+                            continue
+                        matrix[new_x, new_y] += eff_mat[i, j]
+
+        self.img.addMatrix(matrix)  # Indentd  too far right
+
+
+
+    def get_Image(self):
+        if random.random() < self.double_tip_poss:
+            print("Double Tipping")
+            strength = 0.3 + 0.5 * random.random()
+            # print(strength)
+            rel_dist = 0.1 * random.random()  # ToDO: Let loose
+            angle = 2 * np.pi * random.random()
+            # angle = 0
+            doubled_frame = Double_Frame(self.fn_gen, strength, rel_dist, angle)
+            # print("Created Double Frame")
+            doubled_frame.addParticles(self.passed_args[0], self.passed_args[1], self.passed_args[2],
+                                       self.passed_args[3])
+            # print("added Particles")
+            # if self.use_dragging:
+            #    doubled_frame._drag_particles()
+            self.img = doubled_frame.extract_Smaller()
+            # print("extracted Smaller")
+            self.objects = doubled_frame.get_objects()
+            # print("Got objects")
+            if self.use_noise:
+                self.img.noise(self.image_noise_mu, self.image_noise_sigma)
+            self.img.updateImage()
+            # print("updated Image")
+
+            return
+
+        # if self.use_dragging: #ToDo: Possibly later
+        #    self._drag_particles()
+        self.create_Image_Visualization()
+
+        # if random.random() < self.double_tip_poss:
+        #    surrounding_frames = []
+        #    for i in range(4):
+        #        df_a = DataFrame(self.fn_gen)
+        #        df_a.addParticles(self.passed_args[0], self.passed_args[1], self.passed_args[2], self.passed_args[3])
+        #        df_a.double_tip_poss = 0
+        #        df_a.create_Image_Visualization()
+        #        surrounding_frames.append(df_a.img.colors)
+        #    self.img.double_tip(0.3, 0.1, 2 * np.pi * random.random(), surrounding_frames)
+        if self.use_noise:
+            self.img.noise(self.image_noise_mu, self.image_noise_sigma)
+        self.img.updateImage()
+
+    def createText(self):
+        strings = [Particle.str_Header()]
+        for part in self.objects:
+            strings.append(str(part))
+        self.text = "\n".join(strings)
+
+    def save(self, data=True, image=True, sxm=True):
+        if self.img is None:
+            # self.createImage_efficient()
+            self.get_Image()
+        if len(self.text) == 0:
+            self.createText()
+        img_path, dat_path, sxm_path, index = self.fn_gen.generate_Tuple()
+        # print("Saving: {}".format(index))
+        print("Saving No {} -> {}".format(index, img_path))
+        try:
+            with open(dat_path, "w") as dat_file:
+                dat_file.write(self.text)
+        except FileNotFoundError:
+            os.mkdir(cfg.get_data_folder())
+            with open(dat_path, "w") as dat_file:
+                dat_file.write(self.text)
+        self.img.saveImage(img_path)
+        My_SXM.write_sxm(sxm_path, self.img.get_matrix())
+        # if self.has_overlaps():
+        # print("Overlaps detected @ {}".format(index))
+
+    def hasPoints(self):
+        # return not self.points.empty()
+        return len(self.objects) > 0
+
+    def coverage(self):
+        area = self.area
+        covered = 0
+        for part in self.objects:
+            covered += np.pi * np.square(part.get_dimension().px)
+        return covered / area.px
+
+    def has_overlaps(self):
+        for i in range(len(self.objects)):
+            for j in range(i):
+                # print("Testing overlap {} - {}".format(i, j))
+                if self.objects[i].true_overlap(self.objects[j]):
+                    print("Overlap between Part {} @ ({},{}) and Part {} @ ({},{})".format(i, self.objects[i].pos[0].px, self.objects[i].pos[1].px, j , self.objects[j].pos[0].px, self.objects[j].pos[1].px))
+                    print("Reverse: {}".format(self.objects[j].true_overlap(self.objects[i])))
+                    # print("i: x={}, y={}, dg={}; j: x={}, y={}, dg={}".format(self.objects[i].get_x(), self.objects[i].get_y(), self.objects[i].dragged, self.objects[j].get_x(), self.objects[j].get_y(), self.objects[j].dragged))
+                    return True
+        return False
+
+    def __str__(self):
+        return str(self.objects)
+
+
+    # Deprecated Stuff....
+    # calculates particles weight for importance in surrounding particles
+    @DeprecationWarning
+    def _calc_angle_weight(self, part1, part2):
+        print("Deprecated 5183")
+        drel = part1.get_distance_to(part2) / self.max_dist
+        # return np.exp(-self.angle_char_len/drel)
+        return self.angle_char_len / drel
+
+    @DeprecationWarning
+    def _orients_along_crystal(self, particle):
+        print("Deprecated 1351361")
+        return self._bonding_strength_crystal(particle) < 0.5
+
+    # High if bonds tu particles, low if bonds to crystal
+    @DeprecationWarning
+    def _bonding_strength_crystal(self, particle):
+        print("Deprecated 46463516")
+        if len(self.objects) == 0:
+            return 0
+        for part in self.objects:
+            dis = part.get_distance_to(particle)
+            if dis < self.max_dist / np.sqrt(2) * 0.2:
+                return 1
+        return 0
+
+    @DeprecationWarning
+    def _drag_particles(self):
+        print("Deprecated 6546335416")
+        for part in self.objects:
+            if random.random() < self.dragging_possibility:
+                part.drag(self.dragging_speed, self.raster_angle)
+
+    @DeprecationWarning
+    def add_at_optimum_energy_new_theta(self, x_start, y_start, theta_start):
+        print("Deprecated 41535154")
+
+        # print(x_start, y_start, theta_start)
+
+        def overlapping_amount(part):
+            if len(self.objects) == 0:
+                # print("Overlaps any took {}".format(time.perf_counter() - start))
+                return 0
+            amnt = 0
+            for p in self.objects:
+                if not part.dragged and not p.dragged:
+                    if math.dist([p.x, p.y], [part.x, part.y]) > max(part.effect_range, p.effect_range):
+                        continue
+                amnt += part.overlap_amnt(p)
+            # print("Overlaps any took {}".format(time.perf_counter() - start))
+            return amnt
+
+        x_loc = x_start
+        y_loc = y_start
+        theta_loc = theta_start
+
+        def energyt(theta):
+            p = Particle(x_loc, y_loc, theta[0])
+            charges = p.get_charges()
+            e = 0
+            e += overlapping_amount(p)
+            # print("Overlapping_amount: {}".format(overlapping_amount(p)))
+            for c in charges:
+                if c.has_negative_index:
+                    e += 1000
+                try:
+                    e += c.q * self.potential_map[int(c.x), int(c.y)]
+                except IndexError:
+                    e += self.overlapping_energy
+                    continue
+            return e
+
+        # for theta in range(360):
+        #    print("Theta: {} - E: {}".format(theta, energyt([3.14159 * theta/180])))
+
+        self.potential_map = self.calc_potential_map()
+        # plt.imshow(self.potential_map)
+        # plt.show()
+        vals = opt.fmin(energyt, [theta_loc])
+        # print(x_loc, y_loc, vals)
+        p = Particle(x_loc, y_loc, vals)
+
+        for i in range(10):
+            if self._overlaps_any(p):
+                vals = opt.fmin(energyt, [theta_loc])
+                p = Particle(x_loc, y_loc, vals[0])
+            else:
+                break
+        self.objects.append(p)
+        for c in p.get_charges():
+            self.add_To_Potential.append(c)
+        self.potential_map = self.calc_potential_map()
+        # plt.imshow(self.potential_map)
+        # plt.show()
+
+    @DeprecationWarning
+    def add_ALL_at_optimum_energy_new(self, n):
+        print("Deprecated 1351313")
+        # plt.imshow(self.potential_map)
+        # plt.show()
+
+        loc_pot_map = np.zeros((self.img_width, self.img_height))
+        loc_objs = []
+        use_old = False
+        to_add = []
+
+        def calc_loc_pot_map():
+            if use_old:
+                charges = []
+                for part in to_add:
+                    for c in part.get_charges():
+                        charges.append(c)
+                for charge in charges:
+                    for i in range(self.img_width):
+                        for j in range(self.img_height):
+                            loc_pot_map[i, j] += charge.calc_Potential(i, j)
+
+            charges = []
+            for i in loc_objs:
+                for c in i.get_charges():
+                    charges.append(c)
+
+            for charge in charges:
+                for i in range(self.img_width):
+                    for j in range(self.img_height):
+                        loc_pot_map[i, j] += charge.calc_Potential(i, j)
+
+        def overlapping_amount(part):
+            if len(self.objects) == 0:
+                # print("Overlaps any took {}".format(time.perf_counter() - start))
+                return 0
+            amnt = 0
+            for p in loc_objs:
+                if not part.dragged and not p.dragged:
+                    if math.dist([p.x, p.y], [part.x, part.y]) > max(part.effect_range, p.effect_range):
+                        continue
+                amnt += part.overlap_amnt(p)
+            # print("Overlaps any took {}".format(time.perf_counter() - start))
+            return amnt
+
+        initvals = []
+
+        for i in range(n):
+            initvals.append(100 + (self.img_width - 200) * random.random())
+            initvals.append(100 + (self.img_height - 200) * random.random())
+            initvals.append(6.2431 * random.random())
+
+        def energy(args):
+            e = 0
+            for i in range(0, 3 * n, 3):
+                p = Particle(args[i], args[i + 1], args[i + 2])
+                e += energyxyt(Particle(args[i], args[i + 1], args[i + 2]))
+                loc_objs.append(p)
+            # calc_loc_pot_map()
+            # for part in loc_objs:
+            #    e += energyxyt(part)
+
+            return e
+
+        def energyxyt(part):
+            print(part)
+            # print("Part: {}".format(part))
+            # if part is Particle:
+            #    p = part
+            # else:
+            #    p = part[0]
+            es = []
+            try:
+                for p in part:
+                    charges = p.get_charges()
+                    e = 0
+                    e += overlapping_amount(p)
+                    for c in charges:
+                        if c.has_negative_index():
+                            e += 1000
+                        try:
+                            # print("Charge {} at ({},{}) adds Energy {}".format(c.q, c.x, c.y, c.q * self.potential_map[int(c.x), int(c.y)]))
+                            e += c.q * loc_pot_map[int(c.x), int(c.y)]
+                        except IndexError:
+                            # print("Index Error")
+                            e += self.overlapping_energy
+                            continue
+                    # print("Energy: {}".format(e))
+                    es.append(e)
+                return es
+            except TypeError:
+                p = part
+                charges = p.get_charges()
+                e = 0
+                e += overlapping_amount(p)
+                for c in charges:
+                    if c.has_negative_index():
+                        e += 1000
+                    try:
+                        # print("Charge {} at ({},{}) adds Energy {}".format(c.q, c.x, c.y, c.q * self.potential_map[int(c.x), int(c.y)]))
+                        e += c.q * loc_pot_map[int(c.x), int(c.y)]
+                    except IndexError:
+                        # print("Index Error")
+                        e += self.overlapping_energy
+                        continue
+                # print("Energy: {}".format(e))
+                return e
+            except AttributeError:
+                print("AE")
+                return 1000
+
+        # print(energy(initvals))
+
+        calc_loc_pot_map()
+        # plt.imshow(self.potential_map)
+        # plt.show()
+        vals = opt.fmin(energy, initvals)
+
+        for i in range(0, 3 * n, 3):
+            p = Particle(vals[i], vals[i + 1], vals[i + 2])
+            for i in range(10):
+                if self._overlaps_any(p):
+                    print("Overlapped")
+                    vals = opt.fmin(energyxyt, [self.img_width * random.random(), self.img_height * random.random(),
+                                                2 * np.pi * random.random()])
+                    p = Particle(vals[0], vals[1], vals[2])
+                else:
+                    break
+            self.objects.append(p)
+            for c in p.get_charges():
+                self.add_To_Potential.append(c)
+        self.potential_map = self.calc_potential_map()
+        plt.imshow(self.potential_map)
+        plt.show()
+
+    @DeprecationWarning
+    def add_ALL_at_optimum_energy_new(self, n):
+        print("Deprecated 1351313")
+        # plt.imshow(self.potential_map)
+        # plt.show()
+
+        loc_pot_map = np.zeros((self.img_width, self.img_height))
+        loc_objs = []
+        use_old = False
+        to_add = []
+
+        def calc_loc_pot_map():
+            if use_old:
+                charges = []
+                for part in to_add:
+                    for c in part.get_charges():
+                        charges.append(c)
+                for charge in charges:
+                    for i in range(self.img_width):
+                        for j in range(self.img_height):
+                            loc_pot_map[i, j] += charge.calc_Potential(i, j)
+
+            charges = []
+            for i in loc_objs:
+                for c in i.get_charges():
+                    charges.append(c)
+
+            for charge in charges:
+                for i in range(self.img_width):
+                    for j in range(self.img_height):
+                        loc_pot_map[i, j] += charge.calc_Potential(i, j)
+
+        def overlapping_amount(part):
+            if len(self.objects) == 0:
+                # print("Overlaps any took {}".format(time.perf_counter() - start))
+                return 0
+            amnt = 0
+            for p in loc_objs:
+                if not part.dragged and not p.dragged:
+                    if math.dist([p.x, p.y], [part.x, part.y]) > max(part.effect_range, p.effect_range):
+                        continue
+                amnt += part.overlap_amnt(p)
+            # print("Overlaps any took {}".format(time.perf_counter() - start))
+            return amnt
+
+        initvals = []
+
+        for i in range(n):
+            initvals.append(100 + (self.img_width - 200) * random.random())
+            initvals.append(100 + (self.img_height - 200) * random.random())
+            initvals.append(6.2431 * random.random())
+
+        def energy(args):
+            e = 0
+            for i in range(0, 3 * n, 3):
+                p = Particle(args[i], args[i + 1], args[i + 2])
+                e += energyxyt(Particle(args[i], args[i + 1], args[i + 2]))
+                loc_objs.append(p)
+            # calc_loc_pot_map()
+            # for part in loc_objs:
+            #    e += energyxyt(part)
+
+            return e
+
+        def energyxyt(part):
+            print(part)
+            # print("Part: {}".format(part))
+            # if part is Particle:
+            #    p = part
+            # else:
+            #    p = part[0]
+            es = []
+            try:
+                for p in part:
+                    charges = p.get_charges()
+                    e = 0
+                    e += overlapping_amount(p)
+                    for c in charges:
+                        if c.has_negative_index():
+                            e += 1000
+                        try:
+                            # print("Charge {} at ({},{}) adds Energy {}".format(c.q, c.x, c.y, c.q * self.potential_map[int(c.x), int(c.y)]))
+                            e += c.q * loc_pot_map[int(c.x), int(c.y)]
+                        except IndexError:
+                            # print("Index Error")
+                            e += self.overlapping_energy
+                            continue
+                    # print("Energy: {}".format(e))
+                    es.append(e)
+                return es
+            except TypeError:
+                p = part
+                charges = p.get_charges()
+                e = 0
+                e += overlapping_amount(p)
+                for c in charges:
+                    if c.has_negative_index():
+                        e += 1000
+                    try:
+                        # print("Charge {} at ({},{}) adds Energy {}".format(c.q, c.x, c.y, c.q * self.potential_map[int(c.x), int(c.y)]))
+                        e += c.q * loc_pot_map[int(c.x), int(c.y)]
+                    except IndexError:
+                        # print("Index Error")
+                        e += self.overlapping_energy
+                        continue
+                # print("Energy: {}".format(e))
+                return e
+            except AttributeError:
+                print("AE")
+                return 1000
+
+        # print(energy(initvals))
+
+        calc_loc_pot_map()
+        # plt.imshow(self.potential_map)
+        # plt.show()
+        vals = opt.fmin(energy, initvals)
+
+        for i in range(0, 3 * n, 3):
+            p = Particle(vals[i], vals[i + 1], vals[i + 2])
+            for i in range(10):
+                if self._overlaps_any(p):
+                    print("Overlapped")
+                    vals = opt.fmin(energyxyt, [self.img_width * random.random(), self.img_height * random.random(),
+                                                2 * np.pi * random.random()])
+                    p = Particle(vals[0], vals[1], vals[2])
+                else:
+                    break
+            self.objects.append(p)
+            for c in p.get_charges():
+                self.add_To_Potential.append(c)
+        self.potential_map = self.calc_potential_map()
+        plt.imshow(self.potential_map)
+        plt.show()
 
     @DeprecationWarning
     def energy_function(self, x, y, theta):
@@ -606,11 +976,12 @@ class DataFrame:
 
     @DeprecationWarning
     def opimizable_energy_function(self, x):
+        print("Deprecated 165843")
         return self.energy_function(x[0], x[1], x[2])
 
     @DeprecationWarning
     def add_at_optimum_energy(self, initvals=None):  # ToDo: Include crystal structure
-
+        print("Deprecated 13511453415")
         # SCIPY
         self.potential_map = self.calc_potential_map()
         # initvasl = [self.img_width * random.random(), self.img_height * random.random(), 2 * np.pi * random.random()]
@@ -627,9 +998,12 @@ class DataFrame:
             self.add_To_Potential.append(c)
         self.potential_map = self.calc_potential_map()
 
+    @DeprecationWarning
     def add_at_optimum_energy_new(self, x_start, y_start, theta_start):
-        #plt.imshow(self.potential_map)
-        #plt.show()
+        print("Deprecatd 456135")
+
+        # plt.imshow(self.potential_map)
+        # plt.show()
         def overlapping_amount(part):
             if len(self.objects) == 0:
                 # print("Overlaps any took {}".format(time.perf_counter() - start))
@@ -724,330 +1098,179 @@ class DataFrame:
         plt.savefig(f)
         # plt.show()
 
-    def add_ALL_at_optimum_energy_new(self, n):
-        #plt.imshow(self.potential_map)
-        #plt.show()
-
-        loc_pot_map = np.zeros((self.img_width, self.img_height))
-        loc_objs = []
-        use_old = False
-        to_add = []
-        def calc_loc_pot_map():
-            if use_old:
-                charges = []
-                for part in to_add:
-                    for c in part.get_charges():
-                        charges.append(c)
-                for charge in charges:
-                    for i in range(self.img_width):
-                        for j in range(self.img_height):
-                            loc_pot_map[i, j] += charge.calc_Potential(i, j)
-
-
-            charges = []
-            for i in loc_objs:
-                for c in i.get_charges():
-                    charges.append(c)
-
-            for charge in charges:
-                for i in range(self.img_width):
-                    for j in range(self.img_height):
-                        loc_pot_map[i, j] += charge.calc_Potential(i, j)
-
-        def overlapping_amount(part):
-            if len(self.objects) == 0:
-                # print("Overlaps any took {}".format(time.perf_counter() - start))
-                return 0
-            amnt = 0
-            for p in loc_objs:
-                if not part.dragged and not p.dragged:
-                    if math.dist([p.x, p.y], [part.x, part.y]) > max(part.effect_range, p.effect_range):
-                        continue
-                amnt += part.overlap_amnt(p)
-            # print("Overlaps any took {}".format(time.perf_counter() - start))
-            return amnt
-
-        initvals = []
-
-        for i in range(n):
-            initvals.append(100 + (self.img_width - 200) * random.random())
-            initvals.append(100 + (self.img_height - 200) * random.random())
-            initvals.append(6.2431 * random.random())
-
-
-        def energy(args):
-            e = 0
-            for i in range(0, 3 * n, 3):
-                p = Particle(args[i], args[i+1], args[i+2])
-                e += energyxyt(Particle(args[i], args[i+1], args[i+2]))
-                loc_objs.append(p)
-            #calc_loc_pot_map()
-            #for part in loc_objs:
-            #    e += energyxyt(part)
-
-            return e
-
-        def energyxyt(part):
-            print(part)
-            #print("Part: {}".format(part))
-            #if part is Particle:
-            #    p = part
-            #else:
-            #    p = part[0]
-            es = []
-            try:
-                for p in part:
-                    charges = p.get_charges()
-                    e = 0
-                    e += overlapping_amount(p)
-                    for c in charges:
-                        if c.has_negative_index():
-                            e += 1000
-                        try:
-                            # print("Charge {} at ({},{}) adds Energy {}".format(c.q, c.x, c.y, c.q * self.potential_map[int(c.x), int(c.y)]))
-                            e += c.q * loc_pot_map[int(c.x), int(c.y)]
-                        except IndexError:
-                            # print("Index Error")
-                            e += self.overlapping_energy
-                            continue
-            # print("Energy: {}".format(e))
-                    es.append(e)
-                return es
-            except TypeError:
-                p = part
-                charges = p.get_charges()
-                e = 0
-                e += overlapping_amount(p)
-                for c in charges:
-                    if c.has_negative_index():
-                        e += 1000
-                    try:
-                        # print("Charge {} at ({},{}) adds Energy {}".format(c.q, c.x, c.y, c.q * self.potential_map[int(c.x), int(c.y)]))
-                        e += c.q * loc_pot_map[int(c.x), int(c.y)]
-                    except IndexError:
-                        # print("Index Error")
-                        e += self.overlapping_energy
-                        continue
-                # print("Energy: {}".format(e))
-                return e
-            except AttributeError:
-                print("AE")
-                return 1000
-
-        #print(energy(initvals))
-
-        calc_loc_pot_map()
-        # plt.imshow(self.potential_map)
-        # plt.show()
-        vals = opt.fmin(energy, initvals)
-
-        for i in range(0, 3 * n, 3):
-            p = Particle(vals[i], vals[i+1], vals[i+2])
-            for i in range(10):
-                if self._overlaps_any(p):
-                    print("Overlapped")
-                    vals = opt.fmin(energyxyt, [self.img_width * random.random(), self.img_height * random.random(),
-                                            2 * np.pi * random.random()])
-                    p = Particle(vals[0], vals[1], vals[2])
-                else:
-                    break
-            self.objects.append(p)
-            for c in p.get_charges():
-                self.add_To_Potential.append(c)
-        self.potential_map = self.calc_potential_map()
-        plt.imshow(self.potential_map)
-        plt.show()
-
-    # Only Adjust orientation, not position
     @DeprecationWarning
-    def add_at_optimum_energy_new_theta(self, x_start, y_start, theta_start):
+    def calc_pot_Energy_for_particle(self, part, mapchange=False):
+        print("Deprecated 4641635")
+        if mapchange or self.potential_map is None:
+            self.potential_map = self.calc_potential_map()
+        charges = part.get_charges()
+        # pot_map = self.calc_potential_map()
+        e_pot = 0
+        for charge in charges:
+            try:
+                e_pot += charge.q * self.potential_map[
+                    int(charge.x), int(charge.y)]  # ToDo: Not round but scale by surrrounding
+            except IndexError:
+                print("calc_pot_Energy_for_particle for x={}, y={}".format(int(charge.x), int(charge.y)))
 
-        # print(x_start, y_start, theta_start)
+        e_pot += self.is_overlapping(part)
 
-        def overlapping_amount(part):
-            if len(self.objects) == 0:
-                # print("Overlaps any took {}".format(time.perf_counter() - start))
-                return 0
-            amnt = 0
-            for p in self.objects:
-                if not part.dragged and not p.dragged:
-                    if math.dist([p.x, p.y], [part.x, part.y]) > max(part.effect_range, p.effect_range):
-                        continue
-                amnt += part.overlap_amnt(p)
-            # print("Overlaps any took {}".format(time.perf_counter() - start))
-            return amnt
+        return e_pot
 
-        x_loc = x_start
-        y_loc = y_start
-        theta_loc = theta_start
+    @DeprecationWarning
+    def createImage(self):
+        print("Deprecated 3154251534")
+        self.img = MyImage()
+        for part in self.objects:
+            self.img.addParticle(part)
 
-        def energyt(theta):
-            p = Particle(x_loc, y_loc, theta[0])
-            charges = p.get_charges()
-            e = 0
-            e += overlapping_amount(p)
-            # print("Overlapping_amount: {}".format(overlapping_amount(p)))
-            for c in charges:
-                if c.has_negative_index:
-                    e += 1000
-                try:
-                    e += c.q * self.potential_map[int(c.x), int(c.y)]
-                except IndexError:
-                    e += self.overlapping_energy
-                    continue
-            return e
+        self.img.updateImage()  # Always call last
+        # img.noise....etc
 
-        # for theta in range(360):
-        #    print("Theta: {} - E: {}".format(theta, energyt([3.14159 * theta/180])))
-
-        self.potential_map = self.calc_potential_map()
-        # plt.imshow(self.potential_map)
-        # plt.show()
-        vals = opt.fmin(energyt, [theta_loc])
-        # print(x_loc, y_loc, vals)
-        p = Particle(x_loc, y_loc, vals)
-
-        for i in range(10):
-            if self._overlaps_any(p):
-                vals = opt.fmin(energyt, [theta_loc])
-                p = Particle(x_loc, y_loc, vals[0])
-            else:
-                break
-        self.objects.append(p)
-        for c in p.get_charges():
-            self.add_To_Potential.append(c)
-        self.potential_map = self.calc_potential_map()
-        # plt.imshow(self.potential_map)
-        # plt.show()
-
-    def create_Image_Visualization(self):
+    @DeprecationWarning
+    def createImage_efficient(self):
+        print("Deprecated 46541741")
         self.img = MyImage()
         width = self.img_width
         height = self.img_height
         matrix = np.zeros((width, height))
 
         for part in self.objects:
-            for tuple in part.get_visualization():
-                # print("Tupel:{}".format(tuple))
-                eff_mat, x, y = tuple
-                mat_w = eff_mat.shape[0]
+            eff_mat, x, y = part.efficient_Matrix()
+            mat_w = eff_mat.shape[0]
 
-                # ToDo: possible failure
-                x = int(np.round(x))
-                y = int(np.round(y))
-                # plt.imshow(eff_mat)
-                # plt.show()
-                # print(np.max(eff_mat))
-                mat_h = eff_mat.shape[1]
-                for i in range(mat_w):
-                    for j in range(mat_h):
-                        new_x = x - math.floor((mat_w / 2)) + i
-                        new_y = y - math.floor(mat_h / 2) + j
-                        if not (0 <= new_x < width and 0 <= new_y < height):
-                            continue
-                        matrix[new_x, new_y] += eff_mat[i, j]
+            mat_h = eff_mat.shape[1]
+            for i in range(mat_w):
+                for j in range(mat_h):
+                    new_x = x - math.floor((mat_w / 2)) + i
+                    new_y = y - math.floor(mat_h / 2) + j
+                    if not (0 <= new_x < width and 0 <= new_y < height):
+                        continue
+                    matrix[new_x, new_y] += eff_mat[i, j]
 
-        self.img.addMatrix(matrix)  # Indentd  too far right
-
-    def _drag_particles(self):
-        print("Deprecated 6546335416")
-        for part in self.objects:
-            if random.random() < self.dragging_possibility:
-                part.drag(self.dragging_speed, self.raster_angle)
-
-    def get_Image(self):
-        if random.random() < self.double_tip_poss:
-            print("Double Tipping")
-            strength = 0.3 + 0.5 * random.random()
-            # print(strength)
-            rel_dist = 0.1 * random.random()  # ToDO: Let loose
-            angle = 2 * np.pi * random.random()
-            # angle = 0
-            doubled_frame = Double_Frame(self.fn_gen, strength, rel_dist, angle)
-            # print("Created Double Frame")
-            doubled_frame.addParticles(self.passed_args[0], self.passed_args[1], self.passed_args[2],
-                                       self.passed_args[3])
-            # print("added Particles")
-            # if self.use_dragging:
-            #    doubled_frame._drag_particles()
-            self.img = doubled_frame.extract_Smaller()
-            # print("extracted Smaller")
-            self.objects = doubled_frame.get_objects()
-            # print("Got objects")
-            if self.use_noise:
-                self.img.noise(self.image_noise_mu, self.image_noise_sigma)
-            self.img.updateImage()
-            # print("updated Image")
-
-            return
-
-        # if self.use_dragging: #ToDo: Possibly later
-        #    self._drag_particles()
-        self.create_Image_Visualization()
-
-        # if random.random() < self.double_tip_poss:
-        #    surrounding_frames = []
-        #    for i in range(4):
-        #        df_a = DataFrame(self.fn_gen)
-        #        df_a.addParticles(self.passed_args[0], self.passed_args[1], self.passed_args[2], self.passed_args[3])
-        #        df_a.double_tip_poss = 0
-        #        df_a.create_Image_Visualization()
-        #        surrounding_frames.append(df_a.img.colors)
-        #    self.img.double_tip(0.3, 0.1, 2 * np.pi * random.random(), surrounding_frames)
-        if self.use_noise:
-            self.img.noise(self.image_noise_mu, self.image_noise_sigma)
+        self.img.addMatrix(matrix)
         self.img.updateImage()
 
-    def createText(self):
-        strings = [Particle.str_Header()]
+    @DeprecationWarning
+    def createImage_efficient_with_new_Turn(self):
+        print("Deprecated 453643")
+        self.img = MyImage()
+        width = self.img_width
+        height = self.img_width
+        matrix = np.zeros((width, height))
+
         for part in self.objects:
-            strings.append(str(part))
-        self.text = "\n".join(strings)
+            eff_mat, x, y = part.efficient_Matrix_turned()
+            mat_w = eff_mat.shape[0]
 
-    def save(self, data=True, image=True, sxm=True):
-        if self.img is None:
-            # self.createImage_efficient()
-            self.get_Image()
-        if len(self.text) == 0:
-            self.createText()
-        img_path, dat_path, sxm_path, index = self.fn_gen.generate_Tuple()
-        # print("Saving: {}".format(index))
-        print("Saving No {} -> {}".format(index, img_path))
-        try:
-            with open(dat_path, "w") as dat_file:
-                dat_file.write(self.text)
-        except FileNotFoundError:
-            os.mkdir(cfg.get_data_folder())
-            with open(dat_path, "w") as dat_file:
-                dat_file.write(self.text)
-        self.img.saveImage(img_path)
-        My_SXM.write_sxm(sxm_path, self.img.get_matrix())
-        # if self.has_overlaps():
-        # print("Overlaps detected @ {}".format(index))
+            mat_h = eff_mat.shape[1]
+            for i in range(mat_w):
+                for j in range(mat_h):
+                    new_x = x - math.floor((mat_w / 2)) + i
+                    new_y = y - math.floor(mat_h / 2) + j
+                    if not (0 <= new_x < width and 0 <= new_y < height):
+                        continue
+                    matrix[new_x, new_y] += eff_mat[i, j]
 
-    def hasPoints(self):
-        # return not self.points.empty()
-        return len(self.objects) > 0
+        self.img.addMatrix(matrix)
+        # self.img.updateImage()
 
-    def coverage(self):
-        area = self.area
-        covered = 0
-        for part in self.objects:
-            covered += np.pi * np.square(part.get_dimension())
-        return covered / area
+    @DeprecationWarning
+    def calc_potential_map(self):  # ToDo: Nicht Multithreading safe mit pickle dump
+        print("Deprecated 876451646")
+        start = time.perf_counter()
+        if self.oldPotential is not None:
+            pot = self.oldPotential
+            for charge in self.add_To_Potential:
+                for i in range(self.img_width):
+                    for j in range(self.img_height):
+                        pot[i, j] += charge.calc_Potential(i, j)
 
-    def has_overlaps(self):
-        for i in range(len(self.objects)):
-            for j in range(i):
-                # print("Testing overlap {} - {}".format(i, j))
-                if self.objects[i].true_overlap(self.objects[j]):
-                    # print("Testing overlap {} - {}".format(i, j))
-                    # print("i: x={}, y={}, dg={}; j: x={}, y={}, dg={}".format(self.objects[i].get_x(), self.objects[i].get_y(), self.objects[i].dragged, self.objects[j].get_x(), self.objects[j].get_y(), self.objects[j].dragged))
-                    return True
-        return False
+            self.add_To_Potential = []
+            self.oldPotential = pot
+            print("Short End at {}".format(time.perf_counter() - start))
+            # plt.imshow(pot)
+            # plt.show()
+            return pot
 
-    def __str__(self):
-        return str(self.objects)
+        if os.path.isfile("pot.data"):
+            pot = pickle.load(open("pot.data", "rb"))
+            self.oldPotential = pot
+
+            # plt.imshow(pot)
+            # plt.show()
+            if np.shape(pot) == (self.img_width, self.img_height):
+                print("Long End at {}".format(time.perf_counter() - start))
+                return pot
+
+        def gitter():
+            charges = []
+            kappa = 1
+            for i in range(0, self.img_width, 40):
+                # kappa += 1
+                for j in range(0, self.img_height, 40):
+                    kappa += 1
+                    charges.append(Charge(i, j, 0.7))
+            pot = np.zeros((self.img_width, self.img_height))
+
+            for part in self.objects:
+                for q in part.get_charges():
+                    charges.append(q)
+
+            sdf = 0
+            for q in charges:
+                print(sdf)
+                sdf += 1
+                for i in range(self.img_width):
+                    for j in range(self.img_height):
+                        # print(i, j)
+                        pot[i, j] += q.calc_Potential(i, j)
+            return pot
+
+        def alternating():
+            charges = []
+            kappa = 1
+            for i in range(0, self.img_width, 40):
+                kappa += 1
+                for j in range(0, self.img_height, 40):
+                    kappa += 1
+                    charges.append(Charge(i, j, 0.7 * (-1) ** kappa))
+            pot = np.zeros((self.img_width, self.img_height))
+
+            for part in self.objects:
+                for q in part.get_charges():
+                    charges.append(q)
+
+            sdf = 0
+            for q in charges:
+                print(sdf)
+                sdf += 1
+                for i in range(self.img_width):
+                    for j in range(self.img_height):
+                        # print(i, j)
+                        pot[i, j] += q.calc_Potential(i, j)
+            return pot
+
+        def slope():
+            pot = np.zeros((self.img_width, self.img_height))
+            for i in range(self.img_width):
+                for j in range(self.img_width):
+                    pot[i, j] = 100 * i / self.img_width
+
+            return pot
+
+        def ohne():
+            return np.zeros((self.img_width, self.img_height))
+
+        pot = ohne()
+
+        print("Long End at {}".format(time.perf_counter() - start))
+        with open("pot.data", "wb") as p:
+            pickle.dump(pot, p)
+        self.oldPotential = pot
+        # plt.imshow(pot)
+        # plt.show()
+        return pot
 
 
 class Double_Frame(DataFrame):

@@ -9,7 +9,7 @@ class MyImage:
     width = cfg.get_width()
     height = cfg.get_height()
     # noise = True
-    colors = np.zeros((width, height))
+    colors = np.zeros((int(np.ceil(width.px)), int(np.ceil(height.px))))
     sigma = 5.5
 
 
@@ -91,7 +91,7 @@ class MyImage:
                 pixels[i, j] = (int(self.colors[i, j]), int(self.colors[i, j]), int(self.colors[i, j]))
 
     def newImage(self):
-        img = Image.new('RGB', (self.width, self.height), 0)
+        img = Image.new('RGB', (int(np.ceil(self.width.px)), int(np.ceil(self.height.px))), 0)
         return img
 
     # Add Noise to image

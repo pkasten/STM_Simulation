@@ -1,6 +1,7 @@
 import configparser as cp
 import os, numpy as np
 from TestsApril.Maths.Functions import measureTime
+from Distance import Distance
 
 conf = cp.ConfigParser()
 # settings_folder = os.path.join(os.getcwd(), "Configuration")
@@ -35,25 +36,27 @@ val_sxm_folder = None
 
 
 cat_image_basics = 'image_settings'
+def_px_per_angstrom = 'Pixel per Angstrom', 20
 def_prefix_image = 'prefix_image', 'Image'
 def_suffix_image = 'suffix_image', '.png'
 def_prefix_data = 'prefix_data', 'Data'
 def_suffix_data = 'suffix_data', '.txt'
 def_prefix_sxm = 'prefix_sxm', 'Image'
 def_suffix_sxm = 'suffix_sxm', '.sxm'
-def_width = 'width', 400
-def_height = 'height', 400
+def_width = 'width (Ang)', 20
+def_height = 'height (Ang)', 20
 def_particles = 'no_of_particles', int(def_width[1] * def_height[1] / 16000)
 def_px_overlap = 'pixels_overlap (in px)', 40
 def_anti_aliasing = 'Anti-Aliasing', 1
 def_noise_mu = 'Image-noise_Average', 0
 def_noise_std_deriv = 'Image-noise-Standard_derivation', 0.1 * def_noise_mu[1]
 image_basics_settings = [def_prefix_image, def_suffix_image, def_prefix_data, def_suffix_data, def_prefix_sxm,
-                         def_suffix_sxm, def_width, def_height,
+                         def_suffix_sxm, def_px_per_angstrom, def_width, def_height,
                          def_particles, def_px_overlap, def_anti_aliasing, def_noise_mu, def_noise_std_deriv]
 
 
 val_prefix_image = None
+val_px_per_angstrom = None
 val_suffix_image = None
 val_prefix_data = None
 val_suffix_data = None
@@ -69,22 +72,22 @@ val_noise_std_deriv = None
 
 
 cat_particle_properties = 'particle_properties'
-def_width_part = 'width', 3
-def_length_part = 'length', 30
-def_height_part = 'height', 3
+def_width_part = 'Particle width (Ang)', 0.3
+def_length_part = 'Particle length (Ang)', 3
+def_height_part = 'Particle height (Ang)', 0.3
 def_image_path = 'image_path', ""
-def_part_max_height = 'max_height', 1
+def_part_max_height = 'max_height (Ang)', 1
 def_std_deriv = 'std_derivate_grain_border', def_length_part[1] / 5
 def_fermi_exp = '1/kbT', 0.1 * def_length_part[1]
-def_angle_characteristic_length = 'Angle Characteristic_relative_length', 0.2
-def_angle_stdderiv = 'std_derivate_angle_correlation', 1
+def_angle_characteristic_length = 'Angle Characteristic_relative_length', 0
+def_angle_stdderiv = 'std_derivate_angle_correlation', 0
 def_angle_range_min = 'minimum angle (degree)', 0
 def_angle_range_max = 'maximum angle (degree)', 0
 def_angle_range_usage = 'use angle range?', 0
-def_use_crystal_orientation = 'Use Crystal orientation', 1
-def_no_of_orientations = 'Number of Crystal Orientations', 2
+def_use_crystal_orientation = 'Use Crystal orientation', 0
+def_no_of_orientations = 'Number of Crystal Orientations', 0
 def_crystal_orientation_1 = 'Crystal Direction 1 (Degrees)', 0
-def_crystal_orientation_2 = 'Crystal Direction 2 (Degrees)', 90
+def_crystal_orientation_2 = 'Crystal Direction 2 (Degrees)', 0
 def_crystal_orientation_3 = 'Crystal Direction 3 (Degrees)', 0
 def_crystal_orientation_4 = 'Crystal Direction 4 (Degrees)', 0
 particle_properties_settings = [def_width_part, def_image_path, def_length_part, def_height_part, def_fermi_exp,
@@ -128,6 +131,12 @@ val_dragging_possibility = None
 val_raster_angle = None
 val_doubletip_possibility = None
 
+cat_lattice = 'lattice'
+def_nn_dist = 'Distance between nearest neigbours (Ang)', 2.88
+lattice_settings = [def_nn_dist]
+
+val_nn_dist = None
+
 # Reset parameters to default values
 
 @measureTime
@@ -135,6 +144,7 @@ def _writeDefaults():
     conf[cat_pc] = {x[0]: x[1] for x in pc_settings}
     conf[cat_image_basics] = {x[0]: x[1] for x in image_basics_settings}
     conf[cat_particle_properties] = {x[0]: x[1] for x in particle_properties_settings}
+    conf[cat_lattice] = {x[0] : x[1] for x in lattice_settings}
     conf[cat_special] = {x[0]: x[1] for x in special_settings}
     try:
         with open(settings_file, 'w') as settings:
@@ -172,14 +182,15 @@ def update_params():
     global val_angle_range_max, val_angle_range_usage, val_use_crystal_orientation, val_no_of_orientations, val_crystal_orientation_1
     global val_crystal_orientation_2, val_crystal_orientation_3, val_crystal_orientation_4, val_overlap_threshold
     global val_dragging_error, val_raster_angle, val_dragging_speed, val_dragging_possibility, val_doubletip_possibility
-    global val_prefix_sxm, val_suffix_sxm, val_sxm_folder
+    global val_prefix_sxm, val_suffix_sxm, val_sxm_folder, val_px_per_angstrom, val_nn_dist
     val_threads = int(conf[cat_pc][def_threads[0]])
     val_images_per_thread = int(conf[cat_pc][def_images_per_thread[0]])
     val_image_folder = conf[cat_pc][def_image_folder[0]]
     val_data_folder = conf[cat_pc][def_data_folder[0]]
     val_sxm_folder = conf[cat_pc][def_sxm_folder[0]]
-    val_width = int(conf[cat_image_basics][def_width[0]])
-    val_height = int(conf[cat_image_basics][def_height[0]])
+    val_px_per_angstrom = float(conf[cat_image_basics][def_px_per_angstrom[0]])
+    val_width = Distance(True, float(conf[cat_image_basics][def_width[0]]))
+    val_height = Distance(True, float(conf[cat_image_basics][def_height[0]]))
     val_particles = int(conf[cat_image_basics][def_particles[0]])
     val_prefix_image = conf[cat_image_basics][def_prefix_image[0]]
     val_prefix_data = conf[cat_image_basics][def_prefix_data[0]]
@@ -191,11 +202,11 @@ def update_params():
     val_anti_aliasing = bool(int(conf[cat_image_basics][def_anti_aliasing[0]]))
     val_noise_mu = float(conf[cat_image_basics][def_noise_mu[0]])
     val_noise_std_deriv = float(conf[cat_image_basics][def_noise_std_deriv[0]])
-    val_height_part = int(conf[cat_particle_properties][def_height_part[0]])
-    val_width_part = int(conf[cat_particle_properties][def_width_part[0]])
-    val_length_part = int(conf[cat_particle_properties][def_length_part[0]])
+    val_height_part = Distance(True, float(conf[cat_particle_properties][def_height_part[0]]))
+    val_width_part = Distance(True, float(conf[cat_particle_properties][def_width_part[0]]))
+    val_length_part = Distance(True, float(conf[cat_particle_properties][def_length_part[0]]))
     val_image_path = conf[cat_particle_properties][def_image_path[0]]
-    val_part_max_height = int(conf[cat_particle_properties][def_part_max_height[0]])
+    val_part_max_height = Distance(True, float(conf[cat_particle_properties][def_part_max_height[0]]))
     val_fermi_exp = float(conf[cat_particle_properties][def_fermi_exp[0]])
     val_angle_stdderiv = float(conf[cat_particle_properties][def_angle_stdderiv[0]])
     val_angle_characteristic_length = float(conf[cat_particle_properties][def_angle_characteristic_length[0]])
@@ -211,10 +222,10 @@ def update_params():
     val_overlap_threshold = int(conf[cat_special][def_overlap_threshold[0]])
     val_dragging_error = bool(int(conf[cat_special][def_dragging_error[0]]))
     val_raster_angle = np.pi * float(conf[cat_special][def_raster_angle[0]]) / 180
-    val_dragging_speed = float(conf[cat_special][def_dragging_speed[0]])
+    val_dragging_speed = Distance(True, float(conf[cat_special][def_dragging_speed[0]]))
     val_dragging_possibility = float(conf[cat_special][def_dragging_possibility[0]])
     val_doubletip_possibility = float(conf[cat_special][def_doubletip_possibility[0]])
-
+    val_nn_dist = Distance(True, float(conf[cat_lattice][def_nn_dist[0]]))
 
 # return THREADS parameter
 
@@ -351,6 +362,10 @@ def get_particles_per_image():
     if not initialized: setupConfigurationManager()
     return val_particles
 
+def get_px_per_angstrom():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    return val_px_per_angstrom
 
 def get_prefix_image():
     global settings_file
@@ -534,6 +549,8 @@ def get_crystal_orientations_array():
     elif get_no_of_orientations() == 4:
         return [get_crystal_orientation_1(), get_crystal_orientation_2(), get_crystal_orientation_3(), get_crystal_orientation_4()]
     else:
+        if get_no_of_orientations() == 0:
+            return []
         raise NotImplementedError
 
 def get_overlap_threshold():
@@ -566,3 +583,8 @@ def get_double_tip_possibility():
     global settings_file
     if not initialized: setupConfigurationManager()
     return val_doubletip_possibility
+
+def get_nn_dist():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    return val_nn_dist

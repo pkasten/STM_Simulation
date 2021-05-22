@@ -5,7 +5,10 @@ import numpy as np
 import Configuration as conf
 import SXM_info
 import random
+
+from Distance import Distance
 from Images import MyImage
+from Molecule import Molecule
 from Particle import Particle
 from FilenameGenerator import FilenameGenerator
 from DataFrame import DataFrame
@@ -17,6 +20,7 @@ from multiprocessing import Process, Lock, Semaphore
 from multiprocessing.managers import BaseManager
 from My_SXM import My_SXM
 import matplotlib.pyplot as plt
+from Molecule import test_Lookup_Table
 
 
 def test_frame(data_frame):
@@ -101,7 +105,7 @@ def every_thread_one():
 
     ts = []
     for i in range(cfg.get_threads()):
-        ts.append(Gen1(fn))
+        ts.append(Gen1(fn_gen))
     for t in ts:
         t.start()
 
@@ -165,8 +169,32 @@ def testStdderiv(fn_gen, l):
 if __name__ == "__main__":
     clearLog()
     # lo = Lock()
-    start = time.perf_counter()
-    fn = FilenameGenerator()
+    #start = time.perf_counter()
+    #fn = FilenameGenerator()
+
+    test_Lookup_Table()
+
+    #dat = DataFrame(fn)
+    #for n in range(0,8, 3):
+    #    dat.addObject(Molecule(np.array([Distance(False, 200), Distance(False, 200 + 100*n)]), n*0.785))
+    #dat.addObject(Molecule(np.array([Distance(False, 200), Distance(False, 200 + 100)]), 0))
+    #dat.addObject(Particle(Distance(False, 200), Distance(False, 500), 0.9))
+    #dat.addObjects(Molecule, amount=1)
+    #dat.addObject(Molecule(np.array([Distance(False, 200), Distance(False, 200)]), 1*0.785))
+    #dat.addObject(Molecule(np.array([Distance(False, 200), Distance(False, 240)]), 2*0.785))
+    #for i in range(30):
+    #    print("Iteration I={}".format(i))
+    #    dat.addObjects(Molecule, amount=10)
+
+    #dat.objects[0].drag(10, 0)
+
+        #start = time.perf_counter()
+        #print(dat.has_overlaps())
+        #print("Has Overlaps: " + str(time.perf_counter() - start))
+        #start = time.perf_counter()
+        #dat.get_Image()
+        #print("Get Image: " + str(time.perf_counter() - start))
+        #dat.save()
 
 
     # filename = "pySPM_Tests/HOPG-gxy1z1-p2020.sxm"
@@ -232,15 +260,15 @@ if __name__ == "__main__":
     #    dat.save()
 
 
-    dat = DataFrame(fn)
-    for i in range(60, cfg.get_width() - 60, 60):
-        for j in range(60, cfg.get_height() - 60, 60):
-            dat.add_at_optimum_energy_new(100 + 400 * random.random(), 100 + 400 * random.random(), 6.28 * random.random())
-            dat.get_Image()
-            dat.save()
-    #dat.add_ALL_at_optimum_energy_new(10)
-    dat.get_Image()
-    dat.save()
+    #dat = DataFrame(fn)
+    #for i in range(60, cfg.get_width() - 60, 60):
+    #    for j in range(60, cfg.get_height() - 60, 60):
+    #        dat.add_at_optimum_energy_new(100 + 400 * random.random(), 100 + 400 * random.random(), 6.28 * random.random())
+    #        dat.get_Image()
+    #        dat.save()
+    ##dat.add_ALL_at_optimum_energy_new(10)
+    #dat.get_Image()
+    #dat.save()
 
     #dat_frame.addParticle(Particle(100, 100, 0.5))
     #for i in range(5):
@@ -265,11 +293,11 @@ if __name__ == "__main__":
     # dat_frame.get_Image()
     # dat_frame.save()
     # generate(fn)
-    for i in range(10):
-        dat = DataFrame(fn)
-        dat.addParticles(amount=10)
-        dat.get_Image()
-        dat.save()
+    #for i in range(10):
+    #    dat = DataFrame(fn)
+    #    dat.addParticles(amount=10)
+    #    dat.get_Image()
+    #    dat.save()
     # dat_frame.potential_map = dat_frame.calc_potential_map()
     # for i in range(20):
     #    print(i)

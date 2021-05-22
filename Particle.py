@@ -3,6 +3,7 @@ import Configuration as cfg
 import numpy as np
 from Functions import turnMatrix
 from PIL import Image
+from Distance import Distance
 from Charge import Charge
 from scipy.special import erf
 import matplotlib.pyplot as plt
@@ -12,8 +13,8 @@ class Particle:
 
     def __init__(self, x=None, y=None, theta=None):
         if x is None:
-            self.x = random.randint(0 - cfg.get_px_overlap(), cfg.get_width() + cfg.get_px_overlap())
-            self.y = random.randint(0 - cfg.get_px_overlap(), cfg.get_height() + cfg.get_px_overlap())
+            self.x = Distance(False, random.randint(0 - cfg.get_px_overlap(), cfg.get_width().px + cfg.get_px_overlap()))
+            self.y = Distance(False, random.randint(0 - cfg.get_px_overlap(), cfg.get_height().px + cfg.get_px_overlap()))
             self.theta = 2 * math.pi * random.random()
         else:
             self.x = x
@@ -29,9 +30,9 @@ class Particle:
         self.fermi_exp = cfg.get_fermi_exp()
         self.effect_range = max(self.length, self.width)
         if self.fermi_exp != 0:
-            self.fermi_range_w = np.log(99) / self.fermi_exp + self.width / 2  # ToDo: Soft Code percentile
-            self.fermi_range_h = np.log(99) / self.fermi_exp + self.height / 2
-            self.effect_range = int(max(self.length + self.fermi_range_h / 2, self.width + self.fermi_range_w / 2))
+            self.fermi_range_w = np.log(99) / self.fermi_exp + self.width.px / 2  # ToDo: Soft Code percentile
+            self.fermi_range_h = np.log(99) / self.fermi_exp + self.height.px / 2
+            self.effect_range = int(max(self.length.px + self.fermi_range_h / 2, self.width.px + self.fermi_range_w / 2))
         self.overlap_threshold = cfg.get_overlap_threshold()
         # self.effect_range = np.square(self.std_deriv) * max(self.length, self.width)
 
@@ -46,12 +47,12 @@ class Particle:
             self.img = Image.open(cfg.get_image_path())
             self.pixels = self.img.convert("L").load()
             self.fromImage = True
-        self.charges = []
-        self.calc_charges()
+        #self.charges = []
+        #self.calc_charges()
 
+    @DeprecationWarning
     def calc_charges(self):
         #Dipol
-
         q_plus = Charge(self.x - self.length * 0.45 * np.sin(self.theta), self.y + self.length * 0.45 * np.cos(self.theta), 1)
         q_minus = Charge(self.x + self.length * 0.45 * np.sin(self.theta), self.y - self.length * 0.45 * np.cos(self.theta), -1)
         self.charges = []
@@ -59,7 +60,7 @@ class Particle:
         self.charges.append(q_minus)
 
 
-
+    @DeprecationWarning
     def toMatrix(self):
         print("Deprecated 1231453")
         matrix = np.zeros((self.img_width, self.img_height))
@@ -98,8 +99,8 @@ class Particle:
         rmat = np.zeros(np.shape(matrix))
         c_x = np.shape(matrix)[0] / 2
         c_y = np.shape(matrix)[1] / 2
-        c_x_alt = c_x + (random.random() - 0.5) * self.length * np.sin(self.theta)
-        c_y_alt = c_y + (random.random() - 0.5) * self.length * np.cos(self.theta)
+        c_x_alt = c_x + (random.random() - 0.5) * self.length.px * np.sin(self.theta)
+        c_y_alt = c_y + (random.random() - 0.5) * self.length.px * np.cos(self.theta)
         f = lambda x: np.tan(self.dragged_angle) * (x - c_x_alt) + c_y_alt
         for i in range(np.shape(matrix)[0]):
             for j in range(np.shape(matrix)[1]):
@@ -110,9 +111,16 @@ class Particle:
                     lmat[i, j] = 0
                     rmat[i, j] = matrix[i, j]
 
+        #print("x: {}, y:{}".format(x, y))
+        #print("x2: {}, y2:{}".format(x.px + self.dragged_dist * np.cos(self.dragged_angle),y.px + self.dragged_dist * np.sin(
+         #   self.dragged_angle)))
+
+
         self.subp1 = lmat, x, y
-        self.subp2 = rmat, x + self.dragged_dist * np.cos(self.dragged_angle), y + self.dragged_dist * np.sin(
-            self.dragged_angle)
+       #print("X: {}".format(y))
+       # print("DD: {}".format(self.dragged_dist))
+        self.subp2 = rmat, Distance(False, x.px + self.dragged_dist * np.cos(self.dragged_angle)), Distance(False, y.px + self.dragged_dist * np.sin(
+            self.dragged_angle))
 
     def visualize_pixel(self, x, y):
         if not self.fromImage:
@@ -153,10 +161,10 @@ class Particle:
 
         top_fak = 0.7 #ToDO: Remove bzw 1
 
-        if x < left_x - self.fermi_range_w or \
-                y < lower_y - self.fermi_range_h or \
-                x > right_x + self.fermi_range_w or \
-                y > upper_y + self.fermi_range_h:
+        if x < left_x.px - self.fermi_range_w or \
+                y < lower_y.px - self.fermi_range_h or \
+                x > right_x.px + self.fermi_range_w or \
+                y > upper_y.px + self.fermi_range_h:
 
             return 0
         elif x < 0 and y < 0:
@@ -177,13 +185,14 @@ class Particle:
 
     def _fermi1D(self, x, mu):
         if x < 0:
-            return 1 / (np.exp(self.fermi_exp * (-x + mu)) + 1)
+            return 1 / (np.exp(self.fermi_exp * (-x + mu.px)) + 1)
         else:
-            return 1 / (np.exp(self.fermi_exp * (x - mu)) + 1)
+            return 1 / (np.exp(self.fermi_exp * (x - mu.px)) + 1)
 
 
     def _color(self, height):
-        return 255 * height / self.max_height
+
+        return 255 * height.px / self.max_height.px
 
     def get_x(self):
         return self.x
@@ -335,23 +344,50 @@ class Particle:
             return ret1 + ret2 + ret3 + ret4
 
     def _eval_overlap_matrizes(self, mat1, x1, y1, mat2, x2, y2):
+        #Testing - ging nicht
+        #newmat = np.zeros((int(np.ceil(self.img_width.px)), int(np.ceil(self.img_height.px))))
+        #dx = int(np.shape(mat1)[0]/2)
+        #dy = int(np.shape(mat1)[1]/2)
+        #for i in range(np.shape(mat1)[0]):
+        #    for j in range(np.shape(mat2)[1]):
+        #        try:
+        #            newmat[i + int(np.ceil(x1.px)) - dx, j + int(np.ceil(y1.px)) - dy] = mat1[i, j]
+        #        except IndexError:
+        #            continue
+
+        #dx = int(np.shape(mat2)[0] / 2)
+        #dy = int(np.shape(mat2)[1] / 2)
+        #for i in range(np.shape(mat2)[0]):
+        #    for j in range(np.shape(mat2)[1]):
+        #        try:
+        #            if newmat[i + int(np.ceil(x2.px)) - dx, j + int(np.ceil(y2.px)) - dy] > self.overlap_threshold and mat1[i, j] > self.overlap_threshold:
+        #                return True
+        #            newmat[i + int(np.ceil(x2.px)) - dx, j + int(np.ceil(y2.px)) - dy] = mat1[i, j]
+        #        except IndexError:
+        #            continue
+
+        #plt.imshow(newmat)
+        #plt.show()
+        #return False
+
+
         #print(np.max(mat1), np.max(mat2))
 
         #test
-        bigmatw = int(np.shape(mat1)[0]/2 + np.shape(mat2)[0]/2 + np.abs(x1 - x2))
-        bigmath = int(np.shape(mat1)[1]/2 + np.shape(mat2)[1]/2 + np.abs(x1 - x2))
+        bigmatw = int(np.shape(mat1)[0]/2 + np.shape(mat2)[0]/2 + np.abs(x1.px - x2.px))
+        bigmath = int(np.shape(mat1)[1]/2 + np.shape(mat2)[1]/2 + np.abs(x1.px - x2.px))
 
         #bigmat = np.zeros((bigmatw, bigmath))
 
 
-        origin_x = x1 - np.shape(mat1)[0] / 2 if x1 < x2 else x2 - np.shape(mat2)[0] / 2
-        origin_y = y1 - np.shape(mat1)[1] / 2 if y1 < y2 else y2 - np.shape(mat2)[1] / 2
+        origin_x = x1.px - np.shape(mat1)[0] / 2 if x1 < x2 else x2.px - np.shape(mat2)[0] / 2
+        origin_y = y1.px - np.shape(mat1)[1] / 2 if y1 < y2 else y2.px - np.shape(mat2)[1] / 2
 
-        d_x_1 = x1 - origin_x
-        d_y_1 = y1 - origin_y
+        d_x_1 = x1.px - origin_x
+        d_y_1 = y1.px - origin_y
 
-        d_x_2 = x2 - origin_x
-        d_y_2 = y2 - origin_y
+        d_x_2 = x2.px - origin_x
+        d_y_2 = y2.px - origin_y
 
         dd_x_1 = np.shape(mat1)[0] / 2
         dd_y_1 = np.shape(mat1)[1] / 2
