@@ -1,4 +1,5 @@
 import os
+import time
 
 from Particle import Particle
 from Atom import Atom, Ag_Atom
@@ -11,7 +12,7 @@ import matplotlib.pyplot as plt
 
 
 class Molecule(Particle):
-    molecule_class = "CO2"
+    molecule_class = "Star"
 
     def __init__(self, pos=None, theta=None, lookup_table=None, gitter=None):
         if pos is None:
@@ -42,17 +43,18 @@ class Molecule(Particle):
         if self.molecule_class == "Single":
             self.atoms.append(Atom(np.array([0, 0])))
         elif self.molecule_class == "CO2":
-            co_len = Distance(True, 1)
+            co_len = Distance(True, 0.1)
             self.atoms.append(Atom(np.array([0, 0])))
             self.atoms.append(Atom(np.array([-co_len.px, 0])))
             self.atoms.append(Atom(np.array([+co_len.px, 0])))
         elif self.molecule_class == "Star":
-            co_len = Distance(True, 0.1)
+            co_len = Distance(True, 1)
             self.atoms.append(Atom(np.array([0, 0])))
             self.atoms.append(Atom(np.array([-co_len.px, 0])))
             self.atoms.append(Atom(np.array([+co_len.px, 0])))
             self.atoms.append(Atom(np.array([0, co_len.px])))
             self.atoms.append(Atom(np.array([0, -co_len.px])))
+
 
         distant_at = 0
         max_rad = 0
@@ -71,6 +73,10 @@ class Molecule(Particle):
     def __str__(self):
         return self.molecule_class
 
+    def get_C6_Ringdist(self, cc_dist):
+        pass
+    def add_C6_Ring(self, center, cc_dist, ch_dist):
+        pass
     @staticmethod
     def str():
         return Molecule.molecule_class
@@ -80,18 +86,19 @@ class Molecule(Particle):
             return 0
         return Distance(False, np.sqrt(len(self.atoms) * self.atoms[0].radius.px))
 
-    @DeprecationWarning
+    #@DeprecationWarning
     def show(self, x, y):
         ret = 0
         for atom in self.atoms:
             ret += atom.show(x, y)
         return ret
 
-    @DeprecationWarning
+    #@DeprecationWarning
     def show_mat(self):
-        mat = np.zeros((self.img_w.px, self.img_h.px))
-        for i in range(self.img_w.px):
-            for j in range(self.img_h.px):
+        print("Deprecated 73289474329")
+        mat = np.zeros((int(np.ceil(self.img_w.px)), int(np.ceil(self.img_h.px))))
+        for i in range(int(np.ceil(self.img_w.px))):
+            for j in range(int(np.ceil(self.img_h.px))):
                 mat[i, j] = self.show(i, j)
 
         return mat
@@ -328,8 +335,8 @@ def create_Molecule_lookup_table(gitter, Testclass, name=None):
         name = Testclass.str() + "_lookup" + suff
         print(name)
 
-    if os.path.isfile(name + ".data"):
-        table = pickle.load(open(name + ".data", "rb"))
+    if os.path.isfile(os.path.join("Pickle_Data", name + ".data")):
+        table = pickle.load(open(os.path.join("Pickle_Data", name + ".data"), "rb"))
         return table
 
     angle_step = 360 / anglesteps
@@ -368,55 +375,221 @@ def create_Molecule_lookup_table(gitter, Testclass, name=None):
 
     print(lt)
 
-    with open(name + ".data", "wb") as p:
+    with open(os.path.join("Pickle_Data", name + ".data"), "wb") as p:
         pickle.dump(lt, p)
 
     return lt
 
 
-def create_gitter():
-    ret = []
-    nn_dist = cfg.get_nn_dist()
-    img_h = cfg.get_height()
-    img_w = cfg.get_width()
-
-    gv_a = np.array([1, 0]) * nn_dist.px
-    gv_b = np.array([np.cos(np.pi / 1.5), np.sin(np.pi / 1.5)]) * nn_dist.px
-
-    start = np.array([nn_dist.px / 2, nn_dist.px / 2])
-    current = np.array([0, 0])
-    j_max = int(np.ceil(max(img_w.px / gv_b[0], img_h.px / gv_b[1])))
-    i_max = int(np.ceil((img_w.px / gv_a[0]) - j_max * gv_b[0]))
-    for i in range(i_max):
-        for j in range(j_max):
-            current = start + (gv_a * i) + (gv_b * j)
-            if current[0] < img_w.px and current[1] < img_h.px and current[0] > 0 and current[1] > 0:
-                ret.append(Ag_Atom(current.copy()))
-    return ret
 
 
-def test_Lookup_Table():
-    gitter = create_gitter()
-    img_h = cfg.get_height()
-    img_w = cfg.get_width()
-    table = create_Molecule_lookup_table(gitter, Molecule)
-    for i in range(3):
-        for j in range(3):
-            for a in range(4):
-                t = a * np.pi / 3
-                x = 180 + i * 15
-                y = 175 + j * 15
+class Tests_Gitterpot:
 
-                vec_to_nearest = np.array([x, y]) - Atom(np.array([x, y])).find_nearest_atom(gitter).pos
-                e, adist, pdist = table.get_nearest_Energy(vec_to_nearest, t, gitter)
-                if e is None:
-                    print("None")
-                    continue
-                print("Energy for {} {}, theta ={:.2f} is {:.2f} with Angerror {:.2f} and PosError {:.2f}".format(
-                    x, y, t, e, adist, pdist
-                ))
 
-    m1 = Molecule(np.array([random.random() * img_w.px, random.random() * img_h.px]), 2 * np.pi * random.random(),
-                  lookup_table=table, gitter=gitter)
-    print("Molecule Energy: ")
-    print(m1.gitter_pot())
+    @staticmethod
+    def test():
+        print("Test lookup Table:")
+        Tests_Gitterpot.test_Lookup_Table()
+
+        print("Show Things")
+
+        gitter = Tests_Gitterpot.create_gitter()
+        showmat = 0.5 * Tests_Gitterpot.show_gitter(gitter, True)
+
+        #print("Gitter:")
+        #plt.imshow(showmat)
+        #plt.show()
+
+        test = Molecule(np.array([179, 171]), 45 / 180 * np.pi)
+
+        tsm = Tests_Gitterpot.normalize_matrix(test.show_mat()) #ToDo EffMat scaled
+        print("Molecule:")
+        #plt.imshow(tsm)
+        #plt.show()
+        #tsm = test.efficient_Matrix_turned()[0]
+
+        nearestats = []
+        for atom in test.atoms:
+            arr = []
+            for elem in atom.find_nearest_atoms(gitter):
+                arr.append(elem)
+            nearestats.append(arr)
+
+        # print(len(nearestats))
+        nearestshw = []
+        for arr in nearestats:
+            nearestshw.append(Tests_Gitterpot.show_gitter(arr, False))
+            #print("Nearestshow show gitter")
+            #plt.imshow(Tests_Gitterpot.show_gitter(arr, False))
+            #plt.show()
+
+
+        nearestshow = nearestshw[0]
+        for i in range(1, len(nearestshw)):
+            nearestshow += nearestshw[i]
+        nearestshow = Tests_Gitterpot.normalize_matrix(nearestshow)
+        #print("Sum of Nearestshow")
+        #plt.imshow(nearestshow)
+        #plt.show()
+
+        mdp = []
+        for arr in nearestats:
+            mdp.append(Atom.find_mid_of_nearest(arr))
+
+        midpoint = mdp[0].show_mat()
+        for i in range(1, len(mdp)):
+            midpoint += mdp[i].show_mat()
+
+        midpoint = Tests_Gitterpot.normalize_matrix(midpoint)
+        #print("Sum of Midpoints")
+        #plt.imshow(midpoint)
+        #plt.show()
+        #midpoint = Atom.find_mid_of_nearest(nearestats)
+        #msm = midpoint.show_mat()
+        #print("Nearestshow: {}".format(np.shape(nearestshow)))
+        #print("showmat: {}".format(np.shape(showmat)))
+        #print("midponit: {}".format(np.shape(2*midpoint)))
+        #print("tsm: {}".format(np.shape(tsm)))
+        mat = tsm + showmat + nearestshow
+        #mat = nearestshow + showmat + tsm + midpoint
+        print("Sum of all")
+        plt.imshow(mat)
+        plt.show()
+
+        #atti = Atom(np.array([320, 320]))
+        #verynearest = atti.find_nearest_atom(gitter)
+        #matti = Tests_Gitterpot.normalize_matrix(verynearest.show_mat())
+        #attimap = Tests_Gitterpot.normalize_matrix(atti.show_mat())
+        #print("Atom nearest")
+        #plt.imshow(showmat + attimap + matti)
+        #plt.show()
+
+    @staticmethod
+    def normalize_matrix(mat):
+        maxi = np.max(mat)
+        return mat/maxi
+
+    @staticmethod
+    def create_gitter():
+        ret = []
+        nn_dist = cfg.get_nn_dist()
+        img_h = cfg.get_height()
+        img_w = cfg.get_width()
+
+        gv_a = np.array([1, 0]) * nn_dist.px
+        gv_b = np.array([np.cos(np.pi / 1.5), np.sin(np.pi / 1.5)]) * nn_dist.px
+
+        start = np.array([nn_dist.px / 2, nn_dist.px / 2])
+        current = np.array([0, 0])
+        j_max = int(np.ceil(max(img_w.px / gv_b[0], img_h.px / gv_b[1])))
+        i_max = int(np.ceil((img_w.px / gv_a[0]) - j_max * gv_b[0]))
+        for i in range(i_max):
+            for j in range(j_max):
+                current = start + (gv_a * i) + (gv_b * j)
+                if current[0] < img_w.px and current[1] < img_h.px and current[0] > 0 and current[1] > 0:
+                    ret.append(Ag_Atom(current.copy()))
+        return ret
+
+    @staticmethod
+    def test_Lookup_Table():
+        gitter = Tests_Gitterpot.create_gitter()
+        img_h = cfg.get_height()
+        img_w = cfg.get_width()
+        table = create_Molecule_lookup_table(gitter, Molecule)
+        for i in range(3):
+            for j in range(3):
+                for a in range(4):
+                    t = a * np.pi / 3
+                    x = 180 + i * 15
+                    y = 175 + j * 15
+
+                    vec_to_nearest = np.array([x, y]) - Atom(np.array([x, y])).find_nearest_atom(gitter).pos
+                    e, adist, pdist = table.get_nearest_Energy(vec_to_nearest, t, gitter)
+                    if e is None:
+                        print("None")
+                        continue
+                    print("Energy for {} {}, theta ={:.2f} is {:.2f} with Angerror {:.2f} and PosError {:.2f}".format(
+                        x, y, t, e, adist, pdist
+                    ))
+
+        m1 = Molecule(np.array([random.random() * img_w.px, random.random() * img_h.px]), 2 * np.pi * random.random(),
+                      lookup_table=table, gitter=gitter)
+        print("Molecule Energy: ")
+        print(m1.gitter_pot())
+
+    @staticmethod
+    def test_pot_map():
+        start = time.perf_counter()
+        startstart = start
+        gitter = Tests_Gitterpot.create_gitter()
+
+        end = time.perf_counter()
+        print("Create Gitter: {:.3f}s".format(end - start))
+        start = end
+
+        showmat = Tests_Gitterpot.show_gitter(gitter, True)
+
+        end = time.perf_counter()
+        print("ShowGitter: {:.3f}s".format(end - start))
+        start = end
+
+        fig, (ax1, ax2) = plt.subplots(2, 1)
+        fig.suptitle('Potential und Gitterstruktur')
+
+        ax1.imshow(showmat)
+        ax1.set_ylabel("Gitter")
+
+        end = time.perf_counter()
+        print("Plot_things: {:.3f}s".format(end - start))
+        start = end
+
+        pot = Tests_Gitterpot.create_pot_map(gitter)
+
+        end = time.perf_counter()
+        print("Pot_Map: {:.3f}s".format(end - start))
+
+        ax2.imshow(pot)
+        ax2.set_ylabel("Potential")
+
+        end = time.perf_counter()
+        print("Done: {:.3f}s".format(end - startstart))
+
+        plt.show()
+
+    @staticmethod
+    def create_pot_map(gitter):
+        img_w = cfg.get_width()
+        img_h = cfg.get_height()
+        name = "PotMatGitter1"
+        if os.path.isfile(os.path.join("Pickle_Data", name + ".data")):
+            return pickle.load(open(os.path.join("Pickle_Data", name + ".data"), "rb"))
+        ct = 0
+        mat = np.zeros((img_w.px, img_h.px))
+        for i in range(img_w.px):
+            for j in range(img_h.px):
+                test = Molecule(np.array([i, j]), 0)
+                mat[i, j] = test.get_pot(gitter)
+
+        with open(os.path.join("Pickle_Data", name + ".data"), "wb") as p:
+            pickle.dump(mat, p)
+        return mat
+
+    @staticmethod
+    def show_gitter(gitter, save=False, name="gittermat"):
+        img_w = cfg.get_width()
+        img_h = cfg.get_height()
+        if save:
+            if os.path.isfile(os.path.join("Pickle_Data", name + ".data")):
+                return pickle.load(open(os.path.join("Pickle_Data", name + ".data"), "rb"))
+
+        showmat = np.zeros((int(np.ceil(img_w.px)), int(np.ceil(img_h.px))))
+        ct = 0
+        for i in range(int(np.ceil(img_w.px))):
+            for j in range(int(np.ceil(img_h.px))):
+                for atom in gitter:
+                    showmat[i, j] += atom.show(i, j)
+        if save:
+            with open(os.path.join("Pickle_Data", name + ".data"), "wb") as p:
+                pickle.dump(showmat, p)
+
+        return showmat

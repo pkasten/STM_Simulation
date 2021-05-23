@@ -20,7 +20,7 @@ from multiprocessing import Process, Lock, Semaphore
 from multiprocessing.managers import BaseManager
 from My_SXM import My_SXM
 import matplotlib.pyplot as plt
-from Molecule import test_Lookup_Table
+from Molecule import Tests_Gitterpot
 
 
 def test_frame(data_frame):
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     #start = time.perf_counter()
     #fn = FilenameGenerator()
 
-    test_Lookup_Table()
+    Tests_Gitterpot().test()
 
     #dat = DataFrame(fn)
     #for n in range(0,8, 3):

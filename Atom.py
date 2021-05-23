@@ -67,9 +67,9 @@ class Atom:
         #    return 0
 
     def show_mat(self):
-        mat = np.zeros((self.img_w.px, self.img_h.px))
-        for i in range(self.img_w.px):
-            for j in range(self.img_h.px):
+        mat = np.zeros((int(np.ceil(self.img_w.px)), int(np.ceil(self.img_h.px))))
+        for i in range(int(np.ceil(self.img_w.px))):
+            for j in range(int(np.ceil(self.img_h.px))):
                 mat[i, j] = self.show(i, j)
 
         return mat
@@ -180,9 +180,9 @@ class Ag_Atom:
     def show_mat(self):
         radius = 3
         height = 1
-        mat = np.zeros((self.img_w.px, self.img_h.px))
-        for i in range(self.img_w.px):
-            for j in range(self.img_h.px):
+        mat = np.zeros((int(np.ceil(self.img_w.px)), int(np.ceil(self.img_h.px))))
+        for i in range(int(np.ceil(self.img_w.px))):
+            for j in range(int(np.ceil(self.img_h.px))):
                 if np.sqrt(np.power(i - self.pos[0], 2) + np.power(j - self.pos[1], 2)) < radius:
                     mat[i, j] = height
                 else:

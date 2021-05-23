@@ -415,8 +415,8 @@ class Lookup_Table:
 
 
 def create_Molecule_lookup_table(gitter, Testclass, name=None):
-    diststeps = 100
-    anglesteps = 360
+    diststeps = 10
+    anglesteps = 36
     steps = diststeps * anglesteps * anglesteps
     suff = ""
     if steps > 1000000:
@@ -547,13 +547,13 @@ def test_Lookup_Table():
     print(m1.gitter_pot())
 
 if __name__ == "__main__":
-    test_Lookup_Table()
-    exit()
+    #test_Lookup_Table()
+    #exit()
 
     # test_pot_map()
-    gitter = create_gitter()
-    create_Molecule_lookup_table(gitter, Molecule)
-    exit()
+    #gitter = create_gitter()
+    #create_Molecule_lookup_table(gitter, Molecule)
+    #exit()
     gitter = create_gitter()
     showmat = show_gitter(gitter, True)
 
