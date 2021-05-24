@@ -76,7 +76,7 @@ class Distance:
     def px_vec(vec):
         ret = []
         for elem in vec:
-            if elem is Distance:
+            if isinstance(elem, Distance):
                 ret.append(elem.px)
             else:
                 ret.append(elem)

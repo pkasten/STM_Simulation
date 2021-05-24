@@ -50,6 +50,9 @@ class Particle:
         #self.charges = []
         #self.calc_charges()
 
+    def set_maxHeight(self, maxH):
+        self.max_height = maxH
+
     @DeprecationWarning
     def calc_charges(self):
         #Dipol

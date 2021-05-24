@@ -6,10 +6,10 @@ import os, random
 
 
 class MyImage:
-    width = cfg.get_width()
-    height = cfg.get_height()
+    width = cfg.get_width().px
+    height = cfg.get_height().px
     # noise = True
-    colors = np.zeros((int(np.ceil(width.px)), int(np.ceil(height.px))))
+    colors = np.zeros((int(np.ceil(width)), int(np.ceil(height))))
     sigma = 5.5
 
 
@@ -37,11 +37,11 @@ class MyImage:
 
     def setWidth(self, w):
         self.width = w
-        self.colors = np.zeros((self.width, self.height))
+        self.colors = np.zeros((int(np.ceil(self.width)), int(np.ceil(self.height))))
 
     def setHeight(self, h):
         self.height = h
-        self.colors = np.zeros((self.width, self.height))
+        self.colors = np.zeros((int(np.ceil(self.width)), int(np.ceil(self.height))))
 
 
     def addParticle(self, particle):
@@ -91,7 +91,7 @@ class MyImage:
                 pixels[i, j] = (int(self.colors[i, j]), int(self.colors[i, j]), int(self.colors[i, j]))
 
     def newImage(self):
-        img = Image.new('RGB', (int(np.ceil(self.width.px)), int(np.ceil(self.height.px))), 0)
+        img = Image.new('RGB', (int(np.ceil(self.width)), int(np.ceil(self.height))), 0)
         return img
 
     # Add Noise to image

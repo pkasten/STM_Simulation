@@ -12,9 +12,18 @@ import matplotlib.pyplot as plt
 
 
 class Molecule(Particle):
-    molecule_class = "Star"
+    molecule_class = "NCPhCN"
+    molecule_ph_groups = 1
 
-    def __init__(self, pos=None, theta=None, lookup_table=None, gitter=None):
+    def __init__(self, pos=None, theta=None, lookup_table=None, gitter=None, molecule_class=None, molecule_ph_groups=0):
+        if molecule_class is not None:
+            self.molecule_class = molecule_class
+            if self.molecule_class == "NCPhCN":
+                if molecule_ph_groups > 0:
+                    self.molecule_ph_groups = molecule_ph_groups
+                else:
+                    self.molecule_ph_groups = random.randint(1, 5)
+        #self.molecule_ph_groups = random.randint(1, 5)
         if pos is None:
             x = Distance(False, random.randint(0 - cfg.get_px_overlap(), cfg.get_width().px + cfg.get_px_overlap()))
             y = Distance(False, random.randint(0 - cfg.get_px_overlap(), cfg.get_height().px + cfg.get_px_overlap()))
@@ -43,7 +52,7 @@ class Molecule(Particle):
         if self.molecule_class == "Single":
             self.atoms.append(Atom(np.array([0, 0])))
         elif self.molecule_class == "CO2":
-            co_len = Distance(True, 0.1)
+            co_len = Distance(True, 1)
             self.atoms.append(Atom(np.array([0, 0])))
             self.atoms.append(Atom(np.array([-co_len.px, 0])))
             self.atoms.append(Atom(np.array([+co_len.px, 0])))
@@ -54,7 +63,15 @@ class Molecule(Particle):
             self.atoms.append(Atom(np.array([+co_len.px, 0])))
             self.atoms.append(Atom(np.array([0, co_len.px])))
             self.atoms.append(Atom(np.array([0, -co_len.px])))
+        elif self.molecule_class == "NCPhCN":
+            ch_len = Distance(True, 1.08)
+            cn_len = Distance(True, 1.80)
+            cc_len = Distance(True, 1.37)
+            self.create_NC_PhX_CN(self.molecule_ph_groups, cc_len, ch_len, cn_len)
+        else:
+            self.atoms.append(Atom(np.array([0, 0])))
 
+        #n of Atoms: {}".format(len(self.atoms)))
 
         distant_at = 0
         max_rad = 0
@@ -71,29 +88,110 @@ class Molecule(Particle):
             atom.calc_abs_pos(Distance.px_vec(self.pos), self.theta)
 
     def __str__(self):
+        if self.molecule_class == "NCPhCN":
+            return "NCPh{}CN".format(self.molecule_ph_groups)
         return self.molecule_class
 
     def get_C6_Ringdist(self, cc_dist):
-        pass
+        return 3 * cc_dist
+
     def add_C6_Ring(self, center, cc_dist, ch_dist):
-        pass
-    @staticmethod
-    def str():
-        return Molecule.molecule_class
+        # print(type(center))
+        # assert center is type(np.array([0, 0]))
+        assert len(center) == 2
+        deg60 = np.pi * 60 / 180
+        deg120 = np.pi * 120 / 180
+
+        center_px = center
+        cc_dist_px = cc_dist.px
+        ch_dist_px = ch_dist.px
+
+        posis = []
+        #print("Center: {}".format(center_px))
+        posis.append(center_px - np.array([cc_dist_px, 0]))
+        posis.append(center_px + cc_dist_px * np.array([-np.cos(deg60), np.sin(deg60)]))
+        posis.append(center_px + cc_dist_px * np.array([-np.cos(deg120), np.sin(deg120)]))
+        posis.append(center_px + cc_dist_px * np.array([1, 0]))
+        posis.append(center_px - cc_dist_px * np.array([np.cos(deg60), np.sin(deg60)]))
+        posis.append(center_px - cc_dist_px * np.array([np.cos(deg120), np.sin(deg120)]))
+
+        for pos in posis:
+            self.atoms.append(Atom(pos, "C"))
+
+        posis = []
+
+        newdist = cc_dist_px + ch_dist_px
+        posis.append(center_px + newdist * np.array([-np.cos(deg60), np.sin(deg60)]))
+        posis.append(center_px + newdist * np.array([-np.cos(deg120), np.sin(deg120)]))
+        posis.append(center_px - newdist * np.array([np.cos(deg60), np.sin(deg60)]))
+        posis.append(center_px - newdist * np.array([np.cos(deg120), np.sin(deg120)]))
+
+        for pos in posis:
+            self.atoms.append(Atom(pos, "H"))
+
+    def create_NC_PhX_CN(self, n, cc_dist, ch_dist, cn_dist):
+        if n % 2 == 0:
+            amnt = int(n / 2)
+            #print("Amount: {}".format(amnt))
+            ringdist = self.get_C6_Ringdist(cc_dist).px
+            dist = ringdist / 2
+            for i in range(amnt):
+                self.add_C6_Ring(np.array([-dist, 0]), cc_dist, ch_dist)
+                self.add_C6_Ring(np.array([dist, 0]), cc_dist, ch_dist)
+                dist += ringdist
+            c_dist = ringdist / 2 + (amnt-1) * ringdist + cc_dist.px + cc_dist.px
+            n_dist = c_dist + cn_dist.px
+            self.atoms.append(Atom(np.array([-c_dist, 0]), "C"))
+            self.atoms.append(Atom(np.array([c_dist, 0]), "C"))
+            self.atoms.append(Atom(np.array([-n_dist, 0]), "N"))
+            self.atoms.append(Atom(np.array([n_dist, 0]), "N"))
+
+        else:
+            amnt = int((n - 1) / 2)
+            ringdist = self.get_C6_Ringdist(cc_dist).px
+            dist = ringdist
+            self.add_C6_Ring(np.array([0, 0]), cc_dist, ch_dist)
+            for i in range(amnt):
+                self.add_C6_Ring(np.array([-dist, 0]), cc_dist, ch_dist)
+                self.add_C6_Ring(np.array([dist, 0]), cc_dist, ch_dist)
+                dist += ringdist
+            c_dist = amnt * ringdist + cc_dist.px + cc_dist.px
+            n_dist = c_dist + cn_dist.px
+            self.atoms.append(Atom(np.array([-c_dist, 0]), "C"))
+            self.atoms.append(Atom(np.array([c_dist, 0]), "C"))
+            self.atoms.append(Atom(np.array([-n_dist, 0]), "N"))
+            self.atoms.append(Atom(np.array([n_dist, 0]), "N"))
+
+    #@staticmethod
+    #def str():
+    #    return Molecule.molecule_class
+
+    def str(self):
+        return self.__str__()
+
+    def color(self, h):
+        assert len(self.atoms) > 0
+        return self.atoms[0].color(h)
+
+
+    def set_maxHeight(self, max_h):
+        self.max_height = max_h
+        for x in self.atoms:
+            x.set_maxHeight(max_h)
 
     def get_dimension(self):
         if (len(self.atoms) == 0):
             return 0
         return Distance(False, np.sqrt(len(self.atoms) * self.atoms[0].radius.px))
 
-    #@DeprecationWarning
+    # @DeprecationWarning
     def show(self, x, y):
         ret = 0
         for atom in self.atoms:
             ret += atom.show(x, y)
         return ret
 
-    #@DeprecationWarning
+    # @DeprecationWarning
     def show_mat(self):
         print("Deprecated 73289474329")
         mat = np.zeros((int(np.ceil(self.img_w.px)), int(np.ceil(self.img_h.px))))
@@ -131,54 +229,33 @@ class Molecule(Particle):
     def efficient_Matrix_turned(self):
         return self.efficient_Matrix()
 
+    #ToDo Select mode
     def visualize_pixel(self, x, y):
-        ret = 0
-        for atom in self.atoms:
-            vec = atom.abspos - Distance.px_vec(self.pos)
-            ret += atom.show_rel(x - vec[0], y - vec[1])
-            ret = min(255, ret)
-        return ret
+        mode = "MAX"
+        if mode == "ADD":
+            ret = 0
+            for atom in self.atoms:
+                vec = atom.abspos - Distance.px_vec(self.pos)
+                ret += atom.show_rel(x - vec[0], y - vec[1])
+                ret = min(255, ret)
+            return ret
+        if mode == "MAX":
+            ret = 0
+            for atom in self.atoms:
+                vec = atom.abspos - Distance.px_vec(self.pos)
+                ret = max(ret, atom.show_rel(x - vec[0], y - vec[1]))
+                ret = min(255, ret)
+            return ret
 
 
 class Lookup_Table:
 
-    # def log(self):
-    #    log("Lookup_table: ")
-    #    for pair in self.pairs:
-    #        log("Pair {} :".format(pair.pos))
-    #        pair.log()
 
     def __str__(self):
         s = "Lookup_Table: \n"
         for xc in self.table:
             s += str(xc)
         return s
-
-    # def __str__(self):
-    #    s = ""
-    #    s += "Lookup_table: \n"
-    #    for pair in self.pairs:
-    #        s += "Pair {} :\n".format(pair.pos)
-    #        s += pair.__str__()
-    #    return s
-
-    # class Pair:
-    #    def __init__(self, pos):
-    #       self.pos = pos
-    #        self.ang_dict = {}
-
-    # def log(self):
-    #    for angle in self.ang_dict.keys():
-    #        log("\t\t  {:.3f} : E= {:.3f}".format(angle, self.ang_dict[angle]))
-
-    #   def __str__(self):
-    #      s = ""
-    #     for angle in self.ang_dict.keys():
-    #        s += "\t\t  {:.3f} : E= {:.3f} \n".format(angle, self.ang_dict[angle])
-    #   return s
-
-    # def add(self, angle, energy):
-    #   self.ang_dict[angle] = energy
 
     @staticmethod
     def equalVec(a, b):
@@ -198,50 +275,6 @@ class Lookup_Table:
         self.img_w = cfg.get_width()
         self.img_h = cfg.get_height()
 
-    # def add(self, pos, angle, energy):
-    #    exists = False
-    #    for p in [p.pos for p in self.pairs]:
-    #        if self.equalVec(p, pos):
-    #            exists = True
-    #            break
-    #    if not exists:
-    #        self.pairs.append(self.Pair(pos))
-
-    #    for pair in self.pairs:
-    #       if self.equalVec(pair.pos, pos):
-    #          pair.add(angle, energy)
-    #        return
-    # print("Error")
-
-    # def get_nearest_Energy(self, pos, angle, gitter):
-    #
-    #       if np.linalg.norm(pos) > self.nn_dist.px:  # ToDo: Add Lattice Options in settings
-    #          pos = pos - Atom(pos).find_nearest_atom(gitter).pos
-    #
-    #       nearest = None
-    #      min_d = np.infty
-    #     for p in self.pairs:
-    #        d = np.abs(np.linalg.norm(pos - p.pos) / self.dist_step)
-    #
-    #           if d < min_d:
-    #               min_d = d
-    #              nearest = p
-    ##
-    #   min_ang = np.infty
-    #      nearest_energy = None
-    #     nearest_ang = None
-    #    if nearest is None:
-    #          return None, None, None
-    #       for a in nearest.ang_dict.keys():
-    #          d = min(abs(a - angle), abs(2 * np.pi + a - angle))
-    #
-    #           if d < min_ang:
-    #              min_ang = d
-    #             nearest_ang = a
-    #            nearest_energy = nearest.ang_dict[a]
-    #
-    #       return nearest_energy, min(abs(nearest_ang - angle), abs(2 * np.pi + nearest_ang - angle)), \
-    #             np.linalg.norm(pos - nearest.pos)
 
     def get_nearest_Energy(self, pos, angle, gitter=None):
 
@@ -258,7 +291,6 @@ class Lookup_Table:
                 min_x = abs(xj.x - x)
                 min_xc = xj
 
-
         min_y = np.infty
         min_yc = None
         for yj in min_xc.y_container:
@@ -269,78 +301,79 @@ class Lookup_Table:
         min_a = np.infty
         min_an = None
         for aj in min_yc.ang_Contaienr:
-            if min(abs(2*np.pi - aj.ang + ang), abs(ang - aj.ang)) < min_a:
-                min_a = min(abs(2*np.pi - aj.ang + ang), abs(ang - aj.ang))
+            if min(abs(2 * np.pi - aj.ang + ang), abs(ang - aj.ang)) < min_a:
+                min_a = min(abs(2 * np.pi - aj.ang + ang), abs(ang - aj.ang))
                 min_an = aj
 
         energy = min_an.en
 
-        return energy, min_a, np.sqrt(min_x**2 + min_y**2)
+        return energy, min_a, np.sqrt(min_x ** 2 + min_y ** 2)
+
 
 class X_Container:
-        def __init__(self, x):
-            self.x = x
-            self.y_container = []
+    def __init__(self, x):
+        self.x = x
+        self.y_container = []
 
-        def __str__(self):
-            s = "X-Container x = {}\n".format(self.x)
-            for yc in self.y_container:
-                s += str(yc)
+    def __str__(self):
+        s = "X-Container x = {}\n".format(self.x)
+        for yc in self.y_container:
+            s += str(yc)
 
-            return s
+        return s
 
-        def add(self, ycont):
-            self.y_container.append(ycont)
+    def add(self, ycont):
+        self.y_container.append(ycont)
+
 
 class Y_Container:
-        def __init__(self, y):
-            self.y = y
-            self.ang_Contaienr = []
+    def __init__(self, y):
+        self.y = y
+        self.ang_Contaienr = []
 
-        def __str__(self):
-            s = "\tY-Container y = {}\n".format(self.y)
-            for yc in self.ang_Contaienr:
-                s += str(yc)
+    def __str__(self):
+        s = "\tY-Container y = {}\n".format(self.y)
+        for yc in self.ang_Contaienr:
+            s += str(yc)
 
-            return s
+        return s
 
-        def add(self, a_cont):
-            self.ang_Contaienr.append(a_cont)
+    def add(self, a_cont):
+        self.ang_Contaienr.append(a_cont)
+
 
 class Angle:
-        def __init__(self, ang, en):
-            self.ang = ang
-            self.en = en
+    def __init__(self, ang, en):
+        self.ang = ang
+        self.en = en
 
-        def __str__(self):
-            s = "\t\tA={:.2f} -> E={:.2f} \n".format(self.ang, self.en)
-            return s
+    def __str__(self):
+        s = "\t\tA={:.2f} -> E={:.2f} \n".format(self.ang, self.en)
+        return s
 
 
 def create_Molecule_lookup_table(gitter, Testclass, name=None):
-
     nn_dist = cfg.get_nn_dist()
-    diststeps = int(np.ceil(nn_dist.px/2))
+    diststeps = int(np.ceil(nn_dist.px / 2))
     anglesteps = 180
     steps = diststeps * diststeps * anglesteps
     suff = ""
     if steps > 1000000:
-        suff += str(int(np.floor(steps / 1000000))) + "M" + Testclass.molecule_class
+        suff += str(int(np.floor(steps / 1000000))) + "M"
     elif steps > 1000:
-        suff += str(int(np.floor(steps / 1000))) + "K" + Testclass.molecule_class
+        suff += str(int(np.floor(steps / 1000))) + "K"
     else:
         suff += str(steps) + Testclass.molecule_class
 
     if name is None:
-        name = Testclass.str() + "_lookup" + suff
-        print(name)
+        name = str(Testclass()) + "_lookup" + suff
+        print("New Name: " + name)
 
     if os.path.isfile(os.path.join("Pickle_Data", name + ".data")):
         table = pickle.load(open(os.path.join("Pickle_Data", name + ".data"), "rb"))
         return table
 
     angle_step = 360 / anglesteps
-
 
     maxdist = (np.sqrt(0.75) - 0.25) * nn_dist.px
 
@@ -373,7 +406,7 @@ def create_Molecule_lookup_table(gitter, Testclass, name=None):
 
     lt = Lookup_Table(table, dist_step, angle_step)
 
-    print(lt)
+    # print(lt)
 
     with open(os.path.join("Pickle_Data", name + ".data"), "wb") as p:
         pickle.dump(lt, p)
@@ -381,13 +414,12 @@ def create_Molecule_lookup_table(gitter, Testclass, name=None):
     return lt
 
 
-
-
 class Tests_Gitterpot:
-
 
     @staticmethod
     def test():
+
+        all = False
         print("Test lookup Table:")
         Tests_Gitterpot.test_Lookup_Table()
 
@@ -395,18 +427,20 @@ class Tests_Gitterpot:
 
         gitter = Tests_Gitterpot.create_gitter()
         showmat = 0.5 * Tests_Gitterpot.show_gitter(gitter, True)
+        showmat = Tests_Gitterpot.normalize_matrix(showmat)
+        if all:
+            print("Gitter:")
+            plt.imshow(showmat)
+            plt.show()
 
-        #print("Gitter:")
-        #plt.imshow(showmat)
-        #plt.show()
+        test = Molecule(np.array([479, 380]), 45 / 180 * np.pi)
 
-        test = Molecule(np.array([179, 171]), 45 / 180 * np.pi)
-
-        tsm = Tests_Gitterpot.normalize_matrix(test.show_mat()) #ToDo EffMat scaled
-        print("Molecule:")
-        #plt.imshow(tsm)
-        #plt.show()
-        #tsm = test.efficient_Matrix_turned()[0]
+        tsm = Tests_Gitterpot.normalize_matrix(test.show_mat())  # ToDo EffMat scaled
+        if all:
+            print("Molecule:")
+            plt.imshow(tsm)
+            plt.show()
+            #tsm = test.efficient_Matrix_turned()[0]
 
         nearestats = []
         for atom in test.atoms:
@@ -419,55 +453,40 @@ class Tests_Gitterpot:
         nearestshw = []
         for arr in nearestats:
             nearestshw.append(Tests_Gitterpot.show_gitter(arr, False))
-            #print("Nearestshow show gitter")
-            #plt.imshow(Tests_Gitterpot.show_gitter(arr, False))
-            #plt.show()
-
+            # print("Nearestshow show gitter")
+            # plt.imshow(Tests_Gitterpot.show_gitter(arr, False))
+            # plt.show()
 
         nearestshow = nearestshw[0]
         for i in range(1, len(nearestshw)):
             nearestshow += nearestshw[i]
         nearestshow = Tests_Gitterpot.normalize_matrix(nearestshow)
-        #print("Sum of Nearestshow")
-        #plt.imshow(nearestshow)
-        #plt.show()
+        if all:
+            print("Sum of Nearestshow")
+            plt.imshow(nearestshow)
+            plt.show()
 
         mdp = []
         for arr in nearestats:
             mdp.append(Atom.find_mid_of_nearest(arr))
 
-        midpoint = mdp[0].show_mat()
-        for i in range(1, len(mdp)):
-            midpoint += mdp[i].show_mat()
+        #midpoint = mdp[0].show_mat()
+        #for i in range(1, len(mdp)):
+        #    midpoint += mdp[i].show_mat()
 
-        midpoint = Tests_Gitterpot.normalize_matrix(midpoint)
-        #print("Sum of Midpoints")
-        #plt.imshow(midpoint)
-        #plt.show()
-        #midpoint = Atom.find_mid_of_nearest(nearestats)
-        #msm = midpoint.show_mat()
-        #print("Nearestshow: {}".format(np.shape(nearestshow)))
-        #print("showmat: {}".format(np.shape(showmat)))
-        #print("midponit: {}".format(np.shape(2*midpoint)))
-        #print("tsm: {}".format(np.shape(tsm)))
+        #midpoint = Tests_Gitterpot.normalize_matrix(midpoint)
+
         mat = tsm + showmat + nearestshow
-        #mat = nearestshow + showmat + tsm + midpoint
+
         print("Sum of all")
         plt.imshow(mat)
         plt.show()
 
-        #atti = Atom(np.array([320, 320]))
-        #verynearest = atti.find_nearest_atom(gitter)
-        #matti = Tests_Gitterpot.normalize_matrix(verynearest.show_mat())
-        #attimap = Tests_Gitterpot.normalize_matrix(atti.show_mat())
-        #print("Atom nearest")
-        #plt.imshow(showmat + attimap + matti)
-        #plt.show()
 
     @staticmethod
     def normalize_matrix(mat):
         maxi = np.max(mat)
-        return mat/maxi
+        return mat / maxi
 
     @staticmethod
     def create_gitter():
@@ -575,7 +594,7 @@ class Tests_Gitterpot:
         return mat
 
     @staticmethod
-    def show_gitter(gitter, save=False, name="gittermat"):
+    def show_gitter(gitter, save=True, name="gittermat"):
         img_w = cfg.get_width()
         img_h = cfg.get_height()
         if save:
@@ -585,9 +604,10 @@ class Tests_Gitterpot:
         showmat = np.zeros((int(np.ceil(img_w.px)), int(np.ceil(img_h.px))))
         ct = 0
         for i in range(int(np.ceil(img_w.px))):
+            print("i = {}/{}".format(i, img_w.px))
             for j in range(int(np.ceil(img_h.px))):
                 for atom in gitter:
-                    showmat[i, j] += atom.show(i, j)
+                    showmat[i, j] += atom.show_dot(i, j)
         if save:
             with open(os.path.join("Pickle_Data", name + ".data"), "wb") as p:
                 pickle.dump(showmat, p)

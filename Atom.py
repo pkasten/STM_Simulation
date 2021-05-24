@@ -5,15 +5,36 @@ from Distance import Distance
 
 class Atom:
 
-    def __init__(self, relpos):
+    def __init__(self, relpos, type=None):
         self.img_w = cfg.get_width()
         self.img_h = cfg.get_height()
-        self.relpos = relpos
-        self.abspos = relpos
+        #print("Relpos: {}".format(relpos))
+        if isinstance(relpos[0], Distance):
+            #print("Changed")
+            self.relpos = Distance.px_vec(relpos)
+            #print("Now: Relpos: {}".format(self.relpos))
+            self.abspos = self.relpos
+        else:
+            self.relpos = relpos
+            self.abspos = relpos
+
+        #print("Relpos: {} mit {}, {}".format(self.relpos, self.relpos[0], self.relpos[1]))
         self.radius = Distance(True, 0.01)
+        if type == "H":
+            self.radius = Distance(True, 0.032)
+        elif type == "C":
+            self.radius = Distance(True, 0.077)
+        elif type == "N":
+            self.radius = Distance(True, 0.070)
+
         self.height = cfg.get_part_height()
         self.maxheight = cfg.get_max_height()
         self.fermi_exp = cfg.get_fermi_exp()
+        self.fermi_range = np.log(99) / self.fermi_exp + self.height.px / 2
+        self.type = type
+
+    def set_maxHeight(self, maxh):
+        self.maxheight = maxh
 
     def calc_abs_pos(self, moleculepos, moleculetheta):
         # As px
@@ -26,9 +47,17 @@ class Atom:
 
         #self.abspos = moleculepos + self.relpos
 
+    def show_dot(self, x, y):
+        if np.power(x - self.abspos[0], 2) < 25:
+            if np.power(y - self.abspos[1], 2) < 25:
+                if np.sqrt(np.power(x - self.abspos[0], 2) + np.power(y - self.abspos[1], 2)) < 5:
+                    return 255
+
+        return 0
+
     def show(self, x, y):
         d = np.sqrt(np.power(x - self.abspos[0], 2) + np.power(y - self.abspos[1], 2))
-        if d > 30:
+        if d > self.fermi_range:
             return 0
 
         return self.color(self.height * self._fermi1D(d, self.radius))
@@ -189,6 +218,14 @@ class Ag_Atom:
                     mat[i, j] = 0
 
         return mat
+
+    def show_dot(self, x, y):
+        if np.power(x - self.pos[0], 2) < 25:
+            if np.power(y - self.pos[1], 2) < 25:
+                if np.sqrt(np.power(x - self.pos[0], 2) + np.power(y - self.pos[1], 2)) < 5:
+                    return 255
+
+        return 0
 
     def show(self, x, y):
         radius = 3

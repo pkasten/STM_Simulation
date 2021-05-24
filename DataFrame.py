@@ -3,7 +3,7 @@ import copy, os
 import math, random
 import time
 
-from Molecule import Molecule
+from Molecule import Molecule, Tests_Gitterpot
 from Particle import Particle, Double_Particle
 from Images import MyImage
 # from Maths.Functions import measureTime
@@ -57,6 +57,7 @@ class DataFrame:
         self.overlapping_energy = 1000
         self.overlapping_threshold = cfg.get_overlap_threshold()
         self.part_laenge = cfg.get_part_length()
+        self.atomic_step_height = cfg.get_atomic_step_height()
 
     # returns iterator over Particles
     def getIterator(self):
@@ -381,6 +382,8 @@ class DataFrame:
         self.objects.append(ob)
 
     def addObjects(self, Object=Molecule, amount=None, coverage=None, overlapping=False, maximum_tries=1000):
+        self.passed_args_Obj = Object, amount, coverage, overlapping, maximum_tries
+
 
         def get_dragged_that_not_overlaps(maximumtries):
             def _set_p():
@@ -399,19 +402,19 @@ class DataFrame:
             return p
 
         def _get_thatnot_overlaps(maximumtries):
-            print("#Obj: {}, has Overlaps: {}".format(len(self.objects), self.has_overlaps()))
+            #print("#Obj: {}, has Overlaps: {}".format(len(self.objects), self.has_overlaps()))
             if len(self.objects) == 0:
                 return Object()
             p = Object()
             for i in range(maximumtries):
-                print("Added at x={}, y= {}".format(p.pos[0].px, p.pos[1].px))
+                #print("Added at x={}, y= {}".format(p.pos[0].px, p.pos[1].px))
                 if self._overlaps_any(p):
-                    print("Retry")
+                    #print("Retry")
                     p = Object()
                 else:
                     return p
-            print("MaxTries Exhausted_a")
-            print("#Obj: {}, has Overlaps: {}".format(len(self.objects), self.has_overlaps()))
+            #print("MaxTries Exhausted_a")
+            #print("#Obj: {}, has Overlaps: {}".format(len(self.objects), self.has_overlaps()))
             return p
 
 
@@ -443,20 +446,39 @@ class DataFrame:
                         p = _get_thatnot_overlaps(maximum_tries)
                         self.objects.append(p)
 
-
-
     def is_overlapping(self, part):
         for p in self.objects:
             if p.true_overlap(part):
                 return self.overlapping_energy
         return 0
 
-
     def create_Image_Visualization(self):
         self.img = MyImage()
         width = self.img_width
         height = self.img_height
         matrix = np.zeros((int(np.ceil(width.px)), int(np.ceil(height.px))))
+
+        use_atomstep = random.random() < cfg.get_atomic_step_poss()
+
+        # Set Max Height for parts
+        if use_atomstep:
+            for obj in self.objects:
+                obj.set_maxHeight(cfg.get_max_height() + cfg.get_atomic_step_height())
+            # Create Stepborder
+            point_a = [random.random() * self.img_width.px, random.random() * self.img_height.px]
+            point_b = [random.random() * self.img_width.px, random.random() * self.img_height.px]
+
+
+            b = (point_a[1] - (point_a[0]/point_b[0])*point_b[1])/(1-point_a[0]/point_b[0])
+            m = (point_a[1] - b)/point_b[1]
+
+            f = lambda x: m*x + b
+        else:
+            f = lambda x:0*x
+            m = 0
+            b = 0
+
+
 
         for part in self.objects:
             for tuple in part.get_visualization():
@@ -479,49 +501,122 @@ class DataFrame:
                             continue
                         matrix[new_x, new_y] += eff_mat[i, j]
 
-        self.img.addMatrix(matrix)  # Indentd  too far right
 
+        #Gitter mit atomic step
+        def nearest_ag(gitter, pos):
+            mindist = np.inf
+            minat = None
+            for ag in gitter:
+                if np.linalg.norm(ag.pos - pos) < mindist:
+                    mindist = np.linalg.norm(ag.pos - pos)
+                    minat = ag
+
+            return minat
+
+        def in_range_of_nst(x, y, atoms, radius):
+            for atom in atoms:
+                if np.linalg.norm(atom.pos - np.array([x, y])) < radius:
+                    return True
+            return False
+
+        show_gitter = False
+        use_gitter = True
+        if (show_gitter):
+            print("Creating Gitter")
+            gitter = Tests_Gitterpot.create_gitter() #Ag-Atom[]
+            print("Created")
+            matrix += 255 * Tests_Gitterpot.show_gitter(gitter)
+            print("Added Gittershow")
+
+        if use_gitter:
+            if use_atomstep:
+                checking_pairs = []
+                if abs(m) > 1:
+                    for x in range(0, int(np.ceil(self.img_width.px)), 10):
+                        yp = f(x)
+                        if not 0 <= yp <= self.img_height.px:
+                            continue
+                        checking_pairs.append([x, yp])
+                else:
+                    for y in range(0, int(np.ceil(self.img_height.px)), 10):
+                        xp = (y-b)/m
+                        if not 0 <= xp <= self.img_width.px:
+                            continue
+                        checking_pairs.append([xp, y])
+
+                atoms_near_step = []
+                gitter = Tests_Gitterpot.create_gitter()  # Ag-Atom[]
+                print("Positions: {}".format(checking_pairs))
+
+                for pos in checking_pairs:
+                    nat = nearest_ag(gitter, pos)
+                    if nat not in atoms_near_step:
+                        atoms_near_step.append(nat)
+
+                #print("No of Atoms near step: {} - {}".format(len(atoms_near_step), atoms_near_step))
+
+                rad = cfg.get_nn_dist().px
+
+                if len(self.objects) > 0:
+                    dh = self.objects[0].color(self.atomic_step_height)
+
+                else:
+                    dh = 255 * cfg.get_atomic_step_height() / (cfg.get_max_height() + cfg.get_atomic_step_height())
+
+                for h in range(np.shape(matrix)[0]):
+                    #if h % 100 == 0:
+                        #print("H: {}/{}".format(h, np.shape(matrix)[0]))
+                    for r in range(np.shape(matrix)[1]):
+                        if in_range_of_nst(h, r, atoms_near_step, rad) or f(h) > r:
+                            matrix[h, r] += dh
+
+        use_atomstep = False
+
+
+
+
+
+        if use_atomstep:
+            if len(self.objects) > 0:
+                dh = self.objects[0].color(self.atomic_step_height)
+
+            else:
+                dh = 255 * cfg.get_atomic_step_height() / (cfg.get_max_height() + cfg.get_atomic_step_height())
+
+            for h in range(np.shape(matrix)[0]):
+                for r in range(np.shape(matrix)[1]):
+                    if f(h) > r:
+                        matrix[h, r] += dh
+
+
+
+
+        self.img.addMatrix(matrix)
 
 
     def get_Image(self):
         if random.random() < self.double_tip_poss:
             print("Double Tipping")
+            #ToDo: Step
             strength = 0.3 + 0.5 * random.random()
-            # print(strength)
             rel_dist = 0.1 * random.random()  # ToDO: Let loose
             angle = 2 * np.pi * random.random()
-            # angle = 0
             doubled_frame = Double_Frame(self.fn_gen, strength, rel_dist, angle)
-            # print("Created Double Frame")
-            doubled_frame.addParticles(self.passed_args[0], self.passed_args[1], self.passed_args[2],
-                                       self.passed_args[3])
-            # print("added Particles")
-            # if self.use_dragging:
-            #    doubled_frame._drag_particles()
+            #doubled_frame.addParticles(self.passed_args[0], self.passed_args[1], self.passed_args[2],
+             #                          self.passed_args[3])
+            doubled_frame.addObjects(*self.passed_args_Obj)
+
+
             self.img = doubled_frame.extract_Smaller()
-            # print("extracted Smaller")
             self.objects = doubled_frame.get_objects()
-            # print("Got objects")
             if self.use_noise:
                 self.img.noise(self.image_noise_mu, self.image_noise_sigma)
             self.img.updateImage()
-            # print("updated Image")
-
             return
 
-        # if self.use_dragging: #ToDo: Possibly later
-        #    self._drag_particles()
         self.create_Image_Visualization()
 
-        # if random.random() < self.double_tip_poss:
-        #    surrounding_frames = []
-        #    for i in range(4):
-        #        df_a = DataFrame(self.fn_gen)
-        #        df_a.addParticles(self.passed_args[0], self.passed_args[1], self.passed_args[2], self.passed_args[3])
-        #        df_a.double_tip_poss = 0
-        #        df_a.create_Image_Visualization()
-        #        surrounding_frames.append(df_a.img.colors)
-        #    self.img.double_tip(0.3, 0.1, 2 * np.pi * random.random(), surrounding_frames)
+
         if self.use_noise:
             self.img.noise(self.image_noise_mu, self.image_noise_sigma)
         self.img.updateImage()
@@ -1291,14 +1386,14 @@ class Double_Frame(DataFrame):
 
         if self.shift_x > 0:
             if self.shift_y > 0:
-                self.range = int(self.img_width / 2), self.img_width, int(self.img_height / 2), self.img_height
+                self.range = int(int(np.ceil(self.img_width.px)) / 2), int(np.ceil(self.img_width.px)), int(np.ceil((self.img_height.px / 2))), int(np.ceil(self.img_height.px))
             else:
-                self.range = int(self.img_width / 2), self.img_width, 0, int(self.img_height / 2)
+                self.range = int(int(np.ceil(self.img_width.px)) / 2), self.img_width.px, 0, int(np.ceil((self.img_height.px / 2)))
         else:
             if self.shift_y > 0:
-                self.range = 0, int(self.img_width / 2), 0, int(self.img_height / 2), self.img_height
+                self.range = 0, int(int(np.ceil(self.img_width.px)) / 2), 0, int(np.ceil((self.img_height.px / 2))), int(np.ceil(self.img_height.px))
             else:
-                self.range = 0, int(self.img_width / 2), 0, int(self.img_height / 2)
+                self.range = 0, int(int(np.ceil(self.img_width.px)) / 2), 0, int(np.ceil((self.img_height.px / 2)))
 
     def addParticle(self, part=None):
         if self.passed_args is None:
@@ -1515,14 +1610,29 @@ class Double_Frame(DataFrame):
 
     def create_Image_Visualization(self):
         self.img = MyImage()
-        self.img.setWidth(self.img_width)
-        self.img.setHeight(self.img_height)
+        self.img.setWidth(int(np.ceil(self.img_width.px)))
+        self.img.setHeight(int(np.ceil(self.img_height.px)))
         # print("W: {} - {}".format(self.img_width, self.img.getWidth()))
         # print("H: {} - {}".format(self.img_height, self.img.getHeight()))
 
-        width = self.img_width
-        height = self.img_height
+        width = int(np.ceil(self.img_width.px))
+        height = int(np.ceil(self.img_height.px))
         matrix = np.zeros((width, height))
+
+        use_atomstep = random.random() < cfg.get_atomic_step_poss()
+
+        # Set Max Height for parts
+        if use_atomstep:
+            for obj in self.objects:
+                obj.set_maxHeight(cfg.get_max_height() + cfg.get_atomic_step_height())
+            # Create Stepborder
+            point_a = [random.randint(self.range[0], self.range[1]), random.randint(self.range[2], self.range[3])]
+            point_b = [random.randint(self.range[0], self.range[1]), random.randint(self.range[2], self.range[3])]
+
+            b = (point_a[1] - (point_a[0] / point_b[0]) * point_b[1]) / (1 - point_a[0] / point_b[0])
+            m = (point_a[1] - b) / point_b[1]
+
+            f = lambda x: m * x + b
 
         for part in self.objects:
             for tuple in part.get_visualization():
@@ -1531,8 +1641,8 @@ class Double_Frame(DataFrame):
                 mat_w = eff_mat.shape[0]
 
                 # ToDo: possible failure
-                x = int(np.round(x))
-                y = int(np.round(y))
+                x = int(np.round(x.px))
+                y = int(np.round(y.px))
                 # plt.imshow(eff_mat)
                 # plt.show()
                 # print(np.max(eff_mat))
@@ -1544,12 +1654,89 @@ class Double_Frame(DataFrame):
                         if not (0 <= new_x < width and 0 <= new_y < height):
                             continue
                         matrix[new_x, new_y] += eff_mat[i, j]
+
+        if use_atomstep:
+            if len(self.objects) > 0:
+                dh = self.objects[0].color(self.atomic_step_height)
+
+            else:
+                dh = 255 * cfg.get_atomic_step_height() / (cfg.get_max_height() + cfg.get_atomic_step_height())
+
+            #print("Matrix-Shape: {}".format(np.shape(matrix)))
+
+            for h in range(np.shape(matrix)[0]):
+                for r in range(np.shape(matrix)[1]):
+                    if f(h) > r:
+                        matrix[h, r] += dh
+
         # print("img : {}".format(np.shape(self.img.get_matrix())))
         # print("matrix: {}".format(np.shape(matrix)))
         # print("Matrix")
         # plt.imshow(matrix)
         # plt.show()
         self.img.addMatrix(matrix)  # Indentd  too far right
+
+    def addObjects(self, Object=Molecule, amount=None, coverage=None, overlapping=False, maximum_tries=1000):
+        self.passed_args_Obj = Object, amount, coverage, overlapping, maximum_tries
+
+        def get_dragged_that_not_overlaps(maximumtries):
+            def _set_p():
+                p = Object()
+                p.drag(self.dragging_speed, self.raster_angle)
+                return p
+
+            if len(self.objects) == 0:
+                return _set_p()
+            p = _set_p()
+            for i in range(maximumtries):
+                if self._overlaps_any(p):
+                    p = _set_p()
+                else:
+                    return p
+            return p
+
+        def _get_thatnot_overlaps(maximumtries):
+            # print("#Obj: {}, has Overlaps: {}".format(len(self.objects), self.has_overlaps()))
+            if len(self.objects) == 0:
+                return Object()
+            p = Object()
+            for i in range(maximumtries):
+                # print("Added at x={}, y= {}".format(p.pos[0].px, p.pos[1].px))
+                if self._overlaps_any(p):
+                    # print("Retry")
+                    p = Object()
+                else:
+                    return p
+            # print("MaxTries Exhausted_a")
+            # print("#Obj: {}, has Overlaps: {}".format(len(self.objects), self.has_overlaps()))
+            return p
+
+        self.passed_args = (amount, coverage, overlapping, maximum_tries)
+        # print("{}, {}, {}".format(self.use_range, self.angle_char_len, overlapping))
+        if amount is not None:
+            for i in range(amount):
+                if random.random() < self.dragging_possibility:
+                    p = get_dragged_that_not_overlaps(maximum_tries)
+                    self.objects.append(p)
+                else:
+                    p = _get_thatnot_overlaps(maximum_tries)
+                    self.objects.append(p)
+        elif coverage is not None:
+            while self.coverage() < coverage:
+                if random.random() < self.dragging_possibility:
+                    p = get_dragged_that_not_overlaps(maximum_tries)
+                    self.objects.append(p)
+                else:
+                    p = _get_thatnot_overlaps(maximum_tries)
+                    self.objects.append(p)
+            else:
+                for i in range(cfg.get_particles_per_image()):
+                    if random.random() < self.dragging_possibility:
+                        p = get_dragged_that_not_overlaps(maximum_tries)
+                        self.objects.append(p)
+                    else:
+                        p = _get_thatnot_overlaps(maximum_tries)
+                        self.objects.append(p)
 
     def extract_Smaller(self):
         self.create_Image_Visualization()
@@ -1559,7 +1746,7 @@ class Double_Frame(DataFrame):
 
         self.img.double_tip(self.strength, self.rel_dist, self.dt_angle)
 
-        smaller = np.zeros((cfg.get_width(), cfg.get_height()))
+        smaller = np.zeros((int(np.ceil(cfg.get_width().px)), int(np.ceil(cfg.get_height().px))))
         bigger = self.img.get_matrix()
         # print(np.shape(smaller), np.shape(bigger))
         # print(self.range)
@@ -1577,8 +1764,8 @@ class Double_Frame(DataFrame):
     def get_objects(self):
         ret = []
         for part in self.objects:
-            if self.range[0] - self.overlap <= part.get_x() <= self.range[1] + self.overlap and \
-                    self.range[2] - self.overlap <= part.get_y() <= self.range[3] + self.overlap:
+            if self.range[0] - self.overlap <= part.get_x().px <= self.range[1] + self.overlap and \
+                    self.range[2] - self.overlap <= part.get_y().px <= self.range[3] + self.overlap:
                 ret.append(part)
 
         return ret

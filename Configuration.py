@@ -122,7 +122,9 @@ def_dragging_speed = 'dragging speed', 0.1 * def_width[1]
 def_dragging_possibility = 'dragging possibility', 0
 def_raster_angle = 'raster_angle (degrees)', 0
 def_doubletip_possibility= 'possibility of two tips', 0
-special_settings = [def_overlap_threshold, def_dragging_error, def_dragging_speed, def_dragging_possibility, def_raster_angle, def_doubletip_possibility]
+def_atomic_step_height = 'Height of atomic step(ang)', 2.3
+def_atomic_step_poss = 'Possibility of atomc step', 0.1
+special_settings = [def_overlap_threshold, def_dragging_error, def_dragging_speed, def_dragging_possibility, def_raster_angle, def_doubletip_possibility, def_atomic_step_height, def_atomic_step_poss]
 
 val_overlap_threshold = None
 val_dragging_error = None
@@ -130,6 +132,9 @@ val_dragging_speed = None
 val_dragging_possibility = None
 val_raster_angle = None
 val_doubletip_possibility = None
+val_atomc_step_height = None
+val_atomic_step_poss = None
+
 
 cat_lattice = 'lattice'
 def_nn_dist = 'Distance between nearest neigbours (Ang)', 2.88
@@ -182,7 +187,7 @@ def update_params():
     global val_angle_range_max, val_angle_range_usage, val_use_crystal_orientation, val_no_of_orientations, val_crystal_orientation_1
     global val_crystal_orientation_2, val_crystal_orientation_3, val_crystal_orientation_4, val_overlap_threshold
     global val_dragging_error, val_raster_angle, val_dragging_speed, val_dragging_possibility, val_doubletip_possibility
-    global val_prefix_sxm, val_suffix_sxm, val_sxm_folder, val_px_per_angstrom, val_nn_dist
+    global val_prefix_sxm, val_suffix_sxm, val_sxm_folder, val_px_per_angstrom, val_nn_dist, val_atomc_step_height, val_atomic_step_poss
     val_threads = int(conf[cat_pc][def_threads[0]])
     val_images_per_thread = int(conf[cat_pc][def_images_per_thread[0]])
     val_image_folder = conf[cat_pc][def_image_folder[0]]
@@ -224,6 +229,8 @@ def update_params():
     val_raster_angle = np.pi * float(conf[cat_special][def_raster_angle[0]]) / 180
     val_dragging_speed = Distance(True, float(conf[cat_special][def_dragging_speed[0]]))
     val_dragging_possibility = float(conf[cat_special][def_dragging_possibility[0]])
+    val_atomc_step_height = Distance(True, float(conf[cat_special][def_atomic_step_height[0]]))
+    val_atomic_step_poss = float(conf[cat_special][def_atomic_step_poss[0]])
     val_doubletip_possibility = float(conf[cat_special][def_doubletip_possibility[0]])
     val_nn_dist = Distance(True, float(conf[cat_lattice][def_nn_dist[0]]))
 
@@ -471,6 +478,7 @@ def get_angle_stdderiv():
     global settings_file
     if not initialized: setupConfigurationManager()
     return val_angle_stdderiv
+
 def set_angle_stdderiv(sigmea):
     if not initialized: setupConfigurationManager()
     conf[cat_particle_properties][def_angle_stdderiv[0]] = str(sigmea)
@@ -583,6 +591,16 @@ def get_double_tip_possibility():
     global settings_file
     if not initialized: setupConfigurationManager()
     return val_doubletip_possibility
+
+def get_atomic_step_height():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    return val_atomc_step_height
+
+def get_atomic_step_poss():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    return val_atomic_step_poss
 
 def get_nn_dist():
     global settings_file

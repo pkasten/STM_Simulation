@@ -170,9 +170,16 @@ if __name__ == "__main__":
     clearLog()
     # lo = Lock()
     #start = time.perf_counter()
-    #fn = FilenameGenerator()
+    fn = FilenameGenerator()
 
-    Tests_Gitterpot().test()
+    #m = Molecule()
+    #Tests_Gitterpot().test()
+    for i in range(10):
+        dat = DataFrame(fn)
+        dat.addObjects(Molecule, amount=1+i)
+        dat.get_Image()
+        dat.save()
+
 
     #dat = DataFrame(fn)
     #for n in range(0,8, 3):
