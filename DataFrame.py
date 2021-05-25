@@ -467,8 +467,8 @@ class DataFrame:
         b = (point_a[1] - (point_a[0] / point_b[0]) * point_b[1]) / (1 - point_a[0] / point_b[0])
         m = (point_a[1] - b) / point_b[1]
 
-       # b = 200
-       # m = 0.001
+        # b = 200
+        # m = 0.001
 
         f = lru_cache()(lambda x: m * x + b)
 
@@ -479,7 +479,6 @@ class DataFrame:
         mt = False
         if mt:
             start = time.perf_counter()
-
 
         # Gitter mit atomic step
         def nearest_ag(gitter, pos):
@@ -493,7 +492,7 @@ class DataFrame:
             return minat
 
         def in_range_of_nst(x, y, atoms, radius):
-            #return False #ToDo: REm
+            # return False #ToDo: REm
             for atom in atoms:
                 if np.linalg.norm(atom.pos - np.array([x, y])) < radius:
                     return True
@@ -511,13 +510,13 @@ class DataFrame:
             else:
                 return 0
 
-        def fermi_ohne_range(d,mu, fex):
+        def fermi_ohne_range(d, mu, fex):
             return fermi2(d, mu, fex, np.infty)
 
         def dist_to_nst(x, y, atoms, radius):
 
             max = 0
-            #return 0 #ToDo: REm
+            # return 0 #ToDo: REm
             for atom in atoms:
                 if fermi(np.linalg.norm(np.array([x, y]) - atom.pos), radius) > max:
                     max = fermi(np.linalg.norm(np.array([x, y]) - atom.pos), radius)
@@ -529,7 +528,7 @@ class DataFrame:
                 ys = f(xs)
                 if not -50 < ys < self.img_height.px + 50:
                     continue
-                dist = np.sqrt( np.square(x - xs) + np.square(y - ys))
+                dist = np.sqrt(np.square(x - xs) + np.square(y - ys))
                 if dist < mind:
                     mind = dist
 
@@ -537,10 +536,9 @@ class DataFrame:
 
         def find_fermi_range(dh, fex):
             for zetta in range(0, 1000):
-                #zetta = 1000 - d
+                # zetta = 1000 - d
                 if dh * fermi_ohne_range(zetta, rad, fex) < 1:
                     return zetta
-
 
         show_gitter = False
         use_gitter = True
@@ -554,36 +552,35 @@ class DataFrame:
             print("STEP1 (Def): {}".format(time.perf_counter() - start))
             start = time.perf_counter()
 
-       # f_er_x_min = np.inf
-       # f_er_x_max = - np.inf
-       # f_er_y_min = np.inf
-       # f_er_y_max = - np.inf
-
+        # f_er_x_min = np.inf
+        # f_er_x_max = - np.inf
+        # f_er_y_min = np.inf
+        # f_er_y_max = - np.inf
 
         if use_gitter:
             checking_pairs = []
             if abs(m) > 1:
-             #  f_er_x_min = 0
-             #   f_er_x_max = self.img_width.px
+                #  f_er_x_min = 0
+                #   f_er_x_max = self.img_width.px
                 for x in range(0, int(np.ceil(self.img_width.px)), 10):
                     yp = f(x)
-                 #   if yp < f_er_y_min:
-                 #       f_er_y_min = yp
-                 #   if yp > f_er_y_max:
-                 #       f_er_y_max = yp
+                    #   if yp < f_er_y_min:
+                    #       f_er_y_min = yp
+                    #   if yp > f_er_y_max:
+                    #       f_er_y_max = yp
                     if not 0 <= yp <= self.img_height.px:
                         continue
                     checking_pairs.append([x, yp])
             else:
-              #  f_er_y_min = 0
-              #  f_er_y_max = self.img_height.px
+                #  f_er_y_min = 0
+                #  f_er_y_max = self.img_height.px
                 for y in range(0, int(np.ceil(self.img_height.px)), 10):
                     xp = (y - b) / m
 
-               #     if xp < f_er_x_min:
-               #         f_er_x_min = xp
-               #     if xp > f_er_x_max:
-               #         f_er_x_max = xp
+                    #     if xp < f_er_x_min:
+                    #         f_er_x_min = xp
+                    #     if xp > f_er_x_max:
+                    #         f_er_x_max = xp
 
                     if not 0 <= xp <= self.img_width.px:
                         continue
@@ -617,126 +614,128 @@ class DataFrame:
                 dh = 255 * cfg.get_atomic_step_height() / (cfg.get_max_height() + cfg.get_atomic_step_height())
 
             # für glatten Übergang
-            #dh *= fermi(- self.fermi_range, rad)
+            # dh *= fermi(- self.fermi_range, rad)
             debug_mode = False
-            #rem
-            #atoms_near_step = []
-            fex2 = self.fermi_exp
+            # rem
+            # atoms_near_step = []
+            fex2 = 0.15 * Distance(True, 2.88).px / cfg.get_nn_dist().px
 
             fermi_range2 = np.log(99) / fex2 + 50
             fermi_range2 = find_fermi_range(dh, fex2)
             dist_const = rad
 
-           # f_effect_range = f_er_x_min - fermi_range2, f_er_x_max + fermi_range2, f_er_y_min - fermi_range2, f_er_y_max + fermi_range2
-           # print(f_effect_range)
+            # f_effect_range = f_er_x_min - fermi_range2, f_er_x_max + fermi_range2, f_er_y_min - fermi_range2, f_er_y_max + fermi_range2
+            # print(f_effect_range)
 
             def effh():
-                return dist_const / np.sin(0.5*np.pi - np.arctan(1/m))
+                return dist_const / np.sin(0.5 * np.pi - np.arctan(1 / m))
 
-
-
-            #print("FR: {:.3f}".format(fermi_range2))
+            # print("FR: {:.3f}".format(fermi_range2))
 
             if mt:
                 print("STEP4 (Defs): {}".format(time.perf_counter() - start))
                 start = time.perf_counter()
 
+            sign = 1
 
+            mode = "A"  # A
+            schieb = 0  # 0
 
-            hmax = np.shape(matrix)[0]
-            for h in range(np.shape(matrix)[0]):
-                #if h % 50 == 0:
-                #    print("Progress Atom Step: {:.2f}%".format(100*h / hmax))
-                #calcD = True
-                #if not f_effect_range[0] < h < f_effect_range[1]:
-                #    calcD = False
-                y_wert = f(h)
-                for r in range(np.shape(matrix)[1]):
+            if mode == "A":
+                hmax = np.shape(matrix)[0]
+                for h in range(np.shape(matrix)[0]):
+                    if h % 5 == 0:
+                        print("Progress Atom Step: {:.2f}%".format(100 * h / hmax))
 
-                   # if not f_effect_range[2] < r < f_effect_range[3]:
-                   #     calcD = False
+                    y_wert = f(h)
+                    for r in range(np.shape(matrix)[1]):
 
-                    #if calcD:
-                    d = dist_to_f(h, r, f)
-                    #else:
-                    #    d = np.inf
+                        d = dist_to_f(h, r, f)
 
-                    innen = y_wert >= r
+                        innen = y_wert >= sign * r
 
+                        if d + schieb > fermi_range2:
+                            if innen:
+                                # pass
+                                matrix[h, r] += dh
+                            continue
 
-                    if d > fermi_range2:
+                        in_at = in_range_of_nst(h, r, atoms_near_step, rad)
                         if innen:
-                            matrix[h, r] += dh
-                        continue#
-
-                    in_at = in_range_of_nst(h, r, atoms_near_step, rad)
-                    if innen:
-                        if in_at:
-                            opt1 = dh * fermi2(-d, rad, fex2, fermi_range2)
-                            opt2 = dh * dist_to_nst(h, r, atoms_near_step, rad)
-                            matrix[h, r] += max(opt1, opt2)
+                            if in_at:
+                                opt1 = dh * fermi2(-d - schieb, sign * rad, fex2, fermi_range2)
+                                opt2 = dh * dist_to_nst(h, r, atoms_near_step, rad)
+                                matrix[h, r] += max(opt1, opt2)
+                            else:
+                                # pass
+                                matrix[h, r] += dh * fermi2(-d - schieb, rad, fex2, fermi_range2)
                         else:
-                            matrix[h, r] += dh * fermi2(-d, rad, fex2, fermi_range2)
-                    else:
-                        if in_at:
+                            if in_at:
+                                opt1 = dh * fermi2(d + schieb, sign * rad, fex2, fermi_range2)
+                                opt2 = dh * dist_to_nst(h, r, atoms_near_step, rad)
+                                matrix[h, r] += max(opt1, opt2)
+                            else:
+                                matrix[h, r] += dh * fermi2(sign * d + schieb, sign * rad, fex2, fermi_range2)
+
+            if mode == "B":
+                hmax = np.shape(matrix)[0]
+                for h in range(np.shape(matrix)[0]):
+                    if h % 5 == 0:
+                        print("Progress Atom Step: {:.2f}%".format(100 * h / hmax))
+
+                    y_wert = f(h)
+                    for r in range(np.shape(matrix)[1]):
+                        if in_range_of_nst(h, r, atoms_near_step, rad) and y_wert < r:
+                            # außen, aber in range of atom
+                            matrix[h, r] += dh * dist_to_nst(h, r, atoms_near_step, rad)
+                        elif in_range_of_nst(h, r, atoms_near_step, rad) and y_wert >= r:
+                            # innen und im atom
+                            d = dist_to_f(h, r, f)
                             opt1 = dh * fermi2(-d, rad, fex2, fermi_range2)
-                            opt2 = dh * dist_to_nst(h, r, atoms_near_step, rad)
-                            matrix[h, r] += max(opt1, opt2)
+                            opt2 = dist_to_nst(h, r, atoms_near_step, rad)
+                            matrix[h, r] += max(opt1, opt2)  #
+
+                        elif y_wert < r:
+                            # außen, mglw in fermirange
+                            d = dist_to_f(h, r, f)
+                            if d < fermi_range2:
+                                matrix[h, r] += dh * fermi2(d, rad, fex2, fermi_range2)
                         else:
-                            matrix[h, r] += dh * fermi2(d, rad, fex2, fermi_range2)
+                            d = dist_to_f(h, r, f)
+                            if d < fermi_range2:
+                                matrix[h, r] += dh * fermi2(-d, rad, fex2, fermi_range2)
+                            else:
+                                matrix[h, r] += dh
+                            # innen
 
+            if mode == "C":
+                for h in range(np.shape(matrix)[0]):
+                    # if h % 100 == 0:
+                    # print("H: {}/{}".format(h, np.shape(matrix)[0]))
+                    for r in range(np.shape(matrix)[1]):
+                        if in_range_of_nst(h, r, atoms_near_step, rad):
+                            add = dh * dist_to_nst(h, r, atoms_near_step, rad)
+                            temp = matrix[h, r]
+                            matrix[h, r] += add
+                            if debug_mode: matrix[h, r] = 0
+                            if f(h) > r and add < dh:
+                                # matrix[h, r] = temp + max(dh * fermi2(r - f(h) + effh(), effh(), fex2), add)
+                                matrix[h, r] = temp + max(dh * fermi2(dist_to_f(h, r, f), effh(), fex2, fermi_range2),
+                                                          add)  #
 
-                    #if in_range_of_nst(h, r, atoms_near_step, rad) and y_wert < r:
-                    #    # außen, aber in range of atom
-                    #    matrix[h, r] += dist_to_nst(h, r, atoms_near_step, rad)
-                    #elif in_range_of_nst(h, r, atoms_near_step, rad) and y_wert >= r:
-                    #    # innen und im atom
-                    #    d = dist_to_f(h, r, f)
-                    #    opt1 = dh * fermi2(-d, rad, fex2, fermi_range2)
-                    #    opt2 = dist_to_nst(h, r, atoms_near_step, rad)
-                    #    matrix[h, r] += max(opt1, opt2)#
-
-                    #elif y_wert < r:
-                    #    #außen, mglw in fermirange
-                    #    d = dist_to_f(h, r, f)
-                    #    if d < fermi_range2:
-                    #        matrix[h, r] += dh * fermi2(d, rad, fex2, fermi_range2)
-                    #else:
-                    #    d = dist_to_f(h, r, f)
-                    #    if d < fermi_range2:
-                    #        matrix[h, r] += dh * fermi2(-d, rad, fex2, fermi_range2)
-                    #    else:
-                    #        matrix[h, r] += dh
-                        #innen
-
-
-
-        #    for h in range(np.shape(matrix)[0]):
-        #        # if h % 100 == 0:
-        #        # print("H: {}/{}".format(h, np.shape(matrix)[0]))
-        #        for r in range(np.shape(matrix)[1]):
-        #            if in_range_of_nst(h, r, atoms_near_step, rad):
-        #                add = dh * dist_to_nst(h, r, atoms_near_step, rad)
-        #                temp = matrix[h, r]
-        #                matrix[h, r] += add
-        #                if debug_mode: matrix[h, r] = 0
-        #                if f(h) > r and add < dh:
-        #                    #matrix[h, r] = temp + max(dh * fermi2(r - f(h) + effh(), effh(), fex2), add)
-        #                    matrix[h, r] = temp + max(dh * fermi2(dist_to_f(h, r, f), effh(), fex2, fermi_range2), add)#
-        #
-        #                    if debug_mode: matrix[h, r] = 75
-        #            else:
-        #                n = f(h)
-        #                #if n + fermi_range2 > r:
-        #                if n + fermi_range2 > r:
-        #                    if abs(n - r) < effh():
-        #                        matrix[h, r] += dh * fermi2(dist_to_f(h, r, f), effh(), fex2, fermi_range2)
-        #                        #matrix[h, r] += dh * fermi2(r - n + effh(), effh(), fex2)
-        #                        if debug_mode: matrix[h, r] = 150
-        #                    else:
-        #                        if n > r:
-        #                            matrix[h, r] += dh
-        #                            if debug_mode: matrix[h, r] = 225#
+                                if debug_mode: matrix[h, r] = 75
+                        else:
+                            n = f(h)
+                            # if n + fermi_range2 > r:
+                            if n + fermi_range2 > r:
+                                if abs(n - r) < effh():
+                                    matrix[h, r] += dh * fermi2(dist_to_f(h, r, f), effh(), fex2, fermi_range2)
+                                    # matrix[h, r] += dh * fermi2(r - n + effh(), effh(), fex2)
+                                    if debug_mode: matrix[h, r] = 150
+                                else:
+                                    if n > r:
+                                        matrix[h, r] += dh
+                                        if debug_mode: matrix[h, r] = 225  #
 
             if mt:
                 print("STEP5 (Matrix): {}".format(time.perf_counter() - start))
@@ -749,15 +748,13 @@ class DataFrame:
                         if abs(f(h) - r) < delta:
                             matrix[h, r] = 200
 
-            #plt.imshow(matrix.transpose())
+            # plt.imshow(matrix.transpose())
             plt.show()
 
-            #for i in range(0, 400, 40):
+            # for i in range(0, 400, 40):
             #    print("Dist to f: {}-200 : {:.3f}".format(i, dist_to_f(i, 200, f)))#
 
-            #print("Fermi(0, rad) = {}".format(fermi(0, rad)))
-
-
+            # print("Fermi(0, rad) = {}".format(fermi(0, rad)))
 
     def create_Image_Visualization(self):
         self.img = MyImage()

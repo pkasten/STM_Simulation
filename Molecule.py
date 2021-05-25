@@ -519,10 +519,10 @@ class Tests_Gitterpot:
         gv_a = np.array([1, 0]) * nn_dist.px
         gv_b = np.array([np.cos(np.pi / 1.5), np.sin(np.pi / 1.5)]) * nn_dist.px
 
-        start = np.array([-nn_dist.px / 2, -nn_dist.px / 2])
+        start = np.array([0, 0]) - 2*gv_a - 2*gv_b
         current = np.array([0, 0])
-        j_max = int(np.ceil(max(img_w.px / gv_b[0], img_h.px / gv_b[1]))) + 2
-        i_max = int(np.ceil((img_w.px / gv_a[0]) - j_max * gv_b[0])) + 2
+        j_max = int(np.ceil(max(img_w.px / gv_b[0], img_h.px / gv_b[1]))) + 4
+        i_max = int(np.ceil((img_w.px / gv_a[0]) - j_max * gv_b[0])) + 4
         for i in range(i_max):
             for j in range(j_max):
                 current = start + (gv_a * i) + (gv_b * j)

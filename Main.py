@@ -172,14 +172,14 @@ if __name__ == "__main__":
     # lo = Lock()
     #start = time.perf_counter()
     fn = FilenameGenerator()
-    multi_test(1)
+    #multi_test(1)
     #m = Molecule()
     #Tests_Gitterpot().test()
-    #for i in range(1):
-    #    dat = DataFrame(fn)
-    #    dat.addObjects(Molecule, amount=1)
-    #    dat.get_Image()
-    #    dat.save()
+    for i in range(10):
+        dat = DataFrame(fn)
+        dat.addObjects(Molecule, amount=20)
+        dat.get_Image()
+        dat.save()
 
 
     #dat = DataFrame(fn)
