@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 
 class Molecule(Particle):
-    molecule_class = "NCPhCN"
+    molecule_class = "Single"
     molecule_ph_groups = 1
 
     def __init__(self, pos=None, theta=None, lookup_table=None, gitter=None, molecule_class=None, molecule_ph_groups=0):
@@ -510,6 +510,27 @@ class Tests_Gitterpot:
         return ret
 
     @staticmethod
+    def create_larger_gitter():
+        ret = []
+        nn_dist = cfg.get_nn_dist()
+        img_h = cfg.get_height()
+        img_w = cfg.get_width()
+
+        gv_a = np.array([1, 0]) * nn_dist.px
+        gv_b = np.array([np.cos(np.pi / 1.5), np.sin(np.pi / 1.5)]) * nn_dist.px
+
+        start = np.array([-nn_dist.px / 2, -nn_dist.px / 2])
+        current = np.array([0, 0])
+        j_max = int(np.ceil(max(img_w.px / gv_b[0], img_h.px / gv_b[1]))) + 2
+        i_max = int(np.ceil((img_w.px / gv_a[0]) - j_max * gv_b[0])) + 2
+        for i in range(i_max):
+            for j in range(j_max):
+                current = start + (gv_a * i) + (gv_b * j)
+                if current[0] < img_w.px and current[1] < img_h.px and current[0] > 0 and current[1] > 0:
+                    ret.append(Ag_Atom(current.copy()))
+        return ret
+
+    @staticmethod
     def test_Lookup_Table():
         gitter = Tests_Gitterpot.create_gitter()
         img_h = cfg.get_height()
@@ -597,6 +618,7 @@ class Tests_Gitterpot:
     def show_gitter(gitter, save=True, name="gittermat"):
         img_w = cfg.get_width()
         img_h = cfg.get_height()
+        name += str(len(gitter))
         if save:
             if os.path.isfile(os.path.join("Pickle_Data", name + ".data")):
                 return pickle.load(open(os.path.join("Pickle_Data", name + ".data"), "rb"))

@@ -249,7 +249,7 @@ def get_images_pt():
     if not initialized: setupConfigurationManager()
     return val_images_per_thread
     #conf.read(settings_file)
-    #return int(conf[cat_pc][def_images_per_thread[0]])  # ToDo: Castch Exceptions
+    #return int(conf[cat_pc][def_images_per_thread[0]])
 
     # set Images Per Thread
 

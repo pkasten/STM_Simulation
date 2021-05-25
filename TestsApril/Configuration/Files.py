@@ -219,7 +219,6 @@ class FileManager:
 
 
 class ThreadsafeFileManager(FileManager):
-    # ToDo: Check if all Methods areimplemented
     edit_lock = threading.Lock()
     filename_lock = threading.Lock()
 
@@ -343,7 +342,7 @@ class ThreadsafeFileManager(FileManager):
 
         filenames = []
         for i in range(37):
-            filenames.append(str.format("testfiles/{}{}.{}", prefix, i, suffix))  # ToDO: Windowsize
+            filenames.append(str.format("testfiles/{}{}.{}", prefix, i, suffix))
 
         for file in filenames:
             with open(file, "w") as current:

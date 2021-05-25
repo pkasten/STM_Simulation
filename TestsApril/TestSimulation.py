@@ -136,7 +136,7 @@ def test(number_of_points):
                 # img.noiseImage()
                 print("Start imgs.createImg")
                 if not self.alive: return
-                img.createImageTest(data, str(self))  # ToDo: dont delete, or other method to provide index
+                img.createImageTest(data, str(self))
                 if not self.alive: return
                 print("Start Saving")
                 path = img.saveImage(index)[0]

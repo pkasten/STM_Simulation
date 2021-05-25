@@ -3,6 +3,8 @@ import copy, os
 import math, random
 import time
 
+import scipy.optimize
+
 from Molecule import Molecule, Tests_Gitterpot
 from Particle import Particle, Double_Particle
 from Images import MyImage
@@ -18,6 +20,7 @@ import scipy.optimize as opt
 from Charge import Charge
 from Distance import Distance
 import pickle
+from functools import lru_cache
 
 
 class DataFrame:
@@ -53,11 +56,16 @@ class DataFrame:
             self.angle_char_len = 4000
         self.oldPotential = None
         self.add_To_Potential = []
-        #self.potential_map = self.calc_potential_map()
+        # self.potential_map = self.calc_potential_map()
         self.overlapping_energy = 1000
         self.overlapping_threshold = cfg.get_overlap_threshold()
         self.part_laenge = cfg.get_part_length()
         self.atomic_step_height = cfg.get_atomic_step_height()
+        # AtomStepFermi
+        self.fermi_exp = cfg.get_fermi_exp() * cfg.get_nn_dist().px / Distance(True, 0.07).px
+        self.fermi_exp = 0.05
+        self.fermi_range = np.log(99) / self.fermi_exp + cfg.get_atomic_step_height().px
+        # self.fermi_range = 100
 
     # returns iterator over Particles
     def getIterator(self):
@@ -93,7 +101,8 @@ class DataFrame:
             return False
         for p in self.objects:
             if not part.dragged and not p.dragged:
-                if math.dist([p.x.px, p.y.px], [part.x.px, part.y.px]) > np.sqrt(2) * max(part.effect_range, p.effect_range):
+                if math.dist([p.x.px, p.y.px], [part.x.px, part.y.px]) > np.sqrt(2) * max(part.effect_range,
+                                                                                          p.effect_range):
                     continue
             if part.true_overlap(p):
                 # print("Overlaps any took {}".format(time.perf_counter() - start))
@@ -153,7 +162,6 @@ class DataFrame:
                 return p
         # print("MaxTries Exhausted_b")
         return p
-
 
     # calculates a random angle for partilce depending on its surrounding with correlation
     def _calc_angle_for_particle(self, particle):  # ToDo: Still very sketchy
@@ -223,7 +231,7 @@ class DataFrame:
             else:
                 for i in range(cfg.get_particles_per_image()):
                     self.add_at_optimum_energy_new(self.img_width * random.random(), self.img_height * random.random(),
-                                               2 * np.pi * random.random())
+                                                   2 * np.pi * random.random())
             return
 
         # without angle correlation
@@ -384,7 +392,6 @@ class DataFrame:
     def addObjects(self, Object=Molecule, amount=None, coverage=None, overlapping=False, maximum_tries=1000):
         self.passed_args_Obj = Object, amount, coverage, overlapping, maximum_tries
 
-
         def get_dragged_that_not_overlaps(maximumtries):
             def _set_p():
                 p = Object()
@@ -402,22 +409,20 @@ class DataFrame:
             return p
 
         def _get_thatnot_overlaps(maximumtries):
-            #print("#Obj: {}, has Overlaps: {}".format(len(self.objects), self.has_overlaps()))
+            # print("#Obj: {}, has Overlaps: {}".format(len(self.objects), self.has_overlaps()))
             if len(self.objects) == 0:
                 return Object()
             p = Object()
             for i in range(maximumtries):
-                #print("Added at x={}, y= {}".format(p.pos[0].px, p.pos[1].px))
+                # print("Added at x={}, y= {}".format(p.pos[0].px, p.pos[1].px))
                 if self._overlaps_any(p):
-                    #print("Retry")
+                    # print("Retry")
                     p = Object()
                 else:
                     return p
-            #print("MaxTries Exhausted_a")
-            #print("#Obj: {}, has Overlaps: {}".format(len(self.objects), self.has_overlaps()))
+            # print("MaxTries Exhausted_a")
+            # print("#Obj: {}, has Overlaps: {}".format(len(self.objects), self.has_overlaps()))
             return p
-
-
 
         self.passed_args = (amount, coverage, overlapping, maximum_tries)
         # print("{}, {}, {}".format(self.use_range, self.angle_char_len, overlapping))
@@ -452,6 +457,308 @@ class DataFrame:
                 return self.overlapping_energy
         return 0
 
+    def atomic_step_init(self):
+        for obj in self.objects:
+            obj.set_maxHeight(cfg.get_max_height() + cfg.get_atomic_step_height())
+        # Create Stepborder
+        point_a = [random.random() * self.img_width.px, random.random() * self.img_height.px]
+        point_b = [random.random() * self.img_width.px, random.random() * self.img_height.px]
+
+        b = (point_a[1] - (point_a[0] / point_b[0]) * point_b[1]) / (1 - point_a[0] / point_b[0])
+        m = (point_a[1] - b) / point_b[1]
+
+       # b = 200
+       # m = 0.001
+
+        f = lru_cache()(lambda x: m * x + b)
+
+        return f, m, b
+
+    def atomic_step(self, matrix, f, m, b):
+
+        mt = False
+        if mt:
+            start = time.perf_counter()
+
+
+        # Gitter mit atomic step
+        def nearest_ag(gitter, pos):
+            mindist = np.inf
+            minat = None
+            for ag in gitter:
+                if np.linalg.norm(ag.pos - pos) < mindist:
+                    mindist = np.linalg.norm(ag.pos - pos)
+                    minat = ag
+
+            return minat
+
+        def in_range_of_nst(x, y, atoms, radius):
+            #return False #ToDo: REm
+            for atom in atoms:
+                if np.linalg.norm(atom.pos - np.array([x, y])) < radius:
+                    return True
+            return False
+
+        def fermi(d, mu):
+            if d < self.fermi_range:
+                return 1 / (np.exp(self.fermi_exp * (d - mu)) + 1)
+            else:
+                return 0
+
+        def fermi2(d, mu, fex, range):
+            if d < range:
+                return 1 / (np.exp(fex * (d - mu)) + 1)
+            else:
+                return 0
+
+        def fermi_ohne_range(d,mu, fex):
+            return fermi2(d, mu, fex, np.infty)
+
+        def dist_to_nst(x, y, atoms, radius):
+
+            max = 0
+            #return 0 #ToDo: REm
+            for atom in atoms:
+                if fermi(np.linalg.norm(np.array([x, y]) - atom.pos), radius) > max:
+                    max = fermi(np.linalg.norm(np.array([x, y]) - atom.pos), radius)
+            return max
+
+        def dist_to_f(x, y, f):
+            mind = 1000
+            for xs in range(0, int(np.ceil(self.img_width.px))):
+                ys = f(xs)
+                if not -50 < ys < self.img_height.px + 50:
+                    continue
+                dist = np.sqrt( np.square(x - xs) + np.square(y - ys))
+                if dist < mind:
+                    mind = dist
+
+            return mind
+
+        def find_fermi_range(dh, fex):
+            for zetta in range(0, 1000):
+                #zetta = 1000 - d
+                if dh * fermi_ohne_range(zetta, rad, fex) < 1:
+                    return zetta
+
+
+        show_gitter = False
+        use_gitter = True
+        show_f = False
+
+        if (show_gitter):
+            gitter = Tests_Gitterpot.create_larger_gitter()  # Ag-Atom[]
+            matrix += 255 * Tests_Gitterpot.show_gitter(gitter)
+
+        if mt:
+            print("STEP1 (Def): {}".format(time.perf_counter() - start))
+            start = time.perf_counter()
+
+       # f_er_x_min = np.inf
+       # f_er_x_max = - np.inf
+       # f_er_y_min = np.inf
+       # f_er_y_max = - np.inf
+
+
+        if use_gitter:
+            checking_pairs = []
+            if abs(m) > 1:
+             #  f_er_x_min = 0
+             #   f_er_x_max = self.img_width.px
+                for x in range(0, int(np.ceil(self.img_width.px)), 10):
+                    yp = f(x)
+                 #   if yp < f_er_y_min:
+                 #       f_er_y_min = yp
+                 #   if yp > f_er_y_max:
+                 #       f_er_y_max = yp
+                    if not 0 <= yp <= self.img_height.px:
+                        continue
+                    checking_pairs.append([x, yp])
+            else:
+              #  f_er_y_min = 0
+              #  f_er_y_max = self.img_height.px
+                for y in range(0, int(np.ceil(self.img_height.px)), 10):
+                    xp = (y - b) / m
+
+               #     if xp < f_er_x_min:
+               #         f_er_x_min = xp
+               #     if xp > f_er_x_max:
+               #         f_er_x_max = xp
+
+                    if not 0 <= xp <= self.img_width.px:
+                        continue
+
+                    checking_pairs.append([xp, y])
+
+            if mt:
+                print("STEP2 (Checking Pairs): {}".format(time.perf_counter() - start))
+                start = time.perf_counter()
+
+            atoms_near_step = []
+            gitter = Tests_Gitterpot.create_larger_gitter()  # Ag-Atom[]
+            # print("Positions: {}".format(checking_pairs))
+
+            for pos in checking_pairs:
+                nat = nearest_ag(gitter, pos)
+                if nat not in atoms_near_step:
+                    atoms_near_step.append(nat)
+
+            if mt:
+                print("STEP3 (Atoms Near Step): {}".format(time.perf_counter() - start))
+                start = time.perf_counter()
+
+            # print("No of Atoms near step: {} - {}".format(len(atoms_near_step), atoms_near_step))
+
+            rad = cfg.get_nn_dist().px
+
+            if len(self.objects) > 0:
+                dh = self.objects[0].color(self.atomic_step_height)
+            else:
+                dh = 255 * cfg.get_atomic_step_height() / (cfg.get_max_height() + cfg.get_atomic_step_height())
+
+            # für glatten Übergang
+            #dh *= fermi(- self.fermi_range, rad)
+            debug_mode = False
+            #rem
+            #atoms_near_step = []
+            fex2 = self.fermi_exp
+
+            fermi_range2 = np.log(99) / fex2 + 50
+            fermi_range2 = find_fermi_range(dh, fex2)
+            dist_const = rad
+
+           # f_effect_range = f_er_x_min - fermi_range2, f_er_x_max + fermi_range2, f_er_y_min - fermi_range2, f_er_y_max + fermi_range2
+           # print(f_effect_range)
+
+            def effh():
+                return dist_const / np.sin(0.5*np.pi - np.arctan(1/m))
+
+
+
+            #print("FR: {:.3f}".format(fermi_range2))
+
+            if mt:
+                print("STEP4 (Defs): {}".format(time.perf_counter() - start))
+                start = time.perf_counter()
+
+
+
+            hmax = np.shape(matrix)[0]
+            for h in range(np.shape(matrix)[0]):
+                #if h % 50 == 0:
+                #    print("Progress Atom Step: {:.2f}%".format(100*h / hmax))
+                #calcD = True
+                #if not f_effect_range[0] < h < f_effect_range[1]:
+                #    calcD = False
+                y_wert = f(h)
+                for r in range(np.shape(matrix)[1]):
+
+                   # if not f_effect_range[2] < r < f_effect_range[3]:
+                   #     calcD = False
+
+                    #if calcD:
+                    d = dist_to_f(h, r, f)
+                    #else:
+                    #    d = np.inf
+
+                    innen = y_wert >= r
+
+
+                    if d > fermi_range2:
+                        if innen:
+                            matrix[h, r] += dh
+                        continue#
+
+                    in_at = in_range_of_nst(h, r, atoms_near_step, rad)
+                    if innen:
+                        if in_at:
+                            opt1 = dh * fermi2(-d, rad, fex2, fermi_range2)
+                            opt2 = dh * dist_to_nst(h, r, atoms_near_step, rad)
+                            matrix[h, r] += max(opt1, opt2)
+                        else:
+                            matrix[h, r] += dh * fermi2(-d, rad, fex2, fermi_range2)
+                    else:
+                        if in_at:
+                            opt1 = dh * fermi2(-d, rad, fex2, fermi_range2)
+                            opt2 = dh * dist_to_nst(h, r, atoms_near_step, rad)
+                            matrix[h, r] += max(opt1, opt2)
+                        else:
+                            matrix[h, r] += dh * fermi2(d, rad, fex2, fermi_range2)
+
+
+                    #if in_range_of_nst(h, r, atoms_near_step, rad) and y_wert < r:
+                    #    # außen, aber in range of atom
+                    #    matrix[h, r] += dist_to_nst(h, r, atoms_near_step, rad)
+                    #elif in_range_of_nst(h, r, atoms_near_step, rad) and y_wert >= r:
+                    #    # innen und im atom
+                    #    d = dist_to_f(h, r, f)
+                    #    opt1 = dh * fermi2(-d, rad, fex2, fermi_range2)
+                    #    opt2 = dist_to_nst(h, r, atoms_near_step, rad)
+                    #    matrix[h, r] += max(opt1, opt2)#
+
+                    #elif y_wert < r:
+                    #    #außen, mglw in fermirange
+                    #    d = dist_to_f(h, r, f)
+                    #    if d < fermi_range2:
+                    #        matrix[h, r] += dh * fermi2(d, rad, fex2, fermi_range2)
+                    #else:
+                    #    d = dist_to_f(h, r, f)
+                    #    if d < fermi_range2:
+                    #        matrix[h, r] += dh * fermi2(-d, rad, fex2, fermi_range2)
+                    #    else:
+                    #        matrix[h, r] += dh
+                        #innen
+
+
+
+        #    for h in range(np.shape(matrix)[0]):
+        #        # if h % 100 == 0:
+        #        # print("H: {}/{}".format(h, np.shape(matrix)[0]))
+        #        for r in range(np.shape(matrix)[1]):
+        #            if in_range_of_nst(h, r, atoms_near_step, rad):
+        #                add = dh * dist_to_nst(h, r, atoms_near_step, rad)
+        #                temp = matrix[h, r]
+        #                matrix[h, r] += add
+        #                if debug_mode: matrix[h, r] = 0
+        #                if f(h) > r and add < dh:
+        #                    #matrix[h, r] = temp + max(dh * fermi2(r - f(h) + effh(), effh(), fex2), add)
+        #                    matrix[h, r] = temp + max(dh * fermi2(dist_to_f(h, r, f), effh(), fex2, fermi_range2), add)#
+        #
+        #                    if debug_mode: matrix[h, r] = 75
+        #            else:
+        #                n = f(h)
+        #                #if n + fermi_range2 > r:
+        #                if n + fermi_range2 > r:
+        #                    if abs(n - r) < effh():
+        #                        matrix[h, r] += dh * fermi2(dist_to_f(h, r, f), effh(), fex2, fermi_range2)
+        #                        #matrix[h, r] += dh * fermi2(r - n + effh(), effh(), fex2)
+        #                        if debug_mode: matrix[h, r] = 150
+        #                    else:
+        #                        if n > r:
+        #                            matrix[h, r] += dh
+        #                            if debug_mode: matrix[h, r] = 225#
+
+            if mt:
+                print("STEP5 (Matrix): {}".format(time.perf_counter() - start))
+                start = time.perf_counter()
+
+            if show_f:
+                delta = 2 * abs(m)
+                for h in range(np.shape(matrix)[0]):
+                    for r in range(np.shape(matrix)[1]):
+                        if abs(f(h) - r) < delta:
+                            matrix[h, r] = 200
+
+            #plt.imshow(matrix.transpose())
+            plt.show()
+
+            #for i in range(0, 400, 40):
+            #    print("Dist to f: {}-200 : {:.3f}".format(i, dist_to_f(i, 200, f)))#
+
+            #print("Fermi(0, rad) = {}".format(fermi(0, rad)))
+
+
+
     def create_Image_Visualization(self):
         self.img = MyImage()
         width = self.img_width
@@ -462,23 +769,9 @@ class DataFrame:
 
         # Set Max Height for parts
         if use_atomstep:
-            for obj in self.objects:
-                obj.set_maxHeight(cfg.get_max_height() + cfg.get_atomic_step_height())
-            # Create Stepborder
-            point_a = [random.random() * self.img_width.px, random.random() * self.img_height.px]
-            point_b = [random.random() * self.img_width.px, random.random() * self.img_height.px]
-
-
-            b = (point_a[1] - (point_a[0]/point_b[0])*point_b[1])/(1-point_a[0]/point_b[0])
-            m = (point_a[1] - b)/point_b[1]
-
-            f = lambda x: m*x + b
+            fargs = self.atomic_step_init()
         else:
-            f = lambda x:0*x
-            m = 0
-            b = 0
-
-
+            fargs = lambda c: 0, 0, 0
 
         for part in self.objects:
             for tuple in part.get_visualization():
@@ -501,111 +794,22 @@ class DataFrame:
                             continue
                         matrix[new_x, new_y] += eff_mat[i, j]
 
-
-        #Gitter mit atomic step
-        def nearest_ag(gitter, pos):
-            mindist = np.inf
-            minat = None
-            for ag in gitter:
-                if np.linalg.norm(ag.pos - pos) < mindist:
-                    mindist = np.linalg.norm(ag.pos - pos)
-                    minat = ag
-
-            return minat
-
-        def in_range_of_nst(x, y, atoms, radius):
-            for atom in atoms:
-                if np.linalg.norm(atom.pos - np.array([x, y])) < radius:
-                    return True
-            return False
-
-        show_gitter = False
-        use_gitter = True
-        if (show_gitter):
-            print("Creating Gitter")
-            gitter = Tests_Gitterpot.create_gitter() #Ag-Atom[]
-            print("Created")
-            matrix += 255 * Tests_Gitterpot.show_gitter(gitter)
-            print("Added Gittershow")
-
-        if use_gitter:
-            if use_atomstep:
-                checking_pairs = []
-                if abs(m) > 1:
-                    for x in range(0, int(np.ceil(self.img_width.px)), 10):
-                        yp = f(x)
-                        if not 0 <= yp <= self.img_height.px:
-                            continue
-                        checking_pairs.append([x, yp])
-                else:
-                    for y in range(0, int(np.ceil(self.img_height.px)), 10):
-                        xp = (y-b)/m
-                        if not 0 <= xp <= self.img_width.px:
-                            continue
-                        checking_pairs.append([xp, y])
-
-                atoms_near_step = []
-                gitter = Tests_Gitterpot.create_gitter()  # Ag-Atom[]
-                print("Positions: {}".format(checking_pairs))
-
-                for pos in checking_pairs:
-                    nat = nearest_ag(gitter, pos)
-                    if nat not in atoms_near_step:
-                        atoms_near_step.append(nat)
-
-                #print("No of Atoms near step: {} - {}".format(len(atoms_near_step), atoms_near_step))
-
-                rad = cfg.get_nn_dist().px
-
-                if len(self.objects) > 0:
-                    dh = self.objects[0].color(self.atomic_step_height)
-
-                else:
-                    dh = 255 * cfg.get_atomic_step_height() / (cfg.get_max_height() + cfg.get_atomic_step_height())
-
-                for h in range(np.shape(matrix)[0]):
-                    #if h % 100 == 0:
-                        #print("H: {}/{}".format(h, np.shape(matrix)[0]))
-                    for r in range(np.shape(matrix)[1]):
-                        if in_range_of_nst(h, r, atoms_near_step, rad) or f(h) > r:
-                            matrix[h, r] += dh
-
-        use_atomstep = False
-
-
-
-
-
         if use_atomstep:
-            if len(self.objects) > 0:
-                dh = self.objects[0].color(self.atomic_step_height)
-
-            else:
-                dh = 255 * cfg.get_atomic_step_height() / (cfg.get_max_height() + cfg.get_atomic_step_height())
-
-            for h in range(np.shape(matrix)[0]):
-                for r in range(np.shape(matrix)[1]):
-                    if f(h) > r:
-                        matrix[h, r] += dh
-
-
-
+            self.atomic_step(matrix, *fargs)
 
         self.img.addMatrix(matrix)
-
 
     def get_Image(self):
         if random.random() < self.double_tip_poss:
             print("Double Tipping")
-            #ToDo: Step
+            # ToDo: Step
             strength = 0.3 + 0.5 * random.random()
             rel_dist = 0.1 * random.random()  # ToDO: Let loose
             angle = 2 * np.pi * random.random()
             doubled_frame = Double_Frame(self.fn_gen, strength, rel_dist, angle)
-            #doubled_frame.addParticles(self.passed_args[0], self.passed_args[1], self.passed_args[2],
-             #                          self.passed_args[3])
+            # doubled_frame.addParticles(self.passed_args[0], self.passed_args[1], self.passed_args[2],
+            #                          self.passed_args[3])
             doubled_frame.addObjects(*self.passed_args_Obj)
-
 
             self.img = doubled_frame.extract_Smaller()
             self.objects = doubled_frame.get_objects()
@@ -615,7 +819,6 @@ class DataFrame:
             return
 
         self.create_Image_Visualization()
-
 
         if self.use_noise:
             self.img.noise(self.image_noise_mu, self.image_noise_sigma)
@@ -664,7 +867,10 @@ class DataFrame:
             for j in range(i):
                 # print("Testing overlap {} - {}".format(i, j))
                 if self.objects[i].true_overlap(self.objects[j]):
-                    print("Overlap between Part {} @ ({},{}) and Part {} @ ({},{})".format(i, self.objects[i].pos[0].px, self.objects[i].pos[1].px, j , self.objects[j].pos[0].px, self.objects[j].pos[1].px))
+                    print("Overlap between Part {} @ ({},{}) and Part {} @ ({},{})".format(i, self.objects[i].pos[0].px,
+                                                                                           self.objects[i].pos[1].px, j,
+                                                                                           self.objects[j].pos[0].px,
+                                                                                           self.objects[j].pos[1].px))
                     print("Reverse: {}".format(self.objects[j].true_overlap(self.objects[i])))
                     # print("i: x={}, y={}, dg={}; j: x={}, y={}, dg={}".format(self.objects[i].get_x(), self.objects[i].get_y(), self.objects[i].dragged, self.objects[j].get_x(), self.objects[j].get_y(), self.objects[j].dragged))
                     return True
@@ -672,7 +878,6 @@ class DataFrame:
 
     def __str__(self):
         return str(self.objects)
-
 
     # Deprecated Stuff....
     # calculates particles weight for importance in surrounding particles
@@ -1386,12 +1591,15 @@ class Double_Frame(DataFrame):
 
         if self.shift_x > 0:
             if self.shift_y > 0:
-                self.range = int(int(np.ceil(self.img_width.px)) / 2), int(np.ceil(self.img_width.px)), int(np.ceil((self.img_height.px / 2))), int(np.ceil(self.img_height.px))
+                self.range = int(int(np.ceil(self.img_width.px)) / 2), int(np.ceil(self.img_width.px)), int(
+                    np.ceil((self.img_height.px / 2))), int(np.ceil(self.img_height.px))
             else:
-                self.range = int(int(np.ceil(self.img_width.px)) / 2), self.img_width.px, 0, int(np.ceil((self.img_height.px / 2)))
+                self.range = int(int(np.ceil(self.img_width.px)) / 2), self.img_width.px, 0, int(
+                    np.ceil((self.img_height.px / 2)))
         else:
             if self.shift_y > 0:
-                self.range = 0, int(int(np.ceil(self.img_width.px)) / 2), 0, int(np.ceil((self.img_height.px / 2))), int(np.ceil(self.img_height.px))
+                self.range = 0, int(int(np.ceil(self.img_width.px)) / 2), 0, int(
+                    np.ceil((self.img_height.px / 2))), int(np.ceil(self.img_height.px))
             else:
                 self.range = 0, int(int(np.ceil(self.img_width.px)) / 2), 0, int(np.ceil((self.img_height.px / 2)))
 
@@ -1662,7 +1870,7 @@ class Double_Frame(DataFrame):
             else:
                 dh = 255 * cfg.get_atomic_step_height() / (cfg.get_max_height() + cfg.get_atomic_step_height())
 
-            #print("Matrix-Shape: {}".format(np.shape(matrix)))
+            # print("Matrix-Shape: {}".format(np.shape(matrix)))
 
             for h in range(np.shape(matrix)[0]):
                 for r in range(np.shape(matrix)[1]):

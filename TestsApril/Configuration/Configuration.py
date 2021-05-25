@@ -66,7 +66,7 @@ def get_threads():
     if not initialized:
         setup()
     conf.read(settings_file)
-    return int(conf[ovr]['threads'])  # ToDo: Catch Exceptions
+    return int(conf[ovr]['threads'])
 
 
 # get Images Per Thread
@@ -75,7 +75,7 @@ def get_threads():
 def get_images_pt():
     if not initialized: setup()
     conf.read(settings_file)
-    return int(conf[ovr]['images_per_thread'])  # ToDo: Castch Exceptions
+    return int(conf[ovr]['images_per_thread'])
 
     # set Images Per Thread
 
