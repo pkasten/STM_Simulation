@@ -176,12 +176,16 @@ if __name__ == "__main__":
     #multi_test(1)
     #m = Molecule()
     #Tests_Gitterpot().test()
+
+
     for i in range(10):
         dat = DataFrame(fn)
-        dat.addObjects(Molecule, amount=2)
-        dat.add_Dust(DustParticle(np.array([200, 200])))
+        dat.addObjects(Molecule)
+        #dat.add_Dust(DustParticle(np.array([200, 200]), color=i))
         dat.get_Image()
         dat.save()
+
+    #DustParticle.test()
 
 
     #dat = DataFrame(fn)

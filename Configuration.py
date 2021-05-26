@@ -124,7 +124,8 @@ def_raster_angle = 'raster_angle (degrees)', 0
 def_doubletip_possibility= 'possibility of two tips', 0
 def_atomic_step_height = 'Height of atomic step(ang)', 2.3
 def_atomic_step_poss = 'Possibility of atomc step', 0.1
-special_settings = [def_overlap_threshold, def_dragging_error, def_dragging_speed, def_dragging_possibility, def_raster_angle, def_doubletip_possibility, def_atomic_step_height, def_atomic_step_poss]
+def_dust_amount = 'Medium no of dust particles', 0
+special_settings = [def_overlap_threshold, def_dragging_error, def_dragging_speed, def_dragging_possibility, def_raster_angle, def_doubletip_possibility, def_atomic_step_height, def_atomic_step_poss, def_dust_amount]
 
 val_overlap_threshold = None
 val_dragging_error = None
@@ -134,7 +135,7 @@ val_raster_angle = None
 val_doubletip_possibility = None
 val_atomc_step_height = None
 val_atomic_step_poss = None
-
+val_dust_amount = None
 
 cat_lattice = 'lattice'
 def_nn_dist = 'Distance between nearest neigbours (Ang)', 2.88
@@ -188,6 +189,7 @@ def update_params():
     global val_crystal_orientation_2, val_crystal_orientation_3, val_crystal_orientation_4, val_overlap_threshold
     global val_dragging_error, val_raster_angle, val_dragging_speed, val_dragging_possibility, val_doubletip_possibility
     global val_prefix_sxm, val_suffix_sxm, val_sxm_folder, val_px_per_angstrom, val_nn_dist, val_atomc_step_height, val_atomic_step_poss
+    global val_dust_amount
     val_threads = int(conf[cat_pc][def_threads[0]])
     val_images_per_thread = int(conf[cat_pc][def_images_per_thread[0]])
     val_image_folder = conf[cat_pc][def_image_folder[0]]
@@ -233,6 +235,7 @@ def update_params():
     val_atomic_step_poss = float(conf[cat_special][def_atomic_step_poss[0]])
     val_doubletip_possibility = float(conf[cat_special][def_doubletip_possibility[0]])
     val_nn_dist = Distance(True, float(conf[cat_lattice][def_nn_dist[0]]))
+    val_dust_amount = float(conf[cat_special][def_dust_amount[0]])
 
 # return THREADS parameter
 
@@ -606,3 +609,8 @@ def get_nn_dist():
     global settings_file
     if not initialized: setupConfigurationManager()
     return val_nn_dist
+
+def get_dust_amount():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    return val_dust_amount

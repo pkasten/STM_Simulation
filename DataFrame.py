@@ -67,8 +67,10 @@ class DataFrame:
         self.fermi_exp = 0.05
         self.fermi_range = np.log(99) / self.fermi_exp + cfg.get_atomic_step_height().px
         # self.fermi_range = 100
-        self.usedust = True
+        self.dust_amount = cfg.get_dust_amount()
+        self.usedust = self.dust_amount != 0
         self.dust_particles = []
+        self.max_height = cfg.get_max_height()
 
     # returns iterator over Particles
     def getIterator(self):
@@ -445,14 +447,14 @@ class DataFrame:
                 else:
                     p = _get_thatnot_overlaps(maximum_tries)
                     self.objects.append(p)
-            else:
-                for i in range(cfg.get_particles_per_image()):
-                    if random.random() < self.dragging_possibility:
-                        p = get_dragged_that_not_overlaps(maximum_tries)
-                        self.objects.append(p)
-                    else:
-                        p = _get_thatnot_overlaps(maximum_tries)
-                        self.objects.append(p)
+        else:
+            for i in range(cfg.get_particles_per_image()):
+                if random.random() < self.dragging_possibility:
+                    p = get_dragged_that_not_overlaps(maximum_tries)
+                    self.objects.append(p)
+                else:
+                    p = _get_thatnot_overlaps(maximum_tries)
+                    self.objects.append(p)
 
     def is_overlapping(self, part):
         for p in self.objects:
@@ -518,7 +520,6 @@ class DataFrame:
         def fermi_ohne_range(d, mu, fex):
             return fermi2(d, mu, fex, np.infty)
 
-
         def dist_to_nst(x, y, atoms, radius):
 
             max = 0
@@ -528,7 +529,7 @@ class DataFrame:
                     max = fermi(np.linalg.norm(np.array([x, y]) - atom.pos), radius)
             return max
 
-        #def dist_to_f(x, y, f):
+        # def dist_to_f(x, y, f):
         #    mind = 1000
         #    for xs in range(0, int(np.ceil(self.img_width.px))):
         #        ys = f(xs)
@@ -538,39 +539,37 @@ class DataFrame:
         #        if dist < mind:
         #            mind = dist#
 
-#            return mind
-
+        #            return mind
 
         def _calc_fpoints(f):
             lastpt = np.array([0, f(0)])
             inc = 1
-            h = 0 #-50
-            while h < self.img_width.px: #+50
-                nextpt = np.array([h + inc, f(h+inc)])
+            h = 0  # -50
+            while h < self.img_width.px:  # +50
+                nextpt = np.array([h + inc, f(h + inc)])
                 if not (-50 <= h <= self.img_width.px + 50 and -50 <= f(h) <= self.img_height.px + 50):
                     h += 1
                     lastpt = np.array([h, f(h)])
-                    #print("Outside: ")
-                    #print("f({:.2f}) = {:.2f}".format(h, f(h)))
+                    # print("Outside: ")
+                    # print("f({:.2f}) = {:.2f}".format(h, f(h)))
                     continue
                 if np.linalg.norm(lastpt - nextpt) > 2:
                     inc /= 2
-                    #print("BigStep: w= {:.2f}, inc={}".format(np.linalg.norm(lastpt - nextpt), inc))
-                    #print("f({:.2f}) = {:.2f}".format(h, f(h)))
+                    # print("BigStep: w= {:.2f}, inc={}".format(np.linalg.norm(lastpt - nextpt), inc))
+                    # print("f({:.2f}) = {:.2f}".format(h, f(h)))
                     continue
                 elif np.linalg.norm(lastpt - nextpt) < 0.5:
                     inc *= 1.5
-                    #print("SmallStep:")
-                    #print("f({:.2f}) = {:.2f}".format(h, f(h)))
+                    # print("SmallStep:")
+                    # print("f({:.2f}) = {:.2f}".format(h, f(h)))
                     continue
                 else:
                     h += inc
                     lastpt = np.array([h, f(h)])
-                    #print("Appended:")
-                    #print("f({:.2f}) = {:.2f}".format(h, f(h)))
+                    # print("Appended:")
+                    # print("f({:.2f}) = {:.2f}".format(h, f(h)))
                     fpoints.append(lastpt)
-                #print("----")
-
+                # print("----")
 
         def dist_to_f(x, y, f):
             if len(fpoints) == 0:
@@ -583,7 +582,6 @@ class DataFrame:
                     mind = np.linalg.norm(lastpt - target)
 
             return mind
-
 
         def find_fermi_range(dh, fex):
             for zetta in range(0, 1000):
@@ -598,7 +596,6 @@ class DataFrame:
         gitter = Tests_Gitterpot.create_larger_gitter()  # Ag-Atom[]
         if (show_gitter):
             matrix += 255 * Tests_Gitterpot.show_gitter(gitter)
-
 
         if mt:
             print("STEP1 (Def): {}".format(time.perf_counter() - start))
@@ -663,7 +660,8 @@ class DataFrame:
             if len(self.objects) > 0:
                 dh = self.objects[0].color(self.atomic_step_height)
             else:
-                dh = 255 * cfg.get_atomic_step_height() / (cfg.get_max_height() + cfg.get_atomic_step_height())
+                dh = 255 * self.atomic_step_height / self.max_height
+                # dh = 255 * cfg.get_atomic_step_height() / (cfg.get_max_height() + cfg.get_atomic_step_height()))
 
             # für glatten Übergang
             # dh *= fermi(- self.fermi_range, rad)
@@ -690,8 +688,8 @@ class DataFrame:
 
             sign = 1
 
-            mode = "A"  # A
-            schieb = 10  # 0
+            mode = "F"  # A
+            schieb = 0  # 0
 
             if mode == "A":
                 hmax = np.shape(matrix)[0]
@@ -706,13 +704,14 @@ class DataFrame:
 
                         innen = y_wert >= sign * r
 
-                        #if d - schieb > fermi_range2:
-                        #    if innen:
-                        #        # pass
-                        #        matrix[h, r] += dh
-                        #    continue
+                        if d - schieb > fermi_range2:
+                            if innen:
+                                # pass
+                                matrix[h, r] += dh
+                            continue
 
-                        in_at = in_range_of_nst(h, r, atoms_near_step, rad)
+                        # in_at = in_range_of_nst(h, r, atoms_near_step, rad)
+                        in_at = False
                         if innen:
                             if in_at:
                                 opt1 = dh * fermi2(-d - schieb, sign * rad, fex2, fermi_range2) * 0
@@ -723,7 +722,7 @@ class DataFrame:
                                 matrix[h, r] += dh * fermi2(-d - schieb, rad, fex2, fermi_range2)
                         else:
                             if in_at:
-                                opt1 = dh * fermi2(d + schieb, sign * rad, fex2, fermi_range2) * 0
+                                opt1 = dh * fermi2(d + schieb, sign * rad, fex2, fermi_range2)
                                 opt2 = dh * dist_to_nst(h, r, atoms_near_step, rad)
                                 matrix[h, r] += max(opt1, opt2)
                             else:
@@ -816,16 +815,16 @@ class DataFrame:
             if mode == "E":
                 x_pt = random.random() * self.img_width.px
                 y_pt = random.random() * self.img_height.px
-                a = 2*(0.5 - random.random())
+                a = 2 * (0.5 - random.random())
                 b = 10 * random.random() - 5
-                c = -(a * x_pt**2 + b * x_pt - y_pt)
+                c = -(a * x_pt ** 2 + b * x_pt - y_pt)
 
                 a = 0.002
                 b = 50
                 c = 50
 
-                #f = lambda v : a * np.square(v) + b * v + c
-                f = lambda v : a * np.square(v - b) + c
+                # f = lambda v : a * np.square(v) + b * v + c
+                f = lambda v: a * np.square(v - b) + c
 
                 print("F(x) = {:.2f}x^2 + {:.2f}x + {:.2f}".format(a, b, c))
                 schieb = 0
@@ -853,6 +852,109 @@ class DataFrame:
                         else:
                             matrix[h, r] += dh * fermi2(sign * d + schieb, sign * rad, fex2, fermi_range2)
 
+            if mode == "F":
+                points = []
+                steps = 15
+                updown = random.random() < 0.5
+                variance = steps
+                sideA = random.random() < 0.5
+                show_line = False
+                tendence = True
+                updown = True
+
+
+                if updown:
+                    oldstep = random.randint(-variance, variance)
+                    oldx = random.random() * self.img_width.px
+                    for i in range(0, int(self.img_height.px) + int(self.img_height.px / steps),
+                                   int(self.img_height.px / steps)):
+                        # points.append(np.array([i, random.random() * self.img_height.px]))
+                        # points.append(np.array([i, self.img_height.px/2]))
+                        if tendence:
+                            newstep = random.randint(-variance, variance) + oldstep
+                            new_x = newstep + oldx
+                            oldstep = newstep
+
+                        else:
+                            new_x = random.randint(-variance, variance) + oldx
+                        points.append(np.array([new_x, i]))
+                        oldx = new_x
+
+                    lines = []
+                    for i in range(len(points) - 1):
+                        lines.append((points[i], points[i + 1]))
+
+                    border = []
+                    for line in lines:
+                        dy = line[1][1] - line[0][1]
+                        dx = line[1][0] - line[0][0]
+
+                        for y in range(int(line[0][1]), int(line[1][1])):
+                            if 0 <= y < np.shape(matrix)[1]:
+                                border.append(np.array([line[0][0] + dx*(y-line[0][1])/dy, y]))
+                    if show_line:
+                        for elem in border:
+                            if 0 <= int(elem[0]) < self.img_width.px and 0 <= int(elem[1]) < self.img_height.px:
+                                matrix[int(elem[0]), int(elem[1])] = 255
+
+                    for r in range(np.shape(matrix)[1]):
+                        grenz = border[r][0]
+                        for h in range(np.shape(matrix)[0]):
+                            if sideA:
+                                if h < grenz:
+                                    matrix[h, r] += dh
+                            else:
+                                if h > grenz:
+                                    matrix[h, r] += dh
+
+
+                else:
+                    oldy = random.random() * self.img_height.px
+                    oldstep = random.randint(-variance, variance)
+                    for i in range(0, int(self.img_width.px) + int(self.img_width.px / steps),
+                                   int(self.img_width.px / steps)):
+                        #points.append(np.array([i, random.random() * self.img_height.px]))
+                        # points.append(np.array([i, self.img_height.px/2]))
+
+                        if tendence:
+                            newstep = random.randint(-variance, variance) + oldstep
+                            new_y = newstep + oldy
+                            oldstep = newstep
+
+                        else:
+                            new_y = random.randint(-variance, variance) + oldy
+                        points.append(np.array([i, new_y]))
+                        oldy = new_y
+
+
+                    lines = []
+                    for i in range(len(points) - 1):
+                        lines.append((points[i], points[i + 1]))
+
+                    border = []
+                    for line in lines:
+                        dy = line[1][1] - line[0][1]
+                        dx = line[1][0] - line[0][0]
+
+                        for x in range(int(line[0][0]), int(line[1][0])):
+                            if 0 <= x < np.shape(matrix)[0]:
+                                border.append(np.array([x, line[0][1] + ((x - line[0][0]) / dx) * dy]))
+                    if show_line:
+                        for elem in border:
+                            if 0 <= int(elem[0]) < self.img_width.px and 0 <= int(elem[1]) < self.img_height.px:
+                                matrix[int(elem[0]), int(elem[1])] = 255
+
+                    for h in range(np.shape(matrix)[0]):
+                        grenz = border[h][1]
+                        for r in range(np.shape(matrix)[1]):
+                            if sideA:
+                                if r < grenz:
+                                    matrix[h, r] += dh
+                            else:
+                                if r > grenz:
+                                    matrix[h, r] += dh
+
+
 
 
 
@@ -861,7 +963,7 @@ class DataFrame:
                 print("STEP5 (Matrix): {}".format(time.perf_counter() - start))
                 start = time.perf_counter()
 
-            #for h in range(np.shape(matrix)[0]):
+            # for h in range(np.shape(matrix)[0]):
             #    for r in range(np.shape(matrix)[1]):
             #        for p in fpoints:
             #            if np.linalg.norm(np.array([h, r]) - p) < 2:
@@ -881,7 +983,6 @@ class DataFrame:
                 plt.imshow(zrs)
                 plt.show()
 
-
             # plt.imshow(matrix.transpose())
             plt.show()
 
@@ -890,11 +991,17 @@ class DataFrame:
 
             # print("Fermi(0, rad) = {}".format(fermi(0, rad)))
 
-    def add_Dust(self, part=None):
+    def add_Dust_Part(self, part=None):
         if part is None:
-            self.dust_particles.append(DustParticle)
+            self.dust_particles.append(DustParticle(size=random.random() * 40))
         else:
-            self.dust_particles.append(DustParticle)
+            self.dust_particles.append(part)
+
+    def add_Dust(self):
+
+        amnt = int(np.round(np.random.normal(self.dust_amount)))
+        for i in range(amnt):
+            self.add_Dust_Part()
 
     def create_Image_Visualization(self):
         self.img = MyImage()
@@ -930,6 +1037,8 @@ class DataFrame:
                         if not (0 <= new_x < width.px and 0 <= new_y < height.px):
                             continue
                         matrix[new_x, new_y] += eff_mat[i, j]
+        if self.usedust:
+            self.add_Dust()
 
         if use_atomstep:
             self.atomic_step(matrix, *fargs)
@@ -963,25 +1072,30 @@ class DataFrame:
             matrix = np.zeros((int(np.ceil(width.px)), int(np.ceil(height.px))))
 
             for d in self.dust_particles:
-                for tuple in d.efficient_Matrix(d):
-                    # print("Tupel:{}".format(tuple))
-                    eff_mat, x, y = tuple
-                    mat_w = eff_mat.shape[0]
+                tuple = d.efficient_Matrix()
+                # print("Tupel:{}".format(tuple))
+                # print(tuple[0])
+                # print(1)
+                # print(tuple[1])
+                # print(2)
+                # print(tuple[2])
+                eff_mat, x, y = tuple
+                mat_w = eff_mat.shape[0]
 
-                    # ToDo: possible failure
-                    x = int(np.round(x.px))
-                    y = int(np.round(y.px))
-                    # plt.imshow(eff_mat)
-                    # plt.show()
-                    # print(np.max(eff_mat))
-                    mat_h = eff_mat.shape[1]
-                    for i in range(mat_w):
-                        for j in range(mat_h):
-                            new_x = x - math.floor((mat_w / 2)) + i
-                            new_y = y - math.floor(mat_h / 2) + j
-                            if not (0 <= new_x < width.px and 0 <= new_y < height.px):
-                                continue
-                            matrix[new_x, new_y] += eff_mat[i, j]
+                # ToDo: possible failure
+                x = int(np.round(x.px))  # no px cause dust
+                y = int(np.round(y.px))
+                # plt.imshow(eff_mat)
+                # plt.show()
+                # print(np.max(eff_mat))
+                mat_h = eff_mat.shape[1]
+                for i in range(mat_w):
+                    for j in range(mat_h):
+                        new_x = x - math.floor((mat_w / 2)) + i
+                        new_y = y - math.floor(mat_h / 2) + j
+                        if not (0 <= new_x < width.px and 0 <= new_y < height.px):
+                            continue
+                        matrix[new_x, new_y] += eff_mat[i, j]
             self.img.addMatrix(matrix)
 
         if self.use_noise:
