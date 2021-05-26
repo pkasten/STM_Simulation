@@ -5,6 +5,7 @@ import time
 
 import scipy.optimize
 
+from DustParticle import DustParticle
 from Molecule import Molecule, Tests_Gitterpot
 from Particle import Particle, Double_Particle
 from Images import MyImage
@@ -66,6 +67,8 @@ class DataFrame:
         self.fermi_exp = 0.05
         self.fermi_range = np.log(99) / self.fermi_exp + cfg.get_atomic_step_height().px
         # self.fermi_range = 100
+        self.usedust = True
+        self.dust_particles = []
 
     # returns iterator over Particles
     def getIterator(self):
@@ -476,6 +479,8 @@ class DataFrame:
 
     def atomic_step(self, matrix, f, m, b):
 
+        fpoints = []
+
         mt = False
         if mt:
             start = time.perf_counter()
@@ -513,6 +518,7 @@ class DataFrame:
         def fermi_ohne_range(d, mu, fex):
             return fermi2(d, mu, fex, np.infty)
 
+
         def dist_to_nst(x, y, atoms, radius):
 
             max = 0
@@ -522,17 +528,62 @@ class DataFrame:
                     max = fermi(np.linalg.norm(np.array([x, y]) - atom.pos), radius)
             return max
 
-        def dist_to_f(x, y, f):
-            mind = 1000
-            for xs in range(0, int(np.ceil(self.img_width.px))):
-                ys = f(xs)
-                if not -50 < ys < self.img_height.px + 50:
+        #def dist_to_f(x, y, f):
+        #    mind = 1000
+        #    for xs in range(0, int(np.ceil(self.img_width.px))):
+        #        ys = f(xs)
+        #        if not -50 < ys < self.img_height.px + 50:
+        #            continue
+        #        dist = np.sqrt(np.square(x - xs) + np.square(y - ys))
+        #        if dist < mind:
+        #            mind = dist#
+
+#            return mind
+
+
+        def _calc_fpoints(f):
+            lastpt = np.array([0, f(0)])
+            inc = 1
+            h = 0 #-50
+            while h < self.img_width.px: #+50
+                nextpt = np.array([h + inc, f(h+inc)])
+                if not (-50 <= h <= self.img_width.px + 50 and -50 <= f(h) <= self.img_height.px + 50):
+                    h += 1
+                    lastpt = np.array([h, f(h)])
+                    #print("Outside: ")
+                    #print("f({:.2f}) = {:.2f}".format(h, f(h)))
                     continue
-                dist = np.sqrt(np.square(x - xs) + np.square(y - ys))
-                if dist < mind:
-                    mind = dist
+                if np.linalg.norm(lastpt - nextpt) > 2:
+                    inc /= 2
+                    #print("BigStep: w= {:.2f}, inc={}".format(np.linalg.norm(lastpt - nextpt), inc))
+                    #print("f({:.2f}) = {:.2f}".format(h, f(h)))
+                    continue
+                elif np.linalg.norm(lastpt - nextpt) < 0.5:
+                    inc *= 1.5
+                    #print("SmallStep:")
+                    #print("f({:.2f}) = {:.2f}".format(h, f(h)))
+                    continue
+                else:
+                    h += inc
+                    lastpt = np.array([h, f(h)])
+                    #print("Appended:")
+                    #print("f({:.2f}) = {:.2f}".format(h, f(h)))
+                    fpoints.append(lastpt)
+                #print("----")
+
+
+        def dist_to_f(x, y, f):
+            if len(fpoints) == 0:
+                _calc_fpoints(f)
+
+            mind = 1000
+            target = np.array([x, y])
+            for lastpt in fpoints:
+                if np.linalg.norm(lastpt - target) < mind:
+                    mind = np.linalg.norm(lastpt - target)
 
             return mind
+
 
         def find_fermi_range(dh, fex):
             for zetta in range(0, 1000):
@@ -544,9 +595,10 @@ class DataFrame:
         use_gitter = True
         show_f = False
 
+        gitter = Tests_Gitterpot.create_larger_gitter()  # Ag-Atom[]
         if (show_gitter):
-            gitter = Tests_Gitterpot.create_larger_gitter()  # Ag-Atom[]
             matrix += 255 * Tests_Gitterpot.show_gitter(gitter)
+
 
         if mt:
             print("STEP1 (Def): {}".format(time.perf_counter() - start))
@@ -639,7 +691,7 @@ class DataFrame:
             sign = 1
 
             mode = "A"  # A
-            schieb = 0  # 0
+            schieb = 10  # 0
 
             if mode == "A":
                 hmax = np.shape(matrix)[0]
@@ -654,16 +706,16 @@ class DataFrame:
 
                         innen = y_wert >= sign * r
 
-                        if d + schieb > fermi_range2:
-                            if innen:
-                                # pass
-                                matrix[h, r] += dh
-                            continue
+                        #if d - schieb > fermi_range2:
+                        #    if innen:
+                        #        # pass
+                        #        matrix[h, r] += dh
+                        #    continue
 
                         in_at = in_range_of_nst(h, r, atoms_near_step, rad)
                         if innen:
                             if in_at:
-                                opt1 = dh * fermi2(-d - schieb, sign * rad, fex2, fermi_range2)
+                                opt1 = dh * fermi2(-d - schieb, sign * rad, fex2, fermi_range2) * 0
                                 opt2 = dh * dist_to_nst(h, r, atoms_near_step, rad)
                                 matrix[h, r] += max(opt1, opt2)
                             else:
@@ -671,7 +723,7 @@ class DataFrame:
                                 matrix[h, r] += dh * fermi2(-d - schieb, rad, fex2, fermi_range2)
                         else:
                             if in_at:
-                                opt1 = dh * fermi2(d + schieb, sign * rad, fex2, fermi_range2)
+                                opt1 = dh * fermi2(d + schieb, sign * rad, fex2, fermi_range2) * 0
                                 opt2 = dh * dist_to_nst(h, r, atoms_near_step, rad)
                                 matrix[h, r] += max(opt1, opt2)
                             else:
@@ -737,16 +789,98 @@ class DataFrame:
                                         matrix[h, r] += dh
                                         if debug_mode: matrix[h, r] = 225  #
 
+            if mode == "D":
+                hmax = np.shape(matrix)[0]
+                for h in range(np.shape(matrix)[0]):
+                    if h % 5 == 0:
+                        print("Progress Atom Step: {:.2f}%".format(100 * h / hmax))
+
+                    y_wert = f(h)
+                    for r in range(np.shape(matrix)[1]):
+
+                        d = dist_to_f(h, r, f)
+
+                        innen = y_wert >= sign * r
+
+                        if d + schieb > fermi_range2:
+                            if innen:
+                                # pass
+                                matrix[h, r] += dh
+                            continue
+
+                        if innen:
+                            matrix[h, r] += dh * fermi2(-d - schieb, rad, fex2, fermi_range2)
+                        else:
+                            matrix[h, r] += dh * fermi2(sign * d + schieb, sign * rad, fex2, fermi_range2)
+
+            if mode == "E":
+                x_pt = random.random() * self.img_width.px
+                y_pt = random.random() * self.img_height.px
+                a = 2*(0.5 - random.random())
+                b = 10 * random.random() - 5
+                c = -(a * x_pt**2 + b * x_pt - y_pt)
+
+                a = 0.002
+                b = 50
+                c = 50
+
+                #f = lambda v : a * np.square(v) + b * v + c
+                f = lambda v : a * np.square(v - b) + c
+
+                print("F(x) = {:.2f}x^2 + {:.2f}x + {:.2f}".format(a, b, c))
+                schieb = 0
+
+                hmax = np.shape(matrix)[0]
+                for h in range(np.shape(matrix)[0]):
+                    if h % 5 == 0:
+                        print("Progress Atom Step: {:.2f}%".format(100 * h / hmax))
+
+                    y_wert = f(h)
+                    for r in range(np.shape(matrix)[1]):
+
+                        d = dist_to_f(h, r, f)
+
+                        innen = y_wert >= sign * r
+
+                        if d + schieb > fermi_range2:
+                            if innen:
+                                # pass
+                                matrix[h, r] += dh
+                            continue
+
+                        if innen:
+                            matrix[h, r] += dh * fermi2(-d - schieb, rad, fex2, fermi_range2)
+                        else:
+                            matrix[h, r] += dh * fermi2(sign * d + schieb, sign * rad, fex2, fermi_range2)
+
+
+
+
+
             if mt:
                 print("STEP5 (Matrix): {}".format(time.perf_counter() - start))
                 start = time.perf_counter()
 
+            #for h in range(np.shape(matrix)[0]):
+            #    for r in range(np.shape(matrix)[1]):
+            #        for p in fpoints:
+            #            if np.linalg.norm(np.array([h, r]) - p) < 2:
+            #                matrix[h, r] = 300
+
             if show_f:
-                delta = 2 * abs(m)
+                delta = 1
                 for h in range(np.shape(matrix)[0]):
                     for r in range(np.shape(matrix)[1]):
-                        if abs(f(h) - r) < delta:
+                        if dist_to_f(h, r, f) < delta:
                             matrix[h, r] = 200
+
+                zrs = np.zeros(np.shape(matrix))
+                for d in range(int(self.img_width.px)):
+                    for e in range(int(self.img_height.px)):
+                        zrs[d, e] = dist_to_f(d, e, f)
+                plt.imshow(zrs)
+                plt.show()
+
 
             # plt.imshow(matrix.transpose())
             plt.show()
@@ -755,6 +889,12 @@ class DataFrame:
             #    print("Dist to f: {}-200 : {:.3f}".format(i, dist_to_f(i, 200, f)))#
 
             # print("Fermi(0, rad) = {}".format(fermi(0, rad)))
+
+    def add_Dust(self, part=None):
+        if part is None:
+            self.dust_particles.append(DustParticle)
+        else:
+            self.dust_particles.append(DustParticle)
 
     def create_Image_Visualization(self):
         self.img = MyImage()
@@ -816,6 +956,33 @@ class DataFrame:
             return
 
         self.create_Image_Visualization()
+
+        if self.usedust:
+            width = self.img_width
+            height = self.img_height
+            matrix = np.zeros((int(np.ceil(width.px)), int(np.ceil(height.px))))
+
+            for d in self.dust_particles:
+                for tuple in d.efficient_Matrix(d):
+                    # print("Tupel:{}".format(tuple))
+                    eff_mat, x, y = tuple
+                    mat_w = eff_mat.shape[0]
+
+                    # ToDo: possible failure
+                    x = int(np.round(x.px))
+                    y = int(np.round(y.px))
+                    # plt.imshow(eff_mat)
+                    # plt.show()
+                    # print(np.max(eff_mat))
+                    mat_h = eff_mat.shape[1]
+                    for i in range(mat_w):
+                        for j in range(mat_h):
+                            new_x = x - math.floor((mat_w / 2)) + i
+                            new_y = y - math.floor(mat_h / 2) + j
+                            if not (0 <= new_x < width.px and 0 <= new_y < height.px):
+                                continue
+                            matrix[new_x, new_y] += eff_mat[i, j]
+            self.img.addMatrix(matrix)
 
         if self.use_noise:
             self.img.noise(self.image_noise_mu, self.image_noise_sigma)

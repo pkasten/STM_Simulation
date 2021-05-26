@@ -7,6 +7,7 @@ import SXM_info
 import random
 
 from Distance import Distance
+from DustParticle import DustParticle
 from Images import MyImage
 from Molecule import Molecule
 from Particle import Particle
@@ -177,7 +178,8 @@ if __name__ == "__main__":
     #Tests_Gitterpot().test()
     for i in range(10):
         dat = DataFrame(fn)
-        dat.addObjects(Molecule, amount=20)
+        dat.addObjects(Molecule, amount=2)
+        dat.add_Dust(DustParticle(np.array([200, 200])))
         dat.get_Image()
         dat.save()
 
