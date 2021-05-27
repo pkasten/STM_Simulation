@@ -14,7 +14,10 @@ class Distance:
             self.ang = arg / px_durch_ang
 
     def __str__(self):
-        return "{}px".format(self.px)
+        return "{:.1f}px".format(self.px)
+
+    def __repr__(self):
+        return "Distance({:.2f}px, {:.2f}Ang)".format(self.px, self.ang)
 
     def __mul__(self, other):
         if type(other) is not type(self):

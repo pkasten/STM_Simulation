@@ -6,6 +6,8 @@ from Distance import Distance
 class Atom:
 
     def __init__(self, relpos, type=None):
+
+        radiusmlt = 5 # ToDo_ Realistisch, besser 1?
         self.img_w = cfg.get_width()
         self.img_h = cfg.get_height()
         #print("Relpos: {}".format(relpos))
@@ -21,17 +23,20 @@ class Atom:
         #print("Relpos: {} mit {}, {}".format(self.relpos, self.relpos[0], self.relpos[1]))
         self.radius = Distance(True, 0.01)
         if type == "H":
-            self.radius = Distance(True, 0.032)
+            self.radius = Distance(True, 0.032) * radiusmlt
         elif type == "C":
-            self.radius = Distance(True, 0.077)
+            self.radius = Distance(True, 0.077) * radiusmlt
         elif type == "N":
-            self.radius = Distance(True, 0.070)
+            self.radius = Distance(True, 0.070) * radiusmlt
 
         self.height = cfg.get_part_height()
         self.maxheight = cfg.get_max_height()
         self.fermi_exp = cfg.get_fermi_exp()
         self.fermi_range = np.log(99) / self.fermi_exp + self.height.px / 2
         self.type = type
+
+    def __repr__(self):
+        return "{}-Atom bei x={:.1f}, y={:.1f}".format(self.type, self.abspos[0], self.abspos[1])
 
     def set_maxHeight(self, maxh):
         self.maxheight = maxh

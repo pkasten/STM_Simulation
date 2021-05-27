@@ -157,6 +157,7 @@ class Particle:
         if self.fermi_exp == 0:
             return self._line(x, y)
 
+
         left_x = -self.width / 2
         right_x = self.width - self.width / 2
         lower_y = -self.length / 2
@@ -202,6 +203,12 @@ class Particle:
 
     def get_y(self):
         return self.y
+
+    def set_width(self, w):
+        self.width = w
+
+    def set_length(self, l):
+        self.length = l
 
     def set_x(self, x):
         self.x = x

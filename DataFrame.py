@@ -456,6 +456,34 @@ class DataFrame:
                     p = _get_thatnot_overlaps(maximum_tries)
                     self.objects.append(p)
 
+    def add_Ordered(self, Object):
+
+        def add_ordered_NCPh3CN():
+            raise NotImplementedError
+
+        def add_ordered_NCPh4CN():
+            raise NotImplementedError
+
+        def add_ordered_NCPh5CN():
+            raise NotImplementedError
+
+
+        if type(Object) is not Particle:
+            raise NotImplementedError
+        elif type(Object) is not Molecule:
+            self.addObjects(Object=Object)
+        elif Object.molecule_class != "NCPhCN":
+            self.addObjects()
+        elif Object.molecule_ph_groups == 3:
+            add_ordered_NCPh3CN()
+        elif Object.molecule_ph_groups == 4:
+            add_ordered_NCPh4CN()
+        elif Object.molecule_ph_groups == 5:
+            add_ordered_NCPh5CN()
+        else:
+            raise NotImplementedError
+
+
     def is_overlapping(self, part):
         for p in self.objects:
             if p.true_overlap(part):
@@ -680,15 +708,44 @@ class DataFrame:
             def effh():
                 return dist_const / np.sin(0.5 * np.pi - np.arctan(1 / m))
 
+
+            already_interpolated = False
+
+            def interpolate_lines(givnlines):
+                nonlocal already_interpolated
+                if already_interpolated:
+                    return
+
+                already_interpolated = True
+                newlines = []
+                for i in range(len(givnlines) - 1):
+                    newpta_x = givnlines[i][0][0] * 0.1 + givnlines[i][1][0] * 0.9
+                    newpta_y = givnlines[i][0][1] * 0.1 + givnlines[i][1][1] * 0.9
+                    newptb_x = givnlines[i + 1][0][0] * 0.9 + givnlines[i + 1][1][0] * 0.1
+                    newptb_y = givnlines[i + 1][0][1] * 0.9 + givnlines[i + 1][1][1] * 0.1
+                    newlines.append((np.array([newpta_x, newpta_y]), np.array([newptb_x, newptb_y])))
+                for kappa in newlines:
+                    givnlines.append(kappa)
+
+
             def dist_to_line(x, y, lines):
+
+                loc_lines = lines
+
+                interpolate = True
+                if interpolate:
+                    interpolate_lines(lines)
+
+
 
                 zero_threshold = 0.005
                 distances = []
-                for line in lines:
-                    # print("Line: {}".format(line))
+                #print(lines)
+                #print(loc_lines)
+                for line in loc_lines:
                     dy = line[1][1] - line[0][1]
                     dx = line[1][0] - line[0][0]
-                    if dx < zero_threshold:
+                    if abs(dx) < zero_threshold:
                         if line[0][1] <= y <= line[1][1]:
                             distances.append(abs(line[0][0] - x))
                         elif y < line[0][1]:
@@ -707,17 +764,16 @@ class DataFrame:
                     dx2 = 1
                     # assert np.sign(m) != np.sign(m)
                     b2 = y - m2 * x
-                    if (m - m2) < zero_threshold:
+                    if abs(m - m2) < zero_threshold:
                         x_sp = 10000
                     else:
                         x_sp = - (b - b2) / (m - m2)
-                    if not line[0][0] <= x_sp <= line[1][0]:
-                        distances.append(10000)
-                        continue
+                    #print("SP inside: {:.2f} <= {:.2f} <= {:.2f}".format(line[0][0], x_sp, line[1][0]))
+                    if not (line[0][0] <= x_sp <= line[1][0] or line[0][0] >= x_sp >= line[1][0]):
                         if x_sp < line[0][0] + (line[1][0] - line[0][0]) / 2:
-                            x_sp = line[0][0]
-                        else:
                             x_sp = line[1][0]
+                        else:
+                            x_sp = line[0][0]
                     y_sp = m * x_sp + b
                     distances.append(np.sqrt(np.square(x - x_sp) + np.square(y - y_sp)))
                 return min(distances)
@@ -900,15 +956,13 @@ class DataFrame:
                 updown = random.random() < 0.5
                 variance = steps
                 sideA = random.random() < 0.5
-                show_line = True
+                show_line = False
                 tendence = True
-                updown = True
-                sideA = True
 
+                # Calculate Lines
                 if updown:
                     oldstep = random.randint(-variance, variance)
                     oldx = random.random() * self.img_width.px
-                    oldx = 400 # ToDo : Rem
                     for i in range(0, int(self.img_height.px) + int(self.img_height.px / steps),
                                    int(self.img_height.px / steps)):
                         # points.append(np.array([i, random.random() * self.img_height.px]))
@@ -920,8 +974,6 @@ class DataFrame:
 
                         else:
                             new_x = random.randint(-variance, variance) + oldx
-
-                        new_x = 400 - i # ToDo Rem
                         points.append(np.array([new_x, i]))
                         oldx = new_x
 
@@ -942,7 +994,7 @@ class DataFrame:
                             if 0 <= int(elem[0]) < self.img_width.px and 0 <= int(elem[1]) < self.img_height.px:
                                 matrix[int(elem[0]) - 10, int(elem[1])] = 255
 
-                    if True:
+                    if False:
                         dists = np.zeros(np.shape(matrix))
                         hges = np.shape(matrix)[0]
                         for h in range(np.shape(matrix)[0]):
@@ -952,7 +1004,7 @@ class DataFrame:
 
                         for elem in border:
                             if 0 <= int(elem[0]) < self.img_width.px and 0 <= int(elem[1]) < self.img_height.px:
-                                dists[int(elem[0]) - 0, int(elem[1])] = 255
+                                dists[int(elem[0]) - 0, int(elem[1])] = 30
 
                         xbrakes = []
                         ybrakes = []
@@ -967,7 +1019,13 @@ class DataFrame:
                             print("2nd: {}/{}".format(h, hges))
                             for r in range(np.shape(matrix)[1]):
                                 if h in xbrakes or r in ybrakes:
-                                    dists[h, r] = 150
+                                    dists[h, r] = 25
+
+                        #for h in range(np.shape(matrix)[0]):
+                        #    print("3rd: {}/{}".format(h, hges))
+                        #    for r in range(np.shape(matrix)[1]):
+                        #        if abs(h - (400 - r)) > 20:
+                        #            dists[h, r] = 0
 
                         plt.imshow(dists)
                         plt.show()
@@ -977,8 +1035,8 @@ class DataFrame:
                     leftborder = []
                     rightborder = []
                     for elem in border:
-                        leftborder.append(np.array([elem[0] - 2*fermi_range2, elem[1]]))
-                        rightborder.append(np.array([elem[0] + 2*fermi_range2, elem[1]]))
+                        leftborder.append(np.array([elem[0] - fermi_range2, elem[1]]))
+                        rightborder.append(np.array([elem[0] + fermi_range2, elem[1]]))
 
                     if False:
                         r = 200
@@ -1016,6 +1074,8 @@ class DataFrame:
                         plt.title("Helligkeitsprofil entlang y = {}".format(r))
                         plt.show()
 
+
+                    #Display
                     for r in range(np.shape(matrix)[1]):
                         lfr = leftborder[r][0]
                         rfr = rightborder[r][0]
@@ -1036,20 +1096,24 @@ class DataFrame:
                                     pass
                                 else:
                                     raise NotImplementedError
-
+                            # SideB
                             else:
                                 if h <= lfr:
                                     pass
+                                    #matrix[h, r] = 50
                                 elif lfr < h < grenz:
-                                    matrix[h, r] += dh * fermi2((-1) * dist_to_line(h, r, lines), 0, fex2, fermi_range2)
-                                elif grenz <= h < rfr:
                                     matrix[h, r] += dh * fermi2(dist_to_line(h, r, lines), 0, fex2, fermi_range2)
+                                    #matrix[h, r] = 100
+                                elif grenz <= h < rfr:
+                                    matrix[h, r] += dh * fermi2((-1)*dist_to_line(h, r, lines), 0, fex2, fermi_range2)
+                                    #matrix[h, r] = 150
                                 elif h >= rfr:
                                     matrix[h, r] += dh
+                                    #matrix[h, r] = 200
                                 else:
                                     raise NotImplementedError
 
-
+                # Not Updown
                 else:
                     oldy = random.random() * self.img_height.px
                     oldstep = random.randint(-variance, variance)
@@ -1085,15 +1149,48 @@ class DataFrame:
                             if 0 <= int(elem[0]) < self.img_width.px and 0 <= int(elem[1]) < self.img_height.px:
                                 matrix[int(elem[0]), int(elem[1])] = 255
 
+                    upperborder = []
+                    lowerborder = []
+                    for elem in border:
+                        upperborder.append(np.array([elem[0], elem[1] - fermi_range2]))
+                        lowerborder.append(np.array([elem[0], elem[1] + fermi_range2]))
+
                     for h in range(np.shape(matrix)[0]):
                         grenz = border[h][1]
+                        ufr = upperborder[h][1]
+                        lfr = lowerborder[h][1]
                         for r in range(np.shape(matrix)[1]):
                             if sideA:
-                                if r < grenz:
+                                if r <= ufr:
                                     matrix[h, r] += dh
+                                    # matrix[h, r] = 255
+                                elif ufr < r < grenz:
+                                    matrix[h, r] += dh * fermi2(-dist_to_line(h, r, lines), 0, fex2, fermi_range2)
+                                    # matrix[h, r] = 180
+                                elif grenz <= r < lfr:
+                                    matrix[h, r] += dh * fermi2(dist_to_line(h, r, lines), 0, fex2, fermi_range2)
+                                    # matrix[h, r] = 100
+                                elif r >= lfr:
+                                    # matrix[h, r] = 50
+                                    pass
+                                else:
+                                    raise NotImplementedError
+                            # SideB
                             else:
-                                if r > grenz:
+                                if r <= ufr:
+                                    pass
+                                    # matrix[h, r] = 50
+                                elif ufr < r < grenz:
+                                    matrix[h, r] += dh * fermi2(dist_to_line(h, r, lines), 0, fex2, fermi_range2)
+                                    # matrix[h, r] = 100
+                                elif grenz <= r < lfr:
+                                    matrix[h, r] += dh * fermi2((-1) * dist_to_line(h, r, lines), 0, fex2, fermi_range2)
+                                    # matrix[h, r] = 150
+                                elif r >= lfr:
                                     matrix[h, r] += dh
+                                    # matrix[h, r] = 200
+                                else:
+                                    raise NotImplementedError
 
             if mt:
                 print("STEP5 (Matrix): {}".format(time.perf_counter() - start))
@@ -1119,8 +1216,22 @@ class DataFrame:
                 plt.imshow(zrs)
                 plt.show()
 
+            if False:
+                mid = int(self.img_height.px / 2)
+                xs = []
+                ys = []
+                for h in range(np.shape(matrix)[0]):
+                    xs.append(h)
+                    ys.append(matrix[h, mid])
+
+                plt.plot(xs, ys)
+                plt.title("Helligkeitsprofil entlang y = {}".format(mid))
+                plt.show()
+
+
+
             # plt.imshow(matrix.transpose())
-            plt.show()
+            #plt.show()
 
             # for i in range(0, 400, 40):
             #    print("Dist to f: {}-200 : {:.3f}".format(i, dist_to_f(i, 200, f)))#

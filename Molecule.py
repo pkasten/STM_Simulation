@@ -12,8 +12,9 @@ import matplotlib.pyplot as plt
 
 
 class Molecule(Particle):
-    molecule_class = "Single"
-    molecule_ph_groups = 1
+    molecule_class = "NCPhCN"
+    molecule_ph_groups = 3
+    molecule_style = "Simple" # "Complex"
 
     def __init__(self, pos=None, theta=None, lookup_table=None, gitter=None, molecule_class=None, molecule_ph_groups=0):
         if molecule_class is not None:
@@ -41,6 +42,10 @@ class Molecule(Particle):
         self.img_w = cfg.get_width()
         self.img_h = cfg.get_height()
         self.lookup_table = lookup_table
+
+        self.ch_len_def = Distance(True, 1.08)
+        self.cn_len_def = Distance(True, 1.80)
+        self.cc_len_def = Distance(True, 1.37)
 
         self.gitter = gitter
         if gitter is not None and lookup_table is None:
@@ -87,6 +92,12 @@ class Molecule(Particle):
         for atom in self.atoms:
             atom.calc_abs_pos(Distance.px_vec(self.pos), self.theta)
 
+        if self.molecule_style == "Simple":
+            self.simple_length = self.get_simple_length(self.cc_len_def, self.cn_len_def)
+            self.simple_width = (2 * self.ch_len_def + 2 * self.cc_len_def) * np.cos(np.pi / 12)
+            super().set_width(self.simple_width)
+            super().set_length(self.simple_length)
+
     def __str__(self):
         if self.molecule_class == "NCPhCN":
             return "NCPh{}CN".format(self.molecule_ph_groups)
@@ -94,6 +105,21 @@ class Molecule(Particle):
 
     def get_C6_Ringdist(self, cc_dist):
         return 3 * cc_dist
+
+    def get_simple_length(self, cc_dist, cn_dist):
+        n = self.molecule_ph_groups
+        if n % 2 == 0:
+            amnt = int(n / 2)
+            ringdist = self.get_C6_Ringdist(cc_dist)
+            c_dist = ringdist / 2 + (amnt-1) * ringdist + cc_dist + cc_dist
+            n_dist = c_dist + cn_dist
+            return 2*n_dist
+        else:
+            amnt = int((n - 1) / 2)
+            ringdist = self.get_C6_Ringdist(cc_dist)
+            c_dist = amnt * ringdist + cc_dist + cc_dist
+            n_dist = c_dist + cn_dist
+            return 2*n_dist
 
     def add_C6_Ring(self, center, cc_dist, ch_dist):
         # print(type(center))
@@ -231,6 +257,10 @@ class Molecule(Particle):
 
     #ToDo Select mode
     def visualize_pixel(self, x, y):
+        if self.molecule_style == "Simple":
+            self.visu_simple(x, y)
+            return
+
         mode = "MAX"
         if mode == "ADD":
             ret = 0
@@ -246,6 +276,9 @@ class Molecule(Particle):
                 ret = max(ret, atom.show_rel(x - vec[0], y - vec[1]))
                 ret = min(255, ret)
             return ret
+
+    def visu_simple(self, x, y):
+        super()._line_fermi(x, y)
 
 
 class Lookup_Table:
