@@ -32,7 +32,8 @@ class Distance:
     def __truediv__(self, other):
         if type(other) is not type(self):
             return Distance(True, self.ang / other)
-        return Distance(True, self.ang / other.ang)
+        #return Distance(True, self.ang / other.ang)
+        return self.ang / other.ang
 
     def __add__(self, other):
         if type(other) is not type(self):

@@ -459,7 +459,37 @@ class DataFrame:
     def add_Ordered(self, Object):
 
         def add_ordered_NCPh3CN():
-            raise NotImplementedError
+            theta_0 = random.random() * np.pi * 2
+            theta_0 = 0 # ToDo Rem
+            def bog(deg):
+                return np.pi * deg/180
+            dist_v = Distance(True, 11.46)
+            dist_h = Distance(True, 12.0084)
+            gv_a = np.array([dist_h * np.cos(theta_0 - bog(20)), dist_h * np.sin(theta_0 - bog(20))])
+            gv_b = np.array([dist_v * np.cos(theta_0 + bog(70)), dist_v * np.sin(theta_0 + bog(70))])
+
+
+            pairs = []
+
+            start = np.array([Distance(True, 0),Distance(True, 0)])
+            current = np.array([0, 0])
+            a_temp = self.img_width / gv_b[0] if gv_b[0].px != 0 else -np.infty
+            b_temp = self.img_height / gv_b[1] if gv_b[1].px != 0 else -np.infty
+            j_max = int(np.ceil(max(a_temp, b_temp)))
+            c_temp = ((self.img_width + j_max * gv_b[0]) / gv_a[0]) if gv_a[0].px != 0 else j_max
+            i_max = int(np.ceil(c_temp))
+            print(i_max, j_max)
+            for i in range(-10, i_max):
+                for j in range(-10, j_max):
+                    current = start + (gv_a * i) + (gv_b * j)
+                    print(current[0], self.img_width)
+                    if current[0] < self.img_width and current[1] < self.img_height and current[0] > Distance(True,0) and current[1] > Distance(True, 0):
+                        pairs.append((current, theta_0 if (i+j)%2 == 0 else theta_0 + bog(40)))
+
+            for pair in pairs:
+                self.objects.append(Object(pos=pair[0], theta=pair[1]))
+
+
 
         def add_ordered_NCPh4CN():
             raise NotImplementedError
@@ -467,10 +497,9 @@ class DataFrame:
         def add_ordered_NCPh5CN():
             raise NotImplementedError
 
-
-        if type(Object) is not Particle:
+        if type(Object) is not type(Particle):
             raise NotImplementedError
-        elif type(Object) is not Molecule:
+        elif type(Object) is not type(Molecule):
             self.addObjects(Object=Object)
         elif Object.molecule_class != "NCPhCN":
             self.addObjects()
@@ -482,7 +511,6 @@ class DataFrame:
             add_ordered_NCPh5CN()
         else:
             raise NotImplementedError
-
 
     def is_overlapping(self, part):
         for p in self.objects:
@@ -708,7 +736,6 @@ class DataFrame:
             def effh():
                 return dist_const / np.sin(0.5 * np.pi - np.arctan(1 / m))
 
-
             already_interpolated = False
 
             def interpolate_lines(givnlines):
@@ -727,7 +754,6 @@ class DataFrame:
                 for kappa in newlines:
                     givnlines.append(kappa)
 
-
             def dist_to_line(x, y, lines):
 
                 loc_lines = lines
@@ -736,12 +762,10 @@ class DataFrame:
                 if interpolate:
                     interpolate_lines(lines)
 
-
-
                 zero_threshold = 0.005
                 distances = []
-                #print(lines)
-                #print(loc_lines)
+                # print(lines)
+                # print(loc_lines)
                 for line in loc_lines:
                     dy = line[1][1] - line[0][1]
                     dx = line[1][0] - line[0][0]
@@ -768,7 +792,7 @@ class DataFrame:
                         x_sp = 10000
                     else:
                         x_sp = - (b - b2) / (m - m2)
-                    #print("SP inside: {:.2f} <= {:.2f} <= {:.2f}".format(line[0][0], x_sp, line[1][0]))
+                    # print("SP inside: {:.2f} <= {:.2f} <= {:.2f}".format(line[0][0], x_sp, line[1][0]))
                     if not (line[0][0] <= x_sp <= line[1][0] or line[0][0] >= x_sp >= line[1][0]):
                         if x_sp < line[0][0] + (line[1][0] - line[0][0]) / 2:
                             x_sp = line[1][0]
@@ -1021,7 +1045,7 @@ class DataFrame:
                                 if h in xbrakes or r in ybrakes:
                                     dists[h, r] = 25
 
-                        #for h in range(np.shape(matrix)[0]):
+                        # for h in range(np.shape(matrix)[0]):
                         #    print("3rd: {}/{}".format(h, hges))
                         #    for r in range(np.shape(matrix)[1]):
                         #        if abs(h - (400 - r)) > 20:
@@ -1029,8 +1053,6 @@ class DataFrame:
 
                         plt.imshow(dists)
                         plt.show()
-
-
 
                     leftborder = []
                     rightborder = []
@@ -1074,8 +1096,7 @@ class DataFrame:
                         plt.title("Helligkeitsprofil entlang y = {}".format(r))
                         plt.show()
 
-
-                    #Display
+                    # Display
                     for r in range(np.shape(matrix)[1]):
                         lfr = leftborder[r][0]
                         rfr = rightborder[r][0]
@@ -1100,16 +1121,16 @@ class DataFrame:
                             else:
                                 if h <= lfr:
                                     pass
-                                    #matrix[h, r] = 50
+                                    # matrix[h, r] = 50
                                 elif lfr < h < grenz:
                                     matrix[h, r] += dh * fermi2(dist_to_line(h, r, lines), 0, fex2, fermi_range2)
-                                    #matrix[h, r] = 100
+                                    # matrix[h, r] = 100
                                 elif grenz <= h < rfr:
-                                    matrix[h, r] += dh * fermi2((-1)*dist_to_line(h, r, lines), 0, fex2, fermi_range2)
-                                    #matrix[h, r] = 150
+                                    matrix[h, r] += dh * fermi2((-1) * dist_to_line(h, r, lines), 0, fex2, fermi_range2)
+                                    # matrix[h, r] = 150
                                 elif h >= rfr:
                                     matrix[h, r] += dh
-                                    #matrix[h, r] = 200
+                                    # matrix[h, r] = 200
                                 else:
                                     raise NotImplementedError
 
@@ -1196,11 +1217,11 @@ class DataFrame:
                 print("STEP5 (Matrix): {}".format(time.perf_counter() - start))
                 start = time.perf_counter()
 
-            #for h in range(np.shape(matrix)[0]):
-             #   for r in range(np.shape(matrix)[1]):
-             #       for p in fpoints:
-              #          if np.linalg.norm(np.array([h, r]) - p) < 2:
-               #             matrix[h, r] = 300
+            # for h in range(np.shape(matrix)[0]):
+            #   for r in range(np.shape(matrix)[1]):
+            #       for p in fpoints:
+            #          if np.linalg.norm(np.array([h, r]) - p) < 2:
+            #             matrix[h, r] = 300
 
             if show_f:
                 delta = 1
@@ -1228,10 +1249,8 @@ class DataFrame:
                 plt.title("Helligkeitsprofil entlang y = {}".format(mid))
                 plt.show()
 
-
-
             # plt.imshow(matrix.transpose())
-            #plt.show()
+            # plt.show()
 
             # for i in range(0, 400, 40):
             #    print("Dist to f: {}-200 : {:.3f}".format(i, dist_to_f(i, 200, f)))#

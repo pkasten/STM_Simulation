@@ -253,13 +253,15 @@ class Molecule(Particle):
         return eff_matrix, self.x, self.y
 
     def efficient_Matrix_turned(self):
+        if self.molecule_style == "Simple":
+            return super().efficient_Matrix_turned()
+
         return self.efficient_Matrix()
 
     #ToDo Select mode
     def visualize_pixel(self, x, y):
         if self.molecule_style == "Simple":
-            return self.visu_simple(x, y)
-
+            return super().visualize_pixel(x, y)
 
         mode = "MAX"
         if mode == "ADD":
@@ -277,8 +279,7 @@ class Molecule(Particle):
                 ret = min(255, ret)
             return ret
 
-    def visu_simple(self, x, y):
-        return super()._line_fermi(x, y)
+
 
 
 class Lookup_Table:
