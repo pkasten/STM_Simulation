@@ -163,7 +163,7 @@ class Particle:
         lower_y = -self.length / 2
         upper_y = self.length - self.length / 2
 
-        top_fak = 0.7 #ToDO: Remove bzw 1
+        top_fak = 1 #ToDO: Remove bzw 1
 
         if x < left_x.px - self.fermi_range_w or \
                 y < lower_y.px - self.fermi_range_h or \

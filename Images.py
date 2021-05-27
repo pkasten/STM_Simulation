@@ -88,6 +88,7 @@ class MyImage:
         pixels = self.img.load()
         for i in range(self.img.size[0]):
             for j in range(self.img.size[1]):
+                print("({}, {}) = {}".format(i, j, self.colors[i, j]))
                 pixels[i, j] = (int(self.colors[i, j]), int(self.colors[i, j]), int(self.colors[i, j]))
 
     def newImage(self):

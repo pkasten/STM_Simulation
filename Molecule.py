@@ -258,8 +258,8 @@ class Molecule(Particle):
     #ToDo Select mode
     def visualize_pixel(self, x, y):
         if self.molecule_style == "Simple":
-            self.visu_simple(x, y)
-            return
+            return self.visu_simple(x, y)
+
 
         mode = "MAX"
         if mode == "ADD":
@@ -278,7 +278,7 @@ class Molecule(Particle):
             return ret
 
     def visu_simple(self, x, y):
-        super()._line_fermi(x, y)
+        return super()._line_fermi(x, y)
 
 
 class Lookup_Table:
