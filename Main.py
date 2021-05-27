@@ -178,7 +178,7 @@ if __name__ == "__main__":
     #Tests_Gitterpot().test()
 
 
-    for i in range(10):
+    for i in range(1):
         dat = DataFrame(fn)
         dat.addObjects(Molecule)
         #dat.add_Dust(DustParticle(np.array([200, 200]), color=i))
