@@ -555,11 +555,11 @@ class DataFrame:
                 phis = [phi1, phi2, phi3, phi4, phi5, phi6]
 
                 theta1 = bog(41.107) + theta
-                theta2 = bog(-74.7938) + theta
-                theta3 = bog(-19.2033) + theta
-                theta4 = theta1
-                theta5 = theta2
-                theta6 = theta3
+                theta2 = bog(101.107) + theta
+                theta3 = bog(161.107) + theta
+                theta4 = bog(221.107) + theta
+                theta5 = bog(281.107) + theta
+                theta6 = bog(341.107) + theta
                 thetas = [theta1, theta2, theta3, theta4, theta5, theta6]
 
                 pairs = []
@@ -574,10 +574,13 @@ class DataFrame:
                 for pair in pairs:
                     ct += 1
                     self.objects.append(Molecule(pos=pair[0], theta=pair[1]))
-                    if ct == 1:
-                        break
+                    #if ct == 2:
+                    #    break
 
-            theta_0 = 0
+            #add_Hexa(np.array([self.img_width/2, self.img_height/2]), 0)
+            #return
+
+            theta_0 = 2 * np.pi * random.random()
 
             gv_dist = Distance(True, 55.4938)
 
