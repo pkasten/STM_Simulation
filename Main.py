@@ -184,11 +184,11 @@ if __name__ == "__main__":
     #    #dat.add_Dust(DustParticle(np.array([200, 200]), color=i))
     #    dat.get_Image()
     #    dat.save()
-
-    dat = DataFrame(fn)
-    dat.add_Ordered(Molecule)
-    dat.get_Image()
-    dat.save()
+    for i in range(0, 30):
+        dat = DataFrame(fn)
+        dat.add_Ordered(Molecule)
+        dat.get_Image()
+        dat.save()
 
     #DustParticle.test()
 

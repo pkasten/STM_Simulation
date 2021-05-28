@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 
 class Molecule(Particle):
     molecule_class = "NCPhCN"
-    molecule_ph_groups = 3
-    molecule_style = "Simple" # "Complex"
+    molecule_ph_groups = 5
+    molecule_style = "Simple"  # "Complex" "Simple"
 
     def __init__(self, pos=None, theta=None, lookup_table=None, gitter=None, molecule_class=None, molecule_ph_groups=0):
         if molecule_class is not None:
@@ -43,9 +43,9 @@ class Molecule(Particle):
         self.img_h = cfg.get_height()
         self.lookup_table = lookup_table
 
-        self.ch_len_def = Distance(True, 1.08)
-        self.cn_len_def = Distance(True, 1.80)
-        self.cc_len_def = Distance(True, 1.37)
+        self.ch_len_def = Distance(True, 1.06)
+        self.cn_len_def = Distance(True, 1.47)
+        self.cc_len_def = Distance(True, 1.20)
 
         self.gitter = gitter
         if gitter is not None and lookup_table is None:
@@ -69,9 +69,12 @@ class Molecule(Particle):
             self.atoms.append(Atom(np.array([0, co_len.px])))
             self.atoms.append(Atom(np.array([0, -co_len.px])))
         elif self.molecule_class == "NCPhCN":
-            ch_len = Distance(True, 1.08)
-            cn_len = Distance(True, 1.80)
-            cc_len = Distance(True, 1.37)
+            #ch_len = Distance(True, 1.08)
+            ch_len = self.ch_len_def
+            cn_len = self.cn_len_def
+            cc_len = self.cn_len_def
+            #cn_len = Distance(True, 1.80)
+            #cc_len = Distance(True, 1.37)
             self.create_NC_PhX_CN(self.molecule_ph_groups, cc_len, ch_len, cn_len)
         else:
             self.atoms.append(Atom(np.array([0, 0])))
@@ -95,6 +98,7 @@ class Molecule(Particle):
         if self.molecule_style == "Simple":
             self.simple_length = self.get_simple_length(self.cc_len_def, self.cn_len_def)
             self.simple_width = (2 * self.ch_len_def + 2 * self.cc_len_def) * np.cos(np.pi / 12)
+            #print("Simple Length = {}, Simple Width = {}".format(self.simple_length.ang, self.simple_width.ang))
             super().set_width(self.simple_width)
             super().set_length(self.simple_length)
 

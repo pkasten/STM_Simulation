@@ -456,46 +456,154 @@ class DataFrame:
                     p = _get_thatnot_overlaps(maximum_tries)
                     self.objects.append(p)
 
-    def add_Ordered(self, Object):
+    def add_Ordered(self, Object, theta=None):
+        offset = Distance(False, cfg.get_px_overlap())
 
-        def add_ordered_NCPh3CN():
-            theta_0 = random.random() * np.pi * 2
-            theta_0 = 0 # ToDo Rem
-            def bog(deg):
-                return np.pi * deg/180
-            dist_v = Distance(True, 11.46)
-            dist_h = Distance(True, 12.0084)
-            gv_a = np.array([dist_h * np.cos(theta_0 - bog(20)), dist_h * np.sin(theta_0 - bog(20))])
-            gv_b = np.array([dist_v * np.cos(theta_0 + bog(70)), dist_v * np.sin(theta_0 + bog(70))])
+        def bog(deg):
+            return np.pi * deg / 180
 
+        def add_ordered_NCPh3CN(theta=None):
+            if theta is None:
+                theta_0 = random.random() * np.pi * 2
+            else:
+                theta_0 = theta
+            # theta_0 = 0 # ToDo Rem
+            # theta_0 = bog(-4.5636)
+            print("theta0: {:.1f}°".format(theta_0 / np.pi * 180))
+            dist_h = Distance(True, 13.226)
+            dist_v = Distance(True, 13.1933)
+            gv_a = np.array([dist_h * np.cos(theta_0), dist_h * np.sin(theta_0)])
+            gv_b = np.array([-dist_v * np.sin(theta_0), dist_v * np.cos(theta_0)])
+
+            ang_a = theta_0 + bog(19.61545)
+            ang_b = theta_0 + bog(59.40909)
 
             pairs = []
 
-            start = np.array([Distance(True, 0),Distance(True, 0)])
+            start = np.array([Distance(True, 0), Distance(True, 0)])
             current = np.array([0, 0])
             a_temp = self.img_width / gv_b[0] if gv_b[0].px != 0 else -np.infty
             b_temp = self.img_height / gv_b[1] if gv_b[1].px != 0 else -np.infty
             j_max = int(np.ceil(max(a_temp, b_temp)))
             c_temp = ((self.img_width + j_max * gv_b[0]) / gv_a[0]) if gv_a[0].px != 0 else j_max
             i_max = int(np.ceil(c_temp))
-            print(i_max, j_max)
-            for i in range(-10, i_max):
-                for j in range(-10, j_max):
+            # print(i_max, j_max)
+            for i in range(-100, 100):
+                for j in range(-100, 100):
                     current = start + (gv_a * i) + (gv_b * j)
-                    print(current[0], self.img_width)
-                    if current[0] < self.img_width and current[1] < self.img_height and current[0] > Distance(True,0) and current[1] > Distance(True, 0):
-                        pairs.append((current, theta_0 if (i+j)%2 == 0 else theta_0 + bog(40)))
+                    # print(current[0], self.img_width)
+                    if self.img_width + offset > current[0] > (-1) * offset and offset + self.img_height > current[
+                        1] > (-1) * offset:
+                        pairs.append((current, ang_a if (i + j) % 2 == 0 else ang_b))
 
             for pair in pairs:
                 self.objects.append(Object(pos=pair[0], theta=pair[1]))
 
+        def add_ordered_NCPh4CN(theta=None):
+            if theta is None:
+                theta_0 = random.random() * np.pi * 2
+            else:
+                theta_0 = theta
+            chirality = np.sign(random.random() - 0.5)
 
+            dist_v = Distance(True, 23.75)
+            dist_h = Distance(True, 22.23)
 
-        def add_ordered_NCPh4CN():
-            raise NotImplementedError
+            if chirality > 0:
+                gv_a = np.array([dist_h * np.cos(theta_0), dist_h * np.sin(theta_0)])
+                gv_b = np.array([-dist_v * np.sin(theta_0), dist_v * np.cos(theta_0)])
+            else:
+                gv_a = np.array([dist_h * np.cos(theta_0 + np.pi / 4), dist_h * np.sin(theta_0 + np.pi / 4)])
+                gv_b = np.array([-dist_v * np.sin(theta_0 + np.pi / 4), dist_v * np.cos(theta_0 + np.pi / 4)])
+
+            pairs = []
+
+            ang_a = theta_0 + bog(25)
+            ang_b = theta_0 + bog(123.1)
+
+            start = np.array([Distance(True, 0), Distance(True, 0)])
+            current = np.array([0, 0])
+            a_temp = self.img_width / gv_b[0] if gv_b[0].px != 0 else -np.infty
+            b_temp = self.img_height / gv_b[1] if gv_b[1].px != 0 else -np.infty
+            j_max = int(np.ceil(max(a_temp, b_temp)))
+            c_temp = ((self.img_width + j_max * gv_b[0]) / gv_a[0]) if gv_a[0].px != 0 else j_max
+            i_max = int(np.ceil(c_temp))
+            for i in range(-10, max(100, i_max)):
+                for j in range(-10, max(100, i_max)):
+                    current = start + (gv_a * i) + (gv_b * j)
+                    if self.img_width + offset > current[0] > (-1) * offset and offset + self.img_height > current[
+                        1] > (-1) * offset:
+                        pairs.append((current, ang_a if (i + j) % 2 == 0 else ang_b))
+
+            for pair in pairs:
+                self.objects.append(Object(pos=pair[0], theta=pair[1]))
 
         def add_ordered_NCPh5CN():
-            raise NotImplementedError
+
+            def add_Hexa(center, theta):
+                d = Distance(True, 22.457)
+
+                def turnvec(len, ang):
+                    return np.array([len * np.sin(ang), -len * np.cos(ang)])
+
+                phi1 = bog(-30.663) + theta
+                phi2 = bog(33.39) + theta
+                phi3 = bog(92.223) + theta
+                phi4 = bog(150.81) + theta
+                phi5 = bog(212.713) + theta
+                phi6 = bog(-87.633) + theta
+                phis = [phi1, phi2, phi3, phi4, phi5, phi6]
+
+                theta1 = bog(41.107) + theta
+                theta2 = bog(-74.7938) + theta
+                theta3 = bog(-19.2033) + theta
+                theta4 = theta1
+                theta5 = theta2
+                theta6 = theta3
+                thetas = [theta1, theta2, theta3, theta4, theta5, theta6]
+
+                pairs = []
+                for i in range(6):
+                    position = center + turnvec(d, phis[i])
+                    #print(position)
+                    if self.img_width + offset > position[0] > (-1) * offset and offset + self.img_height > position[
+                        1] > (-1) * offset:
+                        pairs.append((position, thetas[i]))
+
+                ct = 0
+                for pair in pairs:
+                    ct += 1
+                    self.objects.append(Molecule(pos=pair[0], theta=pair[1]))
+                    if ct == 1:
+                        break
+
+            theta_0 = 0
+
+            gv_dist = Distance(True, 55.4938)
+
+            gv_a_w = theta_0 + bog(179.782)
+            gv_b_w = theta_0 + bog(119.782)
+
+            gv_a = np.array([gv_dist * np.sin(gv_a_w), -gv_dist * np.cos(gv_a_w)])
+            gv_b = np.array([gv_dist * np.sin(gv_b_w), -gv_dist * np.cos(gv_b_w)])
+
+            #print(gv_a, gv_b)
+
+            offset_loc = offset + gv_dist
+
+            start = np.array([Distance(True, 0), Distance(True, 0)])
+            current = np.array([0, 0])
+            a_temp = self.img_width / gv_b[0] if gv_b[0].px != 0 else -np.infty
+            b_temp = self.img_height / gv_b[1] if gv_b[1].px != 0 else -np.infty
+            j_max = int(np.ceil(max(a_temp, b_temp)))
+            c_temp = ((self.img_width + j_max * gv_b[0]) / gv_a[0]) if gv_a[0].px != 0 else j_max
+            i_max = int(np.ceil(c_temp))
+            for i in range(-10, max(100, i_max)):
+                for j in range(-10, max(100, i_max)):
+                    current = start + (gv_a * i) + (gv_b * j) #Sketcy mit 3x Offset
+                    if self.img_width + offset_loc > current[0] > (-1) * offset_loc and offset_loc + self.img_height > current[
+                        1] > (-1) * offset_loc:
+                        add_Hexa(current, theta_0)
 
         if type(Object) is not type(Particle):
             raise NotImplementedError
@@ -504,9 +612,9 @@ class DataFrame:
         elif Object.molecule_class != "NCPhCN":
             self.addObjects()
         elif Object.molecule_ph_groups == 3:
-            add_ordered_NCPh3CN()
+            add_ordered_NCPh3CN(theta)
         elif Object.molecule_ph_groups == 4:
-            add_ordered_NCPh4CN()
+            add_ordered_NCPh4CN(theta)
         elif Object.molecule_ph_groups == 5:
             add_ordered_NCPh5CN()
         else:
@@ -1283,7 +1391,11 @@ class DataFrame:
         else:
             fargs = lambda c: 0, 0, 0
 
+        max = len(self.objects)
+        ct = 0
         for part in self.objects:
+            # print("Visu_progress: {:.1f}%".format(100 * ct/max))
+            ct += 1
             for tuple in part.get_visualization():
                 # print("Tupel:{}".format(tuple))
                 eff_mat, x, y = tuple

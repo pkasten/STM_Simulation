@@ -47,6 +47,8 @@ class Distance:
 
     def __lt__(self, other):
         if type(other) is not type(self):
+            if other == 0:
+                return self.px < 0
             raise TypeError
         return self.ang < other.ang
 
@@ -55,16 +57,22 @@ class Distance:
 
     def __gt__(self, other):
         if type(other) is not type(self):
+            if other == 0:
+                return self.px > 0
             raise TypeError
         return self.ang > other.ang
 
     def __le__(self, other):
         if type(other) is not type(self):
+            if other == 0:
+                return self.px <= 0
             raise TypeError
         return self.ang <= other.ang
 
     def __ge__(self, other):
         if type(other) is not type(self):
+            if other == 0:
+                return self.px >= 0
             raise TypeError
         return self.ang >= other.ang
 
