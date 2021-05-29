@@ -540,7 +540,7 @@ class DataFrame:
 
         def add_ordered_NCPh5CN(theta=None):
 
-            def add_Hexa(center, start_ang):
+            def add_Hexa(center, start_ang, chirality):
                 d = Distance(True, 22.457)
 
                 def turnvec(len, ang):
@@ -552,30 +552,39 @@ class DataFrame:
                 #phi4 = bog(150.81) + start_ang
                 #phi5 = bog(212.713) + start_ang
                 #phi6 = bog(360-87.633) + start_ang
-                phi1 = (bog(-30.663) + start_ang) % (2*np.pi)
-                phi2 = (bog(29.337) + start_ang) % (2*np.pi)
-                phi3 = (bog(89.337) + start_ang) % (2*np.pi)
-                phi4 = (bog(149.337) + start_ang) % (2*np.pi)
-                phi5 = (bog(209.337) + start_ang) % (2*np.pi)
-                phi6 = (bog(269.337) + start_ang) % (2*np.pi)
-                phis = [phi1, phi2, phi3, phi4, phi5, phi6]
+                if chirality > 0:
+                    phi1 = (bog(-30.663) + start_ang) % (2*np.pi)
+                    phi2 = (bog(29.337) + start_ang) % (2*np.pi)
+                    phi3 = (bog(89.337) + start_ang) % (2*np.pi)
+                    phi4 = (bog(149.337) + start_ang) % (2*np.pi)
+                    phi5 = (bog(209.337) + start_ang) % (2*np.pi)
+                    phi6 = (bog(269.337) + start_ang) % (2*np.pi)
+                    phis = [phi1, phi2, phi3, phi4, phi5, phi6]
 
-                theta1 = (bog(41.107) + start_ang) % (2*np.pi)
-                theta2 = (bog(101.107) + start_ang) % (2*np.pi)
-                theta3 = (bog(161.107) + start_ang) % (2*np.pi)
-                theta4 = (bog(221.107) + start_ang) % (2*np.pi)
-                theta5 = (bog(281.107) + start_ang) % (2*np.pi)
-                theta6 = (bog(341.107) + start_ang) % (2*np.pi)
-                thetas = [theta1, theta2, theta3, theta4, theta5, theta6]
+                    theta1 = (bog(41.107) + start_ang) % (2*np.pi)
+                    theta2 = (bog(101.107) + start_ang) % (2*np.pi)
+                    theta3 = (bog(161.107) + start_ang) % (2*np.pi)
+                    theta4 = (bog(221.107) + start_ang) % (2*np.pi)
+                    theta5 = (bog(281.107) + start_ang) % (2*np.pi)
+                    theta6 = (bog(341.107) + start_ang) % (2*np.pi)
+                    thetas = [theta1, theta2, theta3, theta4, theta5, theta6]
+                else:
+                    phi1 = (bog(30.663) + start_ang) % (2 * np.pi)
+                    phi2 = (bog(360-29.337) + start_ang) % (2 * np.pi)
+                    phi3 = (bog(360-89.337) + start_ang) % (2 * np.pi)
+                    phi4 = (bog(360-149.337) + start_ang) % (2 * np.pi)
+                    phi5 = (bog(360-209.337) + start_ang) % (2 * np.pi)
+                    phi6 = (bog(360-269.337) + start_ang) % (2 * np.pi)
+                    phis = [phi1, phi2, phi3, phi4, phi5, phi6]
 
-               # s = "Phi: "
-               # for i in phis:
-               #     s += "{:.1f}".format(i/np.pi * 180) + ", "
-               # s += "\nTheta: "
-               # for i in thetas:
-               #     s += "{:.1f}".format(i / np.pi * 180) + ", "
+                    theta1 = (bog(360-41.107) + start_ang) % (2 * np.pi)
+                    theta2 = (bog(360-101.107) + start_ang) % (2 * np.pi)
+                    theta3 = (bog(360-161.107) + start_ang) % (2 * np.pi)
+                    theta4 = (bog(360-221.107) + start_ang) % (2 * np.pi)
+                    theta5 = (bog(360-281.107) + start_ang) % (2 * np.pi)
+                    theta6 = (bog(360-341.107) + start_ang) % (2 * np.pi)
+                    thetas = [theta1, theta2, theta3, theta4, theta5, theta6]
 
-                #print(s)
 
                 pairs = []
                 for i in range(6):
@@ -603,18 +612,18 @@ class DataFrame:
                 for pair in pairs:
                     self.objects.append(Molecule(pos=pair[0], theta=pair[1]))
 
-            #add_Hexa(np.array([self.img_width/2, self.img_height/2]), 0)
-            #return
+
             if theta is None:
                 theta_0 = 2 * np.pi * random.random()
             else:
                 theta_0 = theta
 
+            chirality = -1
+
             #add_Hexa(np.array([self.img_width/2, self.img_height/2]), theta_0)
             #return
 
             gv_dist = Distance(True, 55.4938)
-
             gv_a_w = theta_0 + bog(179.782)
             gv_b_w = theta_0 + bog(119.782)
 
@@ -637,7 +646,7 @@ class DataFrame:
                     current = start + (gv_a * i) + (gv_b * j) #Sketcy mit 3x Offset
                     if self.img_width + offset_loc > current[0] > (-1) * offset_loc and offset_loc + self.img_height > current[
                         1] > (-1) * offset_loc:
-                        add_Hexa(current, theta_0)
+                        add_Hexa(current, theta_0, chirality)
 
         if type(Object) is not type(Particle):
             raise NotImplementedError
