@@ -184,10 +184,9 @@ if __name__ == "__main__":
     #    #dat.add_Dust(DustParticle(np.array([200, 200]), color=i))
     #    dat.get_Image()
     #    dat.save()
-    for i in range(20):
-    for i in range(20):
+    for i in range(0, 360, 10):
         dat = DataFrame(fn)
-        dat.add_Ordered(Molecule)
+        dat.add_Ordered(Molecule, theta= np.pi * i / 180)
         dat.get_Image()
         dat.save()
 

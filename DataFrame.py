@@ -538,29 +538,44 @@ class DataFrame:
             for pair in pairs:
                 self.objects.append(Object(pos=pair[0], theta=pair[1]))
 
-        def add_ordered_NCPh5CN():
+        def add_ordered_NCPh5CN(theta=None):
 
-            def add_Hexa(center, theta):
+            def add_Hexa(center, start_ang):
                 d = Distance(True, 22.457)
 
                 def turnvec(len, ang):
                     return np.array([len * np.sin(ang), -len * np.cos(ang)])
 
-                phi1 = bog(-30.663) + theta
-                phi2 = bog(33.39) + theta
-                phi3 = bog(92.223) + theta
-                phi4 = bog(150.81) + theta
-                phi5 = bog(212.713) + theta
-                phi6 = bog(-87.633) + theta
+                #phi1 = bog(-30.663) + start_ang
+                #phi2 = bog(33.39) + start_ang
+                #phi3 = bog(92.223) + start_ang
+                #phi4 = bog(150.81) + start_ang
+                #phi5 = bog(212.713) + start_ang
+                #phi6 = bog(360-87.633) + start_ang
+                phi1 = (bog(-30.663) + start_ang) % (2*np.pi)
+                phi2 = (bog(29.337) + start_ang) % (2*np.pi)
+                phi3 = (bog(89.337) + start_ang) % (2*np.pi)
+                phi4 = (bog(149.337) + start_ang) % (2*np.pi)
+                phi5 = (bog(209.337) + start_ang) % (2*np.pi)
+                phi6 = (bog(269.337) + start_ang) % (2*np.pi)
                 phis = [phi1, phi2, phi3, phi4, phi5, phi6]
 
-                theta1 = bog(41.107) + theta
-                theta2 = bog(101.107) + theta
-                theta3 = bog(161.107) + theta
-                theta4 = bog(221.107) + theta
-                theta5 = bog(281.107) + theta
-                theta6 = bog(341.107) + theta
+                theta1 = (bog(41.107) + start_ang) % (2*np.pi)
+                theta2 = (bog(101.107) + start_ang) % (2*np.pi)
+                theta3 = (bog(161.107) + start_ang) % (2*np.pi)
+                theta4 = (bog(221.107) + start_ang) % (2*np.pi)
+                theta5 = (bog(281.107) + start_ang) % (2*np.pi)
+                theta6 = (bog(341.107) + start_ang) % (2*np.pi)
                 thetas = [theta1, theta2, theta3, theta4, theta5, theta6]
+
+               # s = "Phi: "
+               # for i in phis:
+               #     s += "{:.1f}".format(i/np.pi * 180) + ", "
+               # s += "\nTheta: "
+               # for i in thetas:
+               #     s += "{:.1f}".format(i / np.pi * 180) + ", "
+
+                #print(s)
 
                 pairs = []
                 for i in range(6):
@@ -570,17 +585,33 @@ class DataFrame:
                         1] > (-1) * offset:
                         pairs.append((position, thetas[i]))
 
-                ct = 0
+
+                if False:
+                    x = 3
+                    self.objects.append(Molecule(pos=pairs[x][0], theta=pairs[x][1]))
+                    x = 2
+                    self.objects.append(Molecule(pos=pairs[x][0], theta=pairs[x][1]))
+                    x = 1
+                    self.objects.append(Molecule(pos=pairs[x][0], theta=pairs[x][1]))
+                    x = 0
+                    self.objects.append(Molecule(pos=pairs[x][0], theta=pairs[x][1]))
+                    #x = 0
+                    #self.objects.append(Molecule(pos=pairs[x][0], theta=pairs[x][1]))
+                    #x = 1
+                    #self.objects.append(Molecule(pos=pairs[x][0], theta=pairs[x][1]))
+                    return
                 for pair in pairs:
-                    ct += 1
                     self.objects.append(Molecule(pos=pair[0], theta=pair[1]))
-                    #if ct == 2:
-                    #    break
 
             #add_Hexa(np.array([self.img_width/2, self.img_height/2]), 0)
             #return
+            if theta is None:
+                theta_0 = 2 * np.pi * random.random()
+            else:
+                theta_0 = theta
 
-            theta_0 = 2 * np.pi * random.random()
+            #add_Hexa(np.array([self.img_width/2, self.img_height/2]), theta_0)
+            #return
 
             gv_dist = Distance(True, 55.4938)
 
@@ -619,7 +650,7 @@ class DataFrame:
         elif Object.molecule_ph_groups == 4:
             add_ordered_NCPh4CN(theta)
         elif Object.molecule_ph_groups == 5:
-            add_ordered_NCPh5CN()
+            add_ordered_NCPh5CN(theta)
         else:
             raise NotImplementedError
 
