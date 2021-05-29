@@ -546,12 +546,6 @@ class DataFrame:
                 def turnvec(len, ang):
                     return np.array([len * np.sin(ang), -len * np.cos(ang)])
 
-                #phi1 = bog(-30.663) + start_ang
-                #phi2 = bog(33.39) + start_ang
-                #phi3 = bog(92.223) + start_ang
-                #phi4 = bog(150.81) + start_ang
-                #phi5 = bog(212.713) + start_ang
-                #phi6 = bog(360-87.633) + start_ang
                 if chirality > 0:
                     phi1 = (bog(-30.663) + start_ang) % (2*np.pi)
                     phi2 = (bog(29.337) + start_ang) % (2*np.pi)
@@ -589,26 +583,11 @@ class DataFrame:
                 pairs = []
                 for i in range(6):
                     position = center + turnvec(d, phis[i])
-                    #print(position)
                     if self.img_width + offset > position[0] > (-1) * offset and offset + self.img_height > position[
                         1] > (-1) * offset:
                         pairs.append((position, thetas[i]))
 
 
-                if False:
-                    x = 3
-                    self.objects.append(Molecule(pos=pairs[x][0], theta=pairs[x][1]))
-                    x = 2
-                    self.objects.append(Molecule(pos=pairs[x][0], theta=pairs[x][1]))
-                    x = 1
-                    self.objects.append(Molecule(pos=pairs[x][0], theta=pairs[x][1]))
-                    x = 0
-                    self.objects.append(Molecule(pos=pairs[x][0], theta=pairs[x][1]))
-                    #x = 0
-                    #self.objects.append(Molecule(pos=pairs[x][0], theta=pairs[x][1]))
-                    #x = 1
-                    #self.objects.append(Molecule(pos=pairs[x][0], theta=pairs[x][1]))
-                    return
                 for pair in pairs:
                     self.objects.append(Molecule(pos=pair[0], theta=pair[1]))
 
@@ -618,7 +597,7 @@ class DataFrame:
             else:
                 theta_0 = theta
 
-            chirality = -1
+            chirality = np.sign(random.random() - 0.5)
 
             #add_Hexa(np.array([self.img_width/2, self.img_height/2]), theta_0)
             #return

@@ -43,13 +43,17 @@ class Molecule(Particle):
         self.img_h = cfg.get_height()
         self.lookup_table = lookup_table
 
-        self.ch_len_def = Distance(True, 1.06)
-        self.cn_len_def = Distance(True, 1.47)
-        self.cc_len_def = Distance(True, 1.20)
+        # self.ch_len_def = Distance(True, 1.06)
+        # self.cn_len_def = Distance(True, 1.47) # Min
+        # self.cc_len_def = Distance(True, 1.20)
+
+        self.ch_len_def = Distance(True, 1.08)
+        self.cn_len_def = Distance(True, 1.78) # Mid
+        self.cc_len_def = Distance(True, 1.37)
 
         self.gitter = gitter
         if gitter is not None and lookup_table is None:
-            self.lookup_table = self.crate_lookup(gitter)
+            self.crate_lookup(gitter)
 
         # if gitter is None and lookup_table is None:
         # print("WARNING: No Potential lookup")
