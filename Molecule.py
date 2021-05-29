@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 class Molecule(Particle):
     molecule_class = "NCPhCN"
-    molecule_ph_groups = 5
+    molecule_ph_groups = 4
     molecule_style = "Simple"  # "Complex" "Simple"
 
     def __init__(self, pos=None, theta=None, lookup_table=None, gitter=None, molecule_class=None, molecule_ph_groups=0):
@@ -43,13 +43,13 @@ class Molecule(Particle):
         self.img_h = cfg.get_height()
         self.lookup_table = lookup_table
 
-        # self.ch_len_def = Distance(True, 1.06)
-        # self.cn_len_def = Distance(True, 1.47) # Min
-        # self.cc_len_def = Distance(True, 1.20)
+        self.ch_len_def = Distance(True, 1.06)
+        self.cn_len_def = Distance(True, 1.47) # Min
+        self.cc_len_def = Distance(True, 1.20)
 
-        self.ch_len_def = Distance(True, 1.08)
-        self.cn_len_def = Distance(True, 1.78) # Mid
-        self.cc_len_def = Distance(True, 1.37)
+        # self.ch_len_def = Distance(True, 1.08)
+        # self.cn_len_def = Distance(True, 1.78) # Mid
+        # self.cc_len_def = Distance(True, 1.37)
 
         self.gitter = gitter
         if gitter is not None and lookup_table is None:
@@ -110,6 +110,9 @@ class Molecule(Particle):
         if self.molecule_class == "NCPhCN":
             return "NCPh{}CN".format(self.molecule_ph_groups)
         return self.molecule_class
+
+    def __repr__(self):
+        return "Molecule {} (N={})".format(self.molecule_class, self.molecule_ph_groups)
 
     def get_C6_Ringdist(self, cc_dist):
         return 3 * cc_dist

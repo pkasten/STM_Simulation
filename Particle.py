@@ -150,7 +150,8 @@ class Particle:
         else:
             return 0
 
-
+    def color(self, h):
+        return self._color(h)
 
     def _line_fermi(self, x, y):
 

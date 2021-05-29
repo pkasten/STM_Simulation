@@ -47,7 +47,9 @@ class DataFrame:
         self.dragging_speed = cfg.get_dragging_speed()
         self.raster_angle = cfg.get_raster_angle()
         self.double_tip_poss = cfg.get_double_tip_possibility()
-        self.passed_args = None
+        self.passed_args_particles = None
+        self.passed_args_Obj = None
+        self.passed_args_Ordered = None
         self.img_width = cfg.get_width()
         self.img_height = cfg.get_height()
         self.use_crystal_orientations = cfg.get_crystal_orientation_usage()
@@ -82,13 +84,13 @@ class DataFrame:
 
     # adds a given particle or, if not provided a random one
     def addParticle(self, part=None):
-        if self.passed_args is None:
-            self.passed_args = (1, None, True, 1000)
+        if self.passed_args_particles is None:
+            self.passed_args_particles = (1, None, True, 1000)
         else:
-            if self.passed_args[0] is None:
-                self.passed_args = (len(self.objects), self.passed_args[1], self.passed_args[2], self.passed_args[3])
-            newargs = self.passed_args[0] + 1, self.passed_args[1], self.passed_args[2], self.passed_args[3]
-            self.passed_args = newargs
+            if self.passed_args_particles[0] is None:
+                self.passed_args_particles = (len(self.objects), self.passed_args_particles[1], self.passed_args_particles[2], self.passed_args_particles[3])
+            newargs = self.passed_args_particles[0] + 1, self.passed_args_particles[1], self.passed_args_particles[2], self.passed_args_particles[3]
+            self.passed_args_particles = newargs
         if part is None:
             self.objects.append(Particle())
 
@@ -240,7 +242,7 @@ class DataFrame:
             return
 
         # without angle correlation
-        self.passed_args = (amount, coverage, overlapping, maximum_tries)
+        self.passed_args_particles = (optimumEnergy, amount, coverage, overlapping, maximum_tries)
         # print("{}, {}, {}".format(self.use_range, self.angle_char_len, overlapping))
         if not self.use_range:
             if self.angle_char_len == 0:
@@ -429,7 +431,7 @@ class DataFrame:
             # print("#Obj: {}, has Overlaps: {}".format(len(self.objects), self.has_overlaps()))
             return p
 
-        self.passed_args = (amount, coverage, overlapping, maximum_tries)
+        #self.passed_args_particles = (amount, coverage, overlapping, maximum_tries)
         # print("{}, {}, {}".format(self.use_range, self.angle_char_len, overlapping))
         if amount is not None:
             for i in range(amount):
@@ -456,8 +458,9 @@ class DataFrame:
                     p = _get_thatnot_overlaps(maximum_tries)
                     self.objects.append(p)
 
-    def add_Ordered(self, Object, theta=None):
+    def add_Ordered(self, Object=Molecule, theta=None):
         offset = Distance(False, cfg.get_px_overlap())
+        self.passed_args_Ordered = (Object, theta)
 
         def bog(deg):
             return np.pi * deg / 180
@@ -469,7 +472,7 @@ class DataFrame:
                 theta_0 = theta
             # theta_0 = 0 # ToDo Rem
             # theta_0 = bog(-4.5636)
-            print("theta0: {:.1f}°".format(theta_0 / np.pi * 180))
+            #print("theta0: {:.1f}°".format(theta_0 / np.pi * 180))
             dist_h = Distance(True, 13.226)
             dist_v = Distance(True, 13.1933)
             gv_a = np.array([dist_h * np.cos(theta_0), dist_h * np.sin(theta_0)])
@@ -1416,7 +1419,7 @@ class DataFrame:
         max = len(self.objects)
         ct = 0
         for part in self.objects:
-            # print("Visu_progress: {:.1f}%".format(100 * ct/max))
+            #print("Visu_progress: {:.1f}%".format(100 * ct/max))
             ct += 1
             for tuple in part.get_visualization():
                 # print("Tupel:{}".format(tuple))
@@ -1445,6 +1448,30 @@ class DataFrame:
 
         self.img.addMatrix(matrix)
 
+    def get_Image_Dust(self):
+        width = self.img_width
+        height = self.img_height
+        matrix = np.zeros((int(np.ceil(width.px)), int(np.ceil(height.px))))
+
+        for d in self.dust_particles:
+            tuple = d.efficient_Matrix()
+            eff_mat, x, y = tuple
+            mat_w = eff_mat.shape[0]
+
+            # ToDo: possible failure
+            x = int(np.round(x.px))  # no px cause dust
+            y = int(np.round(y.px))
+
+            mat_h = eff_mat.shape[1]
+            for i in range(mat_w):
+                for j in range(mat_h):
+                    new_x = x - math.floor((mat_w / 2)) + i
+                    new_y = y - math.floor(mat_h / 2) + j
+                    if not (0 <= new_x < width.px and 0 <= new_y < height.px):
+                        continue
+                    matrix[new_x, new_y] += eff_mat[i, j]
+        self.img.addMatrix(matrix)
+
     def get_Image(self):
         if random.random() < self.double_tip_poss:
             print("Double Tipping")
@@ -1453,50 +1480,33 @@ class DataFrame:
             rel_dist = 0.1 * random.random()  # ToDO: Let loose
             angle = 2 * np.pi * random.random()
             doubled_frame = Double_Frame(self.fn_gen, strength, rel_dist, angle)
-            # doubled_frame.addParticles(self.passed_args[0], self.passed_args[1], self.passed_args[2],
-            #                          self.passed_args[3])
-            doubled_frame.addObjects(*self.passed_args_Obj)
+            if self.passed_args_particles is not None:
+                doubled_frame.addParticles(*self.passed_args_particles)
+            elif self.passed_args_Obj is not None:
+                doubled_frame.addObjects(*self.passed_args_Obj)
+            elif self.passed_args_Ordered is not None:
+                doubled_frame.add_Ordered(*self.passed_args_Ordered)
+            else:
+                print("Default")
+                doubled_frame.addObjects()
+
+            #if self.usedust:
+            #    print("Dusting")
+            #    doubled_frame.get_Image_Dust()
 
             self.img = doubled_frame.extract_Smaller()
             self.objects = doubled_frame.get_objects()
+
             if self.use_noise:
                 self.img.noise(self.image_noise_mu, self.image_noise_sigma)
+
             self.img.updateImage()
             return
 
         self.create_Image_Visualization()
 
         if self.usedust:
-            width = self.img_width
-            height = self.img_height
-            matrix = np.zeros((int(np.ceil(width.px)), int(np.ceil(height.px))))
-
-            for d in self.dust_particles:
-                tuple = d.efficient_Matrix()
-                # print("Tupel:{}".format(tuple))
-                # print(tuple[0])
-                # print(1)
-                # print(tuple[1])
-                # print(2)
-                # print(tuple[2])
-                eff_mat, x, y = tuple
-                mat_w = eff_mat.shape[0]
-
-                # ToDo: possible failure
-                x = int(np.round(x.px))  # no px cause dust
-                y = int(np.round(y.px))
-                # plt.imshow(eff_mat)
-                # plt.show()
-                # print(np.max(eff_mat))
-                mat_h = eff_mat.shape[1]
-                for i in range(mat_w):
-                    for j in range(mat_h):
-                        new_x = x - math.floor((mat_w / 2)) + i
-                        new_y = y - math.floor(mat_h / 2) + j
-                        if not (0 <= new_x < width.px and 0 <= new_y < height.px):
-                            continue
-                        matrix[new_x, new_y] += eff_mat[i, j]
-            self.img.addMatrix(matrix)
+            self.get_Image_Dust()
 
         if self.use_noise:
             self.img.noise(self.image_noise_mu, self.image_noise_sigma)
@@ -2266,6 +2276,7 @@ class Double_Frame(DataFrame):
         self.shift_x = rel_dist * np.sin(angle)
         self.shift_y = rel_dist * np.cos(angle)
         self.overlap = cfg.get_px_overlap()
+        self.dust_particles *=4
 
         if self.shift_x > 0:
             if self.shift_y > 0:
@@ -2282,12 +2293,12 @@ class Double_Frame(DataFrame):
                 self.range = 0, int(int(np.ceil(self.img_width.px)) / 2), 0, int(np.ceil((self.img_height.px / 2)))
 
     def addParticle(self, part=None):
-        if self.passed_args is None:
-            self.passed_args = (1, None, True, 1000)
+        if self.passed_args_particles is None:
+            self.passed_args_particles = (1, None, True, 1000)
         else:
-            if self.passed_args[0] is None:
-                self.passed_args = (len(self.objects), self.passed_args[1], self.passed_args[2], self.passed_args[3])
-            self.passed_args[0] += 1
+            if self.passed_args_particles[0] is None:
+                self.passed_args_particles = (len(self.objects), self.passed_args_particles[1], self.passed_args_particles[2], self.passed_args_particles[3])
+            self.passed_args_particles[0] += 1
         if part is None:
             self.objects.append(Double_Particle())
         else:
@@ -2314,7 +2325,7 @@ class Double_Frame(DataFrame):
                 return p
         return p
 
-    def _get_thatnot_overlaps(self, maximumtries=1000):
+    def _get_thatnot_overlaps(self, maximumtries=1000, calcangle=False):
         # print("TNO @len {}".format(len(self.objects)))
         if len(self.objects) == 0:
             return Double_Particle()
@@ -2326,10 +2337,11 @@ class Double_Frame(DataFrame):
                 return p
         return p
 
-    def addParticles(self, amount=None, coverage=None, overlapping=False, maximum_tries=1000):
+    def addParticles(self,  optimumEnergy=False, amount=None, coverage=None, overlapping=False, maximum_tries=1000):
 
-        self.passed_args = (amount, coverage, overlapping, maximum_tries)
-        # print("Got Args: {}".format(self.passed_args))
+        self.passed_args_particles = (amount, coverage, overlapping, maximum_tries)
+
+        #print("DF aP Got Args: {}".format(self.passed_args_particles))
         if not self.use_range:
             if self.angle_char_len == 0:
                 if not overlapping:
@@ -2494,6 +2506,21 @@ class Double_Frame(DataFrame):
         #          self.objects.append(p)
         # else:
 
+    def _randomPos(self):
+        return np.array([self.img_width * random.random(), self.img_height*random.random()])
+
+    def add_Dust_Part(self, part=None):
+        if part is None:
+            self.dust_particles.append(DustParticle(pos=self._randomPos(), size=random.random() * 40))
+        else:
+            self.dust_particles.append(part)
+
+    def add_Dust(self):
+
+        amnt = int(np.round(np.random.normal(self.dust_amount)))
+        for i in range(amnt):
+            self.add_Dust_Part()
+
     def create_Image_Visualization(self):
         self.img = MyImage()
         self.img.setWidth(int(np.ceil(self.img_width.px)))
@@ -2506,6 +2533,8 @@ class Double_Frame(DataFrame):
         matrix = np.zeros((width, height))
 
         use_atomstep = random.random() < cfg.get_atomic_step_poss()
+
+
 
         # Set Max Height for parts
         if use_atomstep:
@@ -2541,6 +2570,13 @@ class Double_Frame(DataFrame):
                             continue
                         matrix[new_x, new_y] += eff_mat[i, j]
 
+        if self.usedust:
+            self.add_Dust()
+
+        if self.usedust:
+            print("DD Dusting")
+            self.get_Image_Dust()
+
         if use_atomstep:
             if len(self.objects) > 0:
                 dh = self.objects[0].color(self.atomic_step_height)
@@ -2565,9 +2601,14 @@ class Double_Frame(DataFrame):
     def addObjects(self, Object=Molecule, amount=None, coverage=None, overlapping=False, maximum_tries=1000):
         self.passed_args_Obj = Object, amount, coverage, overlapping, maximum_tries
 
+        def random_pos():
+            x = random.random() * self.img_width
+            y = random.random() * self.img_height
+            return np.array([x, y])
+
         def get_dragged_that_not_overlaps(maximumtries):
             def _set_p():
-                p = Object()
+                p = Object(pos=random_pos())
                 p.drag(self.dragging_speed, self.raster_angle)
                 return p
 
@@ -2585,22 +2626,22 @@ class Double_Frame(DataFrame):
             # print("#Obj: {}, has Overlaps: {}".format(len(self.objects), self.has_overlaps()))
             if len(self.objects) == 0:
                 return Object()
-            p = Object()
+            p = Object(pos=random_pos())
             for i in range(maximumtries):
                 # print("Added at x={}, y= {}".format(p.pos[0].px, p.pos[1].px))
                 if self._overlaps_any(p):
                     # print("Retry")
-                    p = Object()
+                    p = Object(pos=random_pos())
                 else:
                     return p
             # print("MaxTries Exhausted_a")
             # print("#Obj: {}, has Overlaps: {}".format(len(self.objects), self.has_overlaps()))
             return p
 
-        self.passed_args = (amount, coverage, overlapping, maximum_tries)
-        # print("{}, {}, {}".format(self.use_range, self.angle_char_len, overlapping))
+        self.passed_args_particles = (amount, coverage, overlapping, maximum_tries)
+        print("DF aObj {}, {}, {}".format(self.use_range, self.angle_char_len, overlapping))
         if amount is not None:
-            for i in range(amount):
+            for i in range(4*amount):
                 if random.random() < self.dragging_possibility:
                     p = get_dragged_that_not_overlaps(maximum_tries)
                     self.objects.append(p)
@@ -2615,8 +2656,8 @@ class Double_Frame(DataFrame):
                 else:
                     p = _get_thatnot_overlaps(maximum_tries)
                     self.objects.append(p)
-            else:
-                for i in range(cfg.get_particles_per_image()):
+        else:
+            for i in range(4*cfg.get_particles_per_image()):
                     if random.random() < self.dragging_possibility:
                         p = get_dragged_that_not_overlaps(maximum_tries)
                         self.objects.append(p)
@@ -2626,9 +2667,9 @@ class Double_Frame(DataFrame):
 
     def extract_Smaller(self):
         self.create_Image_Visualization()
-        # print("Start extractSmaller")
-        # plt.imshow(self.img.get_matrix())
-        # plt.show()
+        #print("Start extractSmaller")
+        #plt.imshow(self.img.get_matrix())
+        #plt.show()
 
         self.img.double_tip(self.strength, self.rel_dist, self.dt_angle)
 
@@ -2641,8 +2682,9 @@ class Double_Frame(DataFrame):
                 x_tilt = x + self.range[0] - 1
                 y_tilt = y + self.range[2] - 1
                 smaller[x, y] = bigger[x_tilt, y_tilt]
-        # plt.imshow(smaller)
-        # plt.show()
+        #print("Extracted One")
+        #plt.imshow(smaller)
+        #plt.show()
         # plt.imshow(bigger)
         # plt.show()
         return MyImage(smaller)
@@ -2658,6 +2700,33 @@ class Double_Frame(DataFrame):
 
     def get_Image(self):
         raise NotImplementedError
+
+    def get_Image_Dust_DF(self, mat):
+        width = np.shape(mat)[0]
+        height = np.shape(mat)[1]
+        matrix = mat
+
+        for d in self.dust_particles:
+            tuple = d.efficient_Matrix()
+
+            eff_mat, x, y = tuple
+            mat_w = eff_mat.shape[0]
+
+            # ToDo: possible failure
+            x = int(np.round(x.px))  # no px cause dust
+            y = int(np.round(y.px))
+            # plt.imshow(eff_mat)
+            # plt.show()
+            # print(np.max(eff_mat))
+            mat_h = eff_mat.shape[1]
+            for i in range(mat_w):
+                for j in range(mat_h):
+                    new_x = x - math.floor((mat_w / 2)) + i
+                    new_y = y - math.floor(mat_h / 2) + j
+                    if not (0 <= new_x < width and 0 <= new_y < height):
+                        continue
+                    matrix[new_x, new_y] += eff_mat[i, j]
+        #self.img.addMatrix(matrix)
 
     def createText(self):
         raise NotImplementedError
