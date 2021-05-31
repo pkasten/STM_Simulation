@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import time, os, math
 import Configuration as cfg
@@ -172,6 +173,58 @@ def turnMatrix(mat, theta):  # ToDo: Improve Anti-Aliasing
                         pass
 
     return new_mat, (w_new / w) * cx, (h_new / h) * cy
+
+def approx_invers(f, min=0, max=400):
+    genauigkeit = 5
+    y_steps = 500
+    xs_n = []
+    ys_n = []
+    for i in range(min, max):
+        xs_n.append(i)
+        ys_n.append(f(i))
+
+    plt.plot(xs_n, ys_n)
+    plt.title(f)
+    plt.show()
+
+    xs_inv = []
+    ys_inv = []
+
+    for l in np.linspace(genauigkeit * int(np.min(ys_n) - 0.5), genauigkeit * int(np.max(ys_n)+0.5), y_steps):
+        i = l/genauigkeit
+        testx = []
+        testd = []
+        new_min = int(f(min) - 2)
+        new_max = int(f(max) + 2)
+
+        for k in range(genauigkeit * new_min, genauigkeit* new_max):
+            x = k / genauigkeit
+            testx.append(x)
+            testd.append(abs(f(x) - i))
+
+        dmin = np.min(testd)
+        for h in range(len(testx) - 1, 0, -1):
+            if testd[h] == dmin:
+                xs_inv.append(f(testx[h]))
+                ys_inv.append(testx[h])
+                break
+            #print("Not it")
+
+    print(xs_inv)
+    print(ys_inv)
+
+
+
+
+
+
+    plt.plot(xs_inv, ys_inv)
+    plt.title("Inverse")
+    plt.show()
+
+
+
+
 
 
 # def statistics(name, duration):

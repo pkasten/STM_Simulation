@@ -22,6 +22,7 @@ from multiprocessing.managers import BaseManager
 from My_SXM import My_SXM
 import matplotlib.pyplot as plt
 from Molecule import Tests_Gitterpot
+import Functions
 
 
 def test_frame(data_frame):
@@ -186,14 +187,18 @@ if __name__ == "__main__":
     #    dat.save()
 
     start = time.perf_counter()
-    for i in range(0, 360, 10):
-        dat = DataFrame(fn)
-        dat.add_Ordered(Molecule, theta= np.pi * i / 180)
-        dat.get_Image()
-        dat.save()
-        print("Dur: {:.2f}s".format(time.perf_counter() - start))
-        start = time.perf_counter()
-        break
+    f = lambda x: np.exp(0.02*x) + x
+    approx_invers(f)
+    print("Dur: {:.2f}s".format(time.perf_counter() - start))
+
+    #for i in range(0, 360, 10):
+    #    dat = DataFrame(fn)
+    #    dat.add_Ordered(Molecule, theta= np.pi * i / 180)
+    #    dat.get_Image()
+    #    dat.save()
+    #    print("Dur: {:.2f}s".format(time.perf_counter() - start))
+    #    start = time.perf_counter()
+    #    break
         #for i in range(5):
     #    dat = DataFrame(fn)
     #    dat.add_Ordered()

@@ -80,33 +80,41 @@ class MyImage:
     def shift_image(self, f_horiz=None, f_vert=None):
         style = "Exp"
         print("Prev:")
+        factor_x = 1.1
+        factor_y = 1.1
         plt.imshow(self.colors)
         plt.show()
         if style == "Linear":
             if f_horiz is None:
-                f_h = lambda x: 1.1 * x
+                f_h = lambda x: factor_x * x
             else:
                 f_h = f_horiz
             if f_vert is None:
-                f_v = lambda y: 1.1 * y
+                f_v = lambda y: factor_y * y
             else:
                 f_v = f_vert
 
-            f_h_inv = lambda x: x/1.1
-            f_v_inv = lambda x: x/1.1
+            f_h_inv = lambda x: x/factor_x
+            f_v_inv = lambda x: x/factor_y
         elif style == "Exp":
+            wid, heigth = np.shape(self.colors)
+            gamma_x = np.log(wid * factor_x) / wid
+            gamma_y = np.log(heigth * factor_y) / heigth
 
             if f_horiz is None:
-                f_h = lambda x: 1.1 * x
+                f_h = lambda x: x + np.exp(gamma_x * x)
             else:
                 f_h = f_horiz
             if f_vert is None:
-                f_v = lambda y: 1.1 * y
+                f_v = lambda y: y + np.exp(gamma_y * y)
             else:
                 f_v = f_vert
 
-            f_h_inv = lambda x: x / 1.1
-            f_v_inv = lambda x: x / 1.1
+            f_h_inv = lambda x: np.log(x) / gamma_x
+            f_v_inv = lambda x: np.log(x) / gamma_y
+
+            for i in range(380):
+                print("f({}) = {:.1f}".format(i, f_h_inv(i)))
         else:
             raise NotImplementedError
 
@@ -115,8 +123,8 @@ class MyImage:
 
         newmat = np.zeros((w, h))
 
-        for i in range(np.shape(newmat)[0]):
-            for j in range(np.shape(newmat)[1]):
+        for i in range(1,np.shape(newmat)[0]):
+            for j in range(1,np.shape(newmat)[1]):
                 x_w = f_h_inv(i)
                 #y_w = f_v(j)
                 x_lw = int(np.floor(x_w))
