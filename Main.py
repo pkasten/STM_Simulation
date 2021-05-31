@@ -184,16 +184,21 @@ if __name__ == "__main__":
     #    #dat.add_Dust(DustParticle(np.array([200, 200]), color=i))
     #    dat.get_Image()
     #    dat.save()
-    #for i in range(0, 360, 10):
-    #    dat = DataFrame(fn)
-    #    dat.add_Ordered(Molecule, theta= np.pi * i / 180)
-    #    dat.get_Image()
-    #    dat.save()
-    for i in range(5):
+
+    start = time.perf_counter()
+    for i in range(0, 360, 10):
         dat = DataFrame(fn)
-        dat.addParticles()
+        dat.add_Ordered(Molecule, theta= np.pi * i / 180)
         dat.get_Image()
         dat.save()
+        print("Dur: {:.2f}s".format(time.perf_counter() - start))
+        start = time.perf_counter()
+        break
+        #for i in range(5):
+    #    dat = DataFrame(fn)
+    #    dat.add_Ordered()
+    #    dat.get_Image()
+    #    dat.save()
 
     #DustParticle.test()
 

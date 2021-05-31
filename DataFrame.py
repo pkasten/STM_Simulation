@@ -73,6 +73,7 @@ class DataFrame:
         self.usedust = self.dust_amount != 0
         self.dust_particles = []
         self.max_height = cfg.get_max_height()
+        self.use_img_shift = cfg.get_use_img_shift()
 
     # returns iterator over Particles
     def getIterator(self):
@@ -458,7 +459,30 @@ class DataFrame:
                     p = _get_thatnot_overlaps(maximum_tries)
                     self.objects.append(p)
 
-    def add_Ordered(self, Object=Molecule, theta=None):
+    def _add_at_pos_dragged(self,Object, pos, theta):
+        def _set_p(fak):
+            p = Object(pos, theta)
+            p.drag(fak * self.dragging_speed.px, self.raster_angle)
+            return p
+
+        if len(self.objects) == 0:
+            print(1)
+            return _set_p(1)
+        f = 1.0
+        p = _set_p(f)
+        for i in range(10):
+            if self._overlaps_any(p):
+                # print("Retry_b")
+                f *= 0.8
+                p = _set_p(f)
+            else:
+                print("-> {:.3f}".format(f))
+                return p
+        print("MaxTries Exhausted_b")
+        print("-> {:.3f}".format(f))
+        return p
+
+    def add_Ordered(self, Object=Molecule, theta=None, factor=1.0):
         offset = Distance(False, cfg.get_px_overlap())
         self.passed_args_Ordered = (Object, theta)
 
@@ -473,8 +497,8 @@ class DataFrame:
             # theta_0 = 0 # ToDo Rem
             # theta_0 = bog(-4.5636)
             #print("theta0: {:.1f}°".format(theta_0 / np.pi * 180))
-            dist_h = Distance(True, 13.226)
-            dist_v = Distance(True, 13.1933)
+            dist_h = Distance(True, 13.226) * factor
+            dist_v = Distance(True, 13.1933) * factor
             gv_a = np.array([dist_h * np.cos(theta_0), dist_h * np.sin(theta_0)])
             gv_b = np.array([-dist_v * np.sin(theta_0), dist_v * np.cos(theta_0)])
 
@@ -503,48 +527,114 @@ class DataFrame:
                 self.objects.append(Object(pos=pair[0], theta=pair[1]))
 
         def add_ordered_NCPh4CN(theta=None):
+
             if theta is None:
                 theta_0 = random.random() * np.pi * 2
             else:
                 theta_0 = theta
             chirality = np.sign(random.random() - 0.5)
-
-            dist_v = Distance(True, 23.75)
-            dist_h = Distance(True, 22.23)
-
             if chirality > 0:
-                gv_a = np.array([dist_h * np.cos(theta_0), dist_h * np.sin(theta_0)])
-                gv_b = np.array([-dist_v * np.sin(theta_0), dist_v * np.cos(theta_0)])
+                ang_ud = (theta_0 + bog(217.306)) % (2*np.pi)
+                ang_lr = (theta_0 + bog(134.136)) % (2*np.pi)
+                ud_lat_ang = (theta_0 + bog(189.595)) % (2*np.pi)
+                lr_lat_ang = (theta_0 + bog(100.773)) % (2*np.pi)
+                cross_ang = (theta_0 + bog(147.494)) % (2*np.pi)
+
             else:
-                gv_a = np.array([dist_h * np.cos(theta_0 + np.pi / 4), dist_h * np.sin(theta_0 + np.pi / 4)])
-                gv_b = np.array([-dist_v * np.sin(theta_0 + np.pi / 4), dist_v * np.cos(theta_0 + np.pi / 4)])
+                ang_ud = (theta_0 + bog(142.694)) % (2*np.pi)
+                ang_lr = (theta_0 + bog(225.864)) % (2*np.pi)
+                ud_lat_ang = (theta_0 + bog(170.405)) % (2*np.pi) # Nicht sicher mit unsymmetr Molekülen
+                lr_lat_ang = (theta_0 + bog(259.227)) % (2*np.pi)
+                cross_ang = (theta_0 + bog(212.506)) % (2*np.pi)
+
+
+            ud_dist = Distance(True, 24.1689) * factor
+            lr_dist = Distance(True, 22.7745) * factor
+
+            crossU_R = Distance(True, 17.1015) * factor
+
+            vec_ud_lr = np.array([crossU_R * np.sin(cross_ang), -crossU_R *np.cos(cross_ang)])
+            vec_r = np.array([lr_dist * np.sin(lr_lat_ang), -lr_dist * np.cos(lr_lat_ang)])
+            vec_u = np.array([ud_dist * np.sin(ud_lat_ang), -ud_dist * np.cos(ud_lat_ang)])
+
+            #print("LR: {:.1f}°".format(lr_lat_ang/3.14159 * 180))
+            #print(vec_r)
+            #print("UD: {:.1f}°".format(ud_lat_ang/3.14159 * 180))
+            #print(vec_u)
 
             pairs = []
 
-            ang_a = theta_0 + bog(25)
-            ang_b = theta_0 + bog(123.1)
+            i = 5
+            j = -10
+
+
 
             start = np.array([Distance(True, 0), Distance(True, 0)])
-            current = np.array([0, 0])
-            a_temp = self.img_width / gv_b[0] if gv_b[0].px != 0 else -np.infty
-            b_temp = self.img_height / gv_b[1] if gv_b[1].px != 0 else -np.infty
-            j_max = int(np.ceil(max(a_temp, b_temp)))
-            c_temp = ((self.img_width + j_max * gv_b[0]) / gv_a[0]) if gv_a[0].px != 0 else j_max
-            i_max = int(np.ceil(c_temp))
-            for i in range(-10, max(100, i_max)):
-                for j in range(-10, max(100, i_max)):
-                    current = start + (gv_a * i) + (gv_b * j)
+            for i in range(-100, 100):
+                for j in range(-100, 100):
+                    current = start + (vec_u * i) + (vec_r * j)
                     if self.img_width + offset > current[0] > (-1) * offset and offset + self.img_height > current[
                         1] > (-1) * offset:
-                        pairs.append((current, ang_a if (i + j) % 2 == 0 else ang_b))
+                        pairs.append((current, ang_ud))
+                        #print("No {} Appended ({},{})at {}".format(len(pairs), i, j, current))
+                    secnd = current + vec_ud_lr
+                    if self.img_width + offset > secnd[0] > (-1) * offset and offset + self.img_height > secnd[
+                        1] > (-1) * offset:
+                        pairs.append((secnd, ang_lr))
+                       # print("No {} Appended ({},{})at {}".format(len(pairs), i, j, secnd))
+
 
             for pair in pairs:
+                #print(pair)
                 self.objects.append(Object(pos=pair[0], theta=pair[1]))
+
+
+
+
+
+        #    if theta is None:
+        #        theta_0 = random.random() * np.pi * 2
+        #    else:
+        #        theta_0 = theta
+        #    chirality = np.sign(random.random() - 0.5)#
+
+        #    dist_v = Distance(True, 23.75)
+        #    dist_h = Distance(True, 22.23)
+        #    chirality = -1
+
+        #    if chirality > 0:
+        #        gv_a = np.array([dist_h * np.cos(theta_0), dist_h * np.sin(theta_0)])
+        #        gv_b = np.array([-dist_v * np.sin(theta_0), dist_v * np.cos(theta_0)])
+        #    else:
+        #        gv_a = np.array([dist_h * np.cos(theta_0 + np.pi / 4), dist_h * np.sin(theta_0 + np.pi / 4)])
+        #        gv_b = np.array([-dist_v * np.sin(theta_0 + np.pi / 4), dist_v * np.cos(theta_0 + np.pi / 4)])
+
+        #    pairs = []
+
+        #    ang_a = (theta_0 + bog(25)) % (2*np.pi)
+        #    ang_b = (theta_0 + bog(123.1)) % (2 * np.pi)
+
+        #    start = np.array([Distance(True, 0), Distance(True, 0)])
+        #    current = np.array([0, 0])
+        #    a_temp = self.img_width / gv_b[0] if gv_b[0].px != 0 else -np.infty
+        #    b_temp = self.img_height / gv_b[1] if gv_b[1].px != 0 else -np.infty
+        #    j_max = int(np.ceil(max(a_temp, b_temp)))
+        #    c_temp = ((self.img_width + j_max * gv_b[0]) / gv_a[0]) if gv_a[0].px != 0 else j_max
+        #    i_max = int(np.ceil(c_temp))
+        #    for i in range(-10, max(100, i_max)):
+        #        for j in range(-10, max(100, i_max)):
+        #            current = start + (gv_a * i) + (gv_b * j)
+        #            if self.img_width + offset > current[0] > (-1) * offset and offset + self.img_height > current[
+        #                1] > (-1) * offset:
+        #                pairs.append((current, ang_a if (i + j) % 2 == 0 else ang_b))
+
+        #    for pair in pairs:
+        #        self.objects.append(Object(pos=pair[0], theta=pair[1]))
 
         def add_ordered_NCPh5CN(theta=None):
 
             def add_Hexa(center, start_ang, chirality):
-                d = Distance(True, 22.457)
+                d = Distance(True, 22.457) * factor
 
                 def turnvec(len, ang):
                     return np.array([len * np.sin(ang), -len * np.cos(ang)])
@@ -592,7 +682,7 @@ class DataFrame:
 
 
                 for pair in pairs:
-                    self.objects.append(Molecule(pos=pair[0], theta=pair[1]))
+                    self.objects.append(Object(pos=pair[0], theta=pair[1]))
 
 
             if theta is None:
@@ -605,7 +695,7 @@ class DataFrame:
             #add_Hexa(np.array([self.img_width/2, self.img_height/2]), theta_0)
             #return
 
-            gv_dist = Distance(True, 55.4938)
+            gv_dist = Distance(True, 55.4938) * factor
             gv_a_w = theta_0 + bog(179.782)
             gv_b_w = theta_0 + bog(119.782)
 
@@ -644,6 +734,11 @@ class DataFrame:
             add_ordered_NCPh5CN(theta)
         else:
             raise NotImplementedError
+
+        for part in self.objects:
+            if random.random() < self.dragging_possibility:
+                self.objects.remove(part)
+                self.objects.append(self._add_at_pos_dragged(Molecule, pos=part.pos, theta=part.theta))
 
     def is_overlapping(self, part):
         for p in self.objects:
@@ -1419,7 +1514,7 @@ class DataFrame:
         max = len(self.objects)
         ct = 0
         for part in self.objects:
-            #print("Visu_progress: {:.1f}%".format(100 * ct/max))
+            print("Visu_progress: {:.1f}%".format(100 * ct/max))
             ct += 1
             for tuple in part.get_visualization():
                 # print("Tupel:{}".format(tuple))
@@ -1510,7 +1605,13 @@ class DataFrame:
 
         if self.use_noise:
             self.img.noise(self.image_noise_mu, self.image_noise_sigma)
+
+        if self.use_img_shift:
+            self.img.shift_image()
+
         self.img.updateImage()
+
+
 
     def createText(self):
         strings = [Particle.str_Header()]

@@ -194,7 +194,6 @@ class Particle:
         else:
             return 1 / (np.exp(self.fermi_exp * (x - mu.px)) + 1)
 
-
     def _color(self, height):
 
         return 255 * height.px / self.max_height.px
@@ -423,15 +422,12 @@ class Particle:
                     continue
         return False
 
-
     def _eval_overlap(self, particle, mat, x, y):
         a, b, c = particle.efficient_Matrix_turned()
         #if self._eval_overlap_matrizes(a, b, c, mat, x, y):
             #print("eval_overlap true for {}, {} and {}, {}".format(b, c, x, y))
 
         return self._eval_overlap_matrizes(a, b, c, mat, x, y)
-
-
 
     def get_visualization(self):
         ret = []

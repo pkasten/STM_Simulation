@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 import numpy as np
 import Configuration as cfg
 from Distance import Distance
@@ -86,7 +88,7 @@ class Atom:
         #print("Fermi(x={:.2f}m mu={:.2f}) = {:.2f}".format(x, mu.px, fermi_ret))
         return fermi_ret
 
-
+    @lru_cache
     def show_rel(self, x, y):
 
         d = np.sqrt(np.power(x, 2) + np.power(y, 2))

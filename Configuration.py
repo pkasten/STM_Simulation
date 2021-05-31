@@ -36,20 +36,20 @@ val_sxm_folder = None
 
 
 cat_image_basics = 'image_settings'
-def_px_per_angstrom = 'Pixel per Angstrom', 20
+def_px_per_angstrom = 'Pixel per Angstrom', 2
 def_prefix_image = 'prefix_image', 'Image'
 def_suffix_image = 'suffix_image', '.png'
 def_prefix_data = 'prefix_data', 'Data'
 def_suffix_data = 'suffix_data', '.txt'
 def_prefix_sxm = 'prefix_sxm', 'Image'
 def_suffix_sxm = 'suffix_sxm', '.sxm'
-def_width = 'width (Ang)', 20
-def_height = 'height (Ang)', 20
-def_particles = 'no_of_particles', int(def_width[1] * def_height[1] / 16000)
+def_width = 'width (Ang)', 100
+def_height = 'height (Ang)', 100
+def_particles = 'no_of_particles', 20
 def_px_overlap = 'pixels_overlap (in px)', 40
 def_anti_aliasing = 'Anti-Aliasing', 1
-def_noise_mu = 'Image-noise_Average', 0
-def_noise_std_deriv = 'Image-noise-Standard_derivation', 0.1 * def_noise_mu[1]
+def_noise_mu = 'Image-noise_Average', 40
+def_noise_std_deriv = 'Image-noise-Standard_derivation', 0.7 * def_noise_mu[1]
 image_basics_settings = [def_prefix_image, def_suffix_image, def_prefix_data, def_suffix_data, def_prefix_sxm,
                          def_suffix_sxm, def_px_per_angstrom, def_width, def_height,
                          def_particles, def_px_overlap, def_anti_aliasing, def_noise_mu, def_noise_std_deriv]
@@ -72,11 +72,11 @@ val_noise_std_deriv = None
 
 
 cat_particle_properties = 'particle_properties'
-def_width_part = 'Particle width (Ang)', 0.3
-def_length_part = 'Particle length (Ang)', 3
-def_height_part = 'Particle height (Ang)', 0.3
+def_width_part = 'Particle width (Ang)', 0.4
+def_length_part = 'Particle length (Ang)', 20
+def_height_part = 'Particle height (Ang)', 5
 def_image_path = 'image_path', ""
-def_part_max_height = 'max_height (Ang)', 1
+def_part_max_height = 'max_height (Ang)', 7.3
 def_std_deriv = 'std_derivate_grain_border', def_length_part[1] / 5
 def_fermi_exp = '1/kbT', 0.1 * def_length_part[1]
 def_angle_characteristic_length = 'Angle Characteristic_relative_length', 0
@@ -118,14 +118,15 @@ val_crystal_orientation_4 = None
 cat_special = 'special settings'
 def_overlap_threshold = 'overlapping_threshold', 10
 def_dragging_error = 'dragging errors', 0
-def_dragging_speed = 'dragging speed', 0.1 * def_width[1]
+def_dragging_speed = 'dragging speed',  0.5 * def_width[1]
 def_dragging_possibility = 'dragging possibility', 0
 def_raster_angle = 'raster_angle (degrees)', 0
 def_doubletip_possibility= 'possibility of two tips', 0
 def_atomic_step_height = 'Height of atomic step(ang)', 2.3
-def_atomic_step_poss = 'Possibility of atomc step', 0.1
-def_dust_amount = 'Medium no of dust particles', 0
-special_settings = [def_overlap_threshold, def_dragging_error, def_dragging_speed, def_dragging_possibility, def_raster_angle, def_doubletip_possibility, def_atomic_step_height, def_atomic_step_poss, def_dust_amount]
+def_atomic_step_poss = 'Possibility of atomc step', 0
+def_dust_amount = 'Medium no of dust particles', 15
+def_use_imgshift = 'Use Image shift', 0
+special_settings = [def_overlap_threshold, def_dragging_error, def_dragging_speed, def_dragging_possibility, def_raster_angle, def_doubletip_possibility, def_atomic_step_height, def_atomic_step_poss, def_dust_amount, def_use_imgshift]
 
 val_overlap_threshold = None
 val_dragging_error = None
@@ -136,6 +137,7 @@ val_doubletip_possibility = None
 val_atomc_step_height = None
 val_atomic_step_poss = None
 val_dust_amount = None
+val_use_img_shift = None
 
 cat_lattice = 'lattice'
 def_nn_dist = 'Distance between nearest neigbours (Ang)', 2.88
@@ -189,7 +191,7 @@ def update_params():
     global val_crystal_orientation_2, val_crystal_orientation_3, val_crystal_orientation_4, val_overlap_threshold
     global val_dragging_error, val_raster_angle, val_dragging_speed, val_dragging_possibility, val_doubletip_possibility
     global val_prefix_sxm, val_suffix_sxm, val_sxm_folder, val_px_per_angstrom, val_nn_dist, val_atomc_step_height, val_atomic_step_poss
-    global val_dust_amount
+    global val_dust_amount, val_use_img_shift
     val_threads = int(conf[cat_pc][def_threads[0]])
     val_images_per_thread = int(conf[cat_pc][def_images_per_thread[0]])
     val_image_folder = conf[cat_pc][def_image_folder[0]]
@@ -234,6 +236,7 @@ def update_params():
     val_atomc_step_height = Distance(True, float(conf[cat_special][def_atomic_step_height[0]]))
     val_atomic_step_poss = float(conf[cat_special][def_atomic_step_poss[0]])
     val_doubletip_possibility = float(conf[cat_special][def_doubletip_possibility[0]])
+    val_use_img_shift = bool(int(conf[cat_special][def_use_imgshift[0]]))
     val_nn_dist = Distance(True, float(conf[cat_lattice][def_nn_dist[0]]))
     val_dust_amount = float(conf[cat_special][def_dust_amount[0]])
 
@@ -614,3 +617,7 @@ def get_dust_amount():
     global settings_file
     if not initialized: setupConfigurationManager()
     return val_dust_amount
+
+def get_use_img_shift():
+    if not initialized: setupConfigurationManager()
+    return val_use_img_shift
