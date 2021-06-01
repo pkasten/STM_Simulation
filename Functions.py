@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 import matplotlib.pyplot as plt
 import numpy as np
 import time, os, math
@@ -214,13 +216,31 @@ def approx_invers(f, min=0, max=400):
     print(ys_inv)
 
 
+maxInv = max( int(np.ceil(cfg.get_height().px)), int(np.ceil(cfg.get_width().px)))
+def get_invers_function(f, min=0, max=maxInv, acc=20):
+    genauigkeit = acc
+    xs = []
+    ys = []
+    for i in range(genauigkeit * min, genauigkeit * max):
+        x_loc = i / genauigkeit
+        y_loc = f(x_loc)
+        xs.append(x_loc)
+        ys.append(y_loc)
+
+    @lru_cache
+    def f_inv(x):
+        distances = [abs(y_lc - x) for y_lc in ys]
+        dmin = np.min(distances)
+        #print("dmin = {:.3f}".format(dmin))
+        for i in range(len(distances)):
+            if distances[i] == dmin:
+                #print("Ret xs[i]  {}".format(xs[i]))
+                return xs[i]
+
+        return np.infty
 
 
-
-
-    plt.plot(xs_inv, ys_inv)
-    plt.title("Inverse")
-    plt.show()
+    return f_inv
 
 
 

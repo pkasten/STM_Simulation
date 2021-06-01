@@ -3,7 +3,7 @@ from PIL import Image
 import numpy as np
 import Configuration as cfg
 import os, random
-
+from Functions import get_invers_function
 
 # import Particle
 
@@ -78,12 +78,18 @@ class MyImage:
         self.updateImage()
 
     def shift_image(self, f_horiz=None, f_vert=None):
+
+        #testmat = np.ones(np.shape(self.colors))
+        #testmat *= 200
+        #self.colors = testmat
+
         style = "Exp"
         print("Prev:")
         factor_x = 1.1
         factor_y = 1.1
         plt.imshow(self.colors)
         plt.show()
+
         if style == "Linear":
             if f_horiz is None:
                 f_h = lambda x: factor_x * x
@@ -94,12 +100,19 @@ class MyImage:
             else:
                 f_v = f_vert
 
+            print("Calcing inv")
             f_h_inv = lambda x: x/factor_x
             f_v_inv = lambda x: x/factor_y
+            #f_h_inv = get_invers_function(f_h)
+            #f_v_inv = get_invers_function(f_v)
+            print("Got inv")
         elif style == "Exp":
             wid, heigth = np.shape(self.colors)
-            gamma_x = np.log(wid * factor_x) / wid
-            gamma_y = np.log(heigth * factor_y) / heigth
+            #gamma_x = np.log(wid * factor_x) / wid
+            #gamma_y = np.log(heigth * factor_y) / heigth
+            gamma_x = np.log((factor_x - 1)*wid) / wid
+            gamma_y = np.log((factor_y - 1)*heigth) / heigth
+
 
             if f_horiz is None:
                 f_h = lambda x: x + np.exp(gamma_x * x)
@@ -110,11 +123,16 @@ class MyImage:
             else:
                 f_v = f_vert
 
-            f_h_inv = lambda x: np.log(x) / gamma_x
-            f_v_inv = lambda x: np.log(x) / gamma_y
+            #f_h_inv = lambda x: np.log(x) / gamma_x
+            #f_v_inv = lambda x: np.log(x) / gamma_y
+            f_h_inv = get_invers_function(f_h)
+            f_v_inv = get_invers_function(f_v)
 
-            for i in range(380):
-                print("f({}) = {:.1f}".format(i, f_h_inv(i)))
+            print("Finv (0)")
+            print(f_v_inv(0))
+
+            #for i in range(380):
+            #    print("f({}) = {:.1f}".format(i, f_h_inv(i)))
         else:
             raise NotImplementedError
 
@@ -123,8 +141,8 @@ class MyImage:
 
         newmat = np.zeros((w, h))
 
-        for i in range(1,np.shape(newmat)[0]):
-            for j in range(1,np.shape(newmat)[1]):
+        for i in range(0, np.shape(newmat)[0]):
+            for j in range(0, np.shape(newmat)[1]):
                 x_w = f_h_inv(i)
                 #y_w = f_v(j)
                 x_lw = int(np.floor(x_w))
@@ -196,3 +214,33 @@ class MyImage:
             os.mkdir(cfg.get_image_folder())
             self.img.save(filename)
         return filename
+
+    def rgb_map(self, h):
+        xs_blue = [0, 85, 160, 220, 255]
+        ys_blue = [255, 255, 179, 42, 2]
+
+        xs_green = [0, 17, 47, 106, 182, 232, 255]
+        ys_green = [255, 255, 234, 159, 47, 7, 6]
+
+        xs_red = [0, 32, 94, 152, 188, 255]
+        ys_red = [255, 136, 57, 17, 6, 6]
+
+
+        r = None
+        g = None
+        b = None
+        for i in range(len(xs_green)-1):
+            if xs_green[i] <= h < xs_green[i+1]:
+                g = ys_green[i] + (ys_green[i+1]/ys_green[i]) * ((h - xs_green[i])/(xs_green[i+1] - xs_green[i]))
+                break
+        if g is None:
+            if h > xs_green[-1]:
+                g = ys_green[-1]
+            elif h < xs_green[0]:
+                g = ys_green[0]
+            else:
+                raise ValueError
+
+        # ToDo: Continue
+
+        return r, g, b

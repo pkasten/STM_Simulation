@@ -168,6 +168,47 @@ def testStdderiv(fn_gen, l):
         s += inc
         # print(s)
 
+def test_finv_acc():
+    start = time.perf_counter()
+    # f = lambda x: np.exp(0.02*x) + x
+    # approx_invers(f)
+    # print("Dur: {:.2f}s".format(time.perf_counter() - start))
+    times = []
+    accs = []
+    for i in range(1,1000, 5):
+        start = time.perf_counter()
+        f = lambda x: np.exp(x)
+        finv = get_invers_function(f, 0, 400, i)
+
+        xs = [i for i in range(400)]
+        ys = [finv(i) for i in range(400)]
+        times.append(time.perf_counter() - start)
+        accs.append(i)
+
+    plt.plot(accs, times)
+    plt.title("Computing time over Accuracy")
+    plt.show()
+
+def test_finv_len():
+    start = time.perf_counter()
+    # f = lambda x: np.exp(0.02*x) + x
+    # approx_invers(f)
+    # print("Dur: {:.2f}s".format(time.perf_counter() - start))
+    times = []
+    lens = []
+    for i in range(1,100,5):
+        start = time.perf_counter()
+        f = lambda x: np.exp(x)
+        finv = get_invers_function(f, 0, i)
+
+        xs = [i for i in range(400)]
+        ys = [finv(i) for i in range(400)]
+        times.append(time.perf_counter() - start)
+        lens.append(i)
+
+    plt.plot(lens, times)
+    plt.title("Computing time over Accuracy")
+    plt.show()
 
 if __name__ == "__main__":
     clearLog()
@@ -178,6 +219,7 @@ if __name__ == "__main__":
     #m = Molecule()
     #Tests_Gitterpot().test()
 
+    #test_finv_acc()
 
     #for i in range(1):
     #    dat = DataFrame(fn)
@@ -187,18 +229,37 @@ if __name__ == "__main__":
     #    dat.save()
 
     start = time.perf_counter()
-    f = lambda x: np.exp(0.02*x) + x
-    approx_invers(f)
-    print("Dur: {:.2f}s".format(time.perf_counter() - start))
-
-    #for i in range(0, 360, 10):
-    #    dat = DataFrame(fn)
-    #    dat.add_Ordered(Molecule, theta= np.pi * i / 180)
-    #    dat.get_Image()
-    #    dat.save()
-    #    print("Dur: {:.2f}s".format(time.perf_counter() - start))
+    #f = lambda x: np.exp(0.02*x) + x
+    #approx_invers(f)
+    #print("Dur: {:.2f}s".format(time.perf_counter() - start))
+    #times = []
+    #accs = []
+    #f#or i in range(1000):
     #    start = time.perf_counter()
-    #    break
+    #    f = lambda x:np.exp(x)
+    #    finv = get_invers_function(f, 0, 400, i)##
+
+    #    xs = [i for i in range(400)]
+     #   ys = [finv(i) for i in range(400)]
+      #  times.append(time.perf_counter() - start)
+       # accs.append(i)
+
+   # plt.plot(accs, times)
+   # plt.title("Computing time over Accuracy")
+   # plt.show()
+
+
+    for i in range(0, 360, 10):
+        dat = DataFrame(fn)
+        print("AO")
+        dat.add_Ordered(Molecule, theta=np.pi * i / 180)
+        print("GI")
+        dat.get_Image()
+        print("SV")
+        dat.save()
+        print("Dur: {:.2f}s".format(time.perf_counter() - start))
+        start = time.perf_counter()
+        break
         #for i in range(5):
     #    dat = DataFrame(fn)
     #    dat.add_Ordered()
