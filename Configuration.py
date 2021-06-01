@@ -43,6 +43,7 @@ def_prefix_data = 'prefix_data', 'Data'
 def_suffix_data = 'suffix_data', '.txt'
 def_prefix_sxm = 'prefix_sxm', 'Image'
 def_suffix_sxm = 'suffix_sxm', '.sxm'
+def_color_scheme = 'Color scheme (gray, WSXM)', 'WSXM'
 def_width = 'width (Ang)', 100
 def_height = 'height (Ang)', 100
 def_particles = 'no_of_particles', 20
@@ -51,7 +52,7 @@ def_anti_aliasing = 'Anti-Aliasing', 1
 def_noise_mu = 'Image-noise_Average', 40
 def_noise_std_deriv = 'Image-noise-Standard_derivation', 0.7 * def_noise_mu[1]
 image_basics_settings = [def_prefix_image, def_suffix_image, def_prefix_data, def_suffix_data, def_prefix_sxm,
-                         def_suffix_sxm, def_px_per_angstrom, def_width, def_height,
+                         def_suffix_sxm, def_color_scheme, def_px_per_angstrom, def_width, def_height,
                          def_particles, def_px_overlap, def_anti_aliasing, def_noise_mu, def_noise_std_deriv]
 
 
@@ -62,6 +63,7 @@ val_prefix_data = None
 val_suffix_data = None
 val_prefix_sxm = None
 val_suffix_sxm = None
+val_color_scheme = None
 val_width = None
 val_height = None
 val_particles = None
@@ -191,7 +193,7 @@ def update_params():
     global val_crystal_orientation_2, val_crystal_orientation_3, val_crystal_orientation_4, val_overlap_threshold
     global val_dragging_error, val_raster_angle, val_dragging_speed, val_dragging_possibility, val_doubletip_possibility
     global val_prefix_sxm, val_suffix_sxm, val_sxm_folder, val_px_per_angstrom, val_nn_dist, val_atomc_step_height, val_atomic_step_poss
-    global val_dust_amount, val_use_img_shift
+    global val_dust_amount, val_use_img_shift, val_color_scheme
     val_threads = int(conf[cat_pc][def_threads[0]])
     val_images_per_thread = int(conf[cat_pc][def_images_per_thread[0]])
     val_image_folder = conf[cat_pc][def_image_folder[0]]
@@ -207,6 +209,7 @@ def update_params():
     val_suffix_image = conf[cat_image_basics][def_suffix_image[0]]
     val_suffix_data = conf[cat_image_basics][def_suffix_data[0]]
     val_suffix_sxm = conf[cat_image_basics][def_suffix_sxm[0]]
+    val_color_scheme = conf[cat_image_basics][def_color_scheme[0]]
     val_px_overlap = int(conf[cat_image_basics][def_px_overlap[0]])
     val_anti_aliasing = bool(int(conf[cat_image_basics][def_anti_aliasing[0]]))
     val_noise_mu = float(conf[cat_image_basics][def_noise_mu[0]])
@@ -621,3 +624,7 @@ def get_dust_amount():
 def get_use_img_shift():
     if not initialized: setupConfigurationManager()
     return val_use_img_shift
+
+def get_color_scheme():
+    if not initialized: setupConfigurationManager()
+    return val_color_scheme

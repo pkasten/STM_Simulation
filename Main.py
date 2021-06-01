@@ -248,18 +248,18 @@ if __name__ == "__main__":
    # plt.title("Computing time over Accuracy")
    # plt.show()
 
+    every_thread_one()
 
-    for i in range(0, 360, 10):
-        dat = DataFrame(fn)
-        print("AO")
-        dat.add_Ordered(Molecule, theta=np.pi * i / 180)
-        print("GI")
-        dat.get_Image()
-        print("SV")
-        dat.save()
-        print("Dur: {:.2f}s".format(time.perf_counter() - start))
-        start = time.perf_counter()
-        break
+    #img = MyImage()
+    #img.rgb_map_test()
+    #for i in range(0, 360, 10):
+    #    dat = DataFrame(fn)
+    #    dat.add_Ordered(Molecule, theta=np.pi * i / 180)
+    #    dat.get_Image()
+    #    dat.save()
+    #    print("Dur: {:.2f}s".format(time.perf_counter() - start))
+    #    start = time.perf_counter()
+    ##    break
         #for i in range(5):
     #    dat = DataFrame(fn)
     #    dat.add_Ordered()

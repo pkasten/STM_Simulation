@@ -285,7 +285,7 @@ def measureTime(func):
         ret = func(*args)
         duration = time.process_time() - start
         # statistics(func.__name__, duration * 1000)
-        log(str(func.__name__) + ": {:.3f} ms \n".format(duration * 1000))
+        log(str(func.__name__) + ": {} ms \n".format(duration * 1000))
         return ret
 
     return measure

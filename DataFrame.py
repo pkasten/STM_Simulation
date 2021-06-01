@@ -89,8 +89,11 @@ class DataFrame:
             self.passed_args_particles = (1, None, True, 1000)
         else:
             if self.passed_args_particles[0] is None:
-                self.passed_args_particles = (len(self.objects), self.passed_args_particles[1], self.passed_args_particles[2], self.passed_args_particles[3])
-            newargs = self.passed_args_particles[0] + 1, self.passed_args_particles[1], self.passed_args_particles[2], self.passed_args_particles[3]
+                self.passed_args_particles = (
+                len(self.objects), self.passed_args_particles[1], self.passed_args_particles[2],
+                self.passed_args_particles[3])
+            newargs = self.passed_args_particles[0] + 1, self.passed_args_particles[1], self.passed_args_particles[2], \
+                      self.passed_args_particles[3]
             self.passed_args_particles = newargs
         if part is None:
             self.objects.append(Particle())
@@ -432,7 +435,7 @@ class DataFrame:
             # print("#Obj: {}, has Overlaps: {}".format(len(self.objects), self.has_overlaps()))
             return p
 
-        #self.passed_args_particles = (amount, coverage, overlapping, maximum_tries)
+        # self.passed_args_particles = (amount, coverage, overlapping, maximum_tries)
         # print("{}, {}, {}".format(self.use_range, self.angle_char_len, overlapping))
         if amount is not None:
             for i in range(amount):
@@ -459,7 +462,7 @@ class DataFrame:
                     p = _get_thatnot_overlaps(maximum_tries)
                     self.objects.append(p)
 
-    def _add_at_pos_dragged(self,Object, pos, theta):
+    def _add_at_pos_dragged(self, Object, pos, theta):
         def _set_p(fak):
             p = Object(pos, theta)
             p.drag(fak * self.dragging_speed.px, self.raster_angle)
@@ -496,7 +499,7 @@ class DataFrame:
                 theta_0 = theta
             # theta_0 = 0 # ToDo Rem
             # theta_0 = bog(-4.5636)
-            #print("theta0: {:.1f}°".format(theta_0 / np.pi * 180))
+            # print("theta0: {:.1f}°".format(theta_0 / np.pi * 180))
             dist_h = Distance(True, 13.226) * factor
             dist_v = Distance(True, 13.1933) * factor
             gv_a = np.array([dist_h * np.cos(theta_0), dist_h * np.sin(theta_0)])
@@ -534,40 +537,37 @@ class DataFrame:
                 theta_0 = theta
             chirality = np.sign(random.random() - 0.5)
             if chirality > 0:
-                ang_ud = (theta_0 + bog(217.306)) % (2*np.pi)
-                ang_lr = (theta_0 + bog(134.136)) % (2*np.pi)
-                ud_lat_ang = (theta_0 + bog(189.595)) % (2*np.pi)
-                lr_lat_ang = (theta_0 + bog(100.773)) % (2*np.pi)
-                cross_ang = (theta_0 + bog(147.494)) % (2*np.pi)
+                ang_ud = (theta_0 + bog(217.306)) % (2 * np.pi)
+                ang_lr = (theta_0 + bog(134.136)) % (2 * np.pi)
+                ud_lat_ang = (theta_0 + bog(189.595)) % (2 * np.pi)
+                lr_lat_ang = (theta_0 + bog(100.773)) % (2 * np.pi)
+                cross_ang = (theta_0 + bog(147.494)) % (2 * np.pi)
 
             else:
-                ang_ud = (theta_0 + bog(142.694)) % (2*np.pi)
-                ang_lr = (theta_0 + bog(225.864)) % (2*np.pi)
-                ud_lat_ang = (theta_0 + bog(170.405)) % (2*np.pi) # Nicht sicher mit unsymmetr Molekülen
-                lr_lat_ang = (theta_0 + bog(259.227)) % (2*np.pi)
-                cross_ang = (theta_0 + bog(212.506)) % (2*np.pi)
-
+                ang_ud = (theta_0 + bog(142.694)) % (2 * np.pi)
+                ang_lr = (theta_0 + bog(225.864)) % (2 * np.pi)
+                ud_lat_ang = (theta_0 + bog(170.405)) % (2 * np.pi)  # Nicht sicher mit unsymmetr Molekülen
+                lr_lat_ang = (theta_0 + bog(259.227)) % (2 * np.pi)
+                cross_ang = (theta_0 + bog(212.506)) % (2 * np.pi)
 
             ud_dist = Distance(True, 24.1689) * factor
             lr_dist = Distance(True, 22.7745) * factor
 
             crossU_R = Distance(True, 17.1015) * factor
 
-            vec_ud_lr = np.array([crossU_R * np.sin(cross_ang), -crossU_R *np.cos(cross_ang)])
+            vec_ud_lr = np.array([crossU_R * np.sin(cross_ang), -crossU_R * np.cos(cross_ang)])
             vec_r = np.array([lr_dist * np.sin(lr_lat_ang), -lr_dist * np.cos(lr_lat_ang)])
             vec_u = np.array([ud_dist * np.sin(ud_lat_ang), -ud_dist * np.cos(ud_lat_ang)])
 
-            #print("LR: {:.1f}°".format(lr_lat_ang/3.14159 * 180))
-            #print(vec_r)
-            #print("UD: {:.1f}°".format(ud_lat_ang/3.14159 * 180))
-            #print(vec_u)
+            # print("LR: {:.1f}°".format(lr_lat_ang/3.14159 * 180))
+            # print(vec_r)
+            # print("UD: {:.1f}°".format(ud_lat_ang/3.14159 * 180))
+            # print(vec_u)
 
             pairs = []
 
             i = 5
             j = -10
-
-
 
             start = np.array([Distance(True, 0), Distance(True, 0)])
             for i in range(-100, 100):
@@ -576,21 +576,16 @@ class DataFrame:
                     if self.img_width + offset > current[0] > (-1) * offset and offset + self.img_height > current[
                         1] > (-1) * offset:
                         pairs.append((current, ang_ud))
-                        #print("No {} Appended ({},{})at {}".format(len(pairs), i, j, current))
+                        # print("No {} Appended ({},{})at {}".format(len(pairs), i, j, current))
                     secnd = current + vec_ud_lr
                     if self.img_width + offset > secnd[0] > (-1) * offset and offset + self.img_height > secnd[
                         1] > (-1) * offset:
                         pairs.append((secnd, ang_lr))
-                       # print("No {} Appended ({},{})at {}".format(len(pairs), i, j, secnd))
-
+                    # print("No {} Appended ({},{})at {}".format(len(pairs), i, j, secnd))
 
             for pair in pairs:
-                #print(pair)
+                # print(pair)
                 self.objects.append(Object(pos=pair[0], theta=pair[1]))
-
-
-
-
 
         #    if theta is None:
         #        theta_0 = random.random() * np.pi * 2
@@ -640,38 +635,37 @@ class DataFrame:
                     return np.array([len * np.sin(ang), -len * np.cos(ang)])
 
                 if chirality > 0:
-                    phi1 = (bog(-30.663) + start_ang) % (2*np.pi)
-                    phi2 = (bog(29.337) + start_ang) % (2*np.pi)
-                    phi3 = (bog(89.337) + start_ang) % (2*np.pi)
-                    phi4 = (bog(149.337) + start_ang) % (2*np.pi)
-                    phi5 = (bog(209.337) + start_ang) % (2*np.pi)
-                    phi6 = (bog(269.337) + start_ang) % (2*np.pi)
+                    phi1 = (bog(-30.663) + start_ang) % (2 * np.pi)
+                    phi2 = (bog(29.337) + start_ang) % (2 * np.pi)
+                    phi3 = (bog(89.337) + start_ang) % (2 * np.pi)
+                    phi4 = (bog(149.337) + start_ang) % (2 * np.pi)
+                    phi5 = (bog(209.337) + start_ang) % (2 * np.pi)
+                    phi6 = (bog(269.337) + start_ang) % (2 * np.pi)
                     phis = [phi1, phi2, phi3, phi4, phi5, phi6]
 
-                    theta1 = (bog(41.107) + start_ang) % (2*np.pi)
-                    theta2 = (bog(101.107) + start_ang) % (2*np.pi)
-                    theta3 = (bog(161.107) + start_ang) % (2*np.pi)
-                    theta4 = (bog(221.107) + start_ang) % (2*np.pi)
-                    theta5 = (bog(281.107) + start_ang) % (2*np.pi)
-                    theta6 = (bog(341.107) + start_ang) % (2*np.pi)
+                    theta1 = (bog(41.107) + start_ang) % (2 * np.pi)
+                    theta2 = (bog(101.107) + start_ang) % (2 * np.pi)
+                    theta3 = (bog(161.107) + start_ang) % (2 * np.pi)
+                    theta4 = (bog(221.107) + start_ang) % (2 * np.pi)
+                    theta5 = (bog(281.107) + start_ang) % (2 * np.pi)
+                    theta6 = (bog(341.107) + start_ang) % (2 * np.pi)
                     thetas = [theta1, theta2, theta3, theta4, theta5, theta6]
                 else:
                     phi1 = (bog(30.663) + start_ang) % (2 * np.pi)
-                    phi2 = (bog(360-29.337) + start_ang) % (2 * np.pi)
-                    phi3 = (bog(360-89.337) + start_ang) % (2 * np.pi)
-                    phi4 = (bog(360-149.337) + start_ang) % (2 * np.pi)
-                    phi5 = (bog(360-209.337) + start_ang) % (2 * np.pi)
-                    phi6 = (bog(360-269.337) + start_ang) % (2 * np.pi)
+                    phi2 = (bog(360 - 29.337) + start_ang) % (2 * np.pi)
+                    phi3 = (bog(360 - 89.337) + start_ang) % (2 * np.pi)
+                    phi4 = (bog(360 - 149.337) + start_ang) % (2 * np.pi)
+                    phi5 = (bog(360 - 209.337) + start_ang) % (2 * np.pi)
+                    phi6 = (bog(360 - 269.337) + start_ang) % (2 * np.pi)
                     phis = [phi1, phi2, phi3, phi4, phi5, phi6]
 
-                    theta1 = (bog(360-41.107) + start_ang) % (2 * np.pi)
-                    theta2 = (bog(360-101.107) + start_ang) % (2 * np.pi)
-                    theta3 = (bog(360-161.107) + start_ang) % (2 * np.pi)
-                    theta4 = (bog(360-221.107) + start_ang) % (2 * np.pi)
-                    theta5 = (bog(360-281.107) + start_ang) % (2 * np.pi)
-                    theta6 = (bog(360-341.107) + start_ang) % (2 * np.pi)
+                    theta1 = (bog(360 - 41.107) + start_ang) % (2 * np.pi)
+                    theta2 = (bog(360 - 101.107) + start_ang) % (2 * np.pi)
+                    theta3 = (bog(360 - 161.107) + start_ang) % (2 * np.pi)
+                    theta4 = (bog(360 - 221.107) + start_ang) % (2 * np.pi)
+                    theta5 = (bog(360 - 281.107) + start_ang) % (2 * np.pi)
+                    theta6 = (bog(360 - 341.107) + start_ang) % (2 * np.pi)
                     thetas = [theta1, theta2, theta3, theta4, theta5, theta6]
-
 
                 pairs = []
                 for i in range(6):
@@ -680,10 +674,8 @@ class DataFrame:
                         1] > (-1) * offset:
                         pairs.append((position, thetas[i]))
 
-
                 for pair in pairs:
                     self.objects.append(Object(pos=pair[0], theta=pair[1]))
-
 
             if theta is None:
                 theta_0 = 2 * np.pi * random.random()
@@ -692,8 +684,8 @@ class DataFrame:
 
             chirality = np.sign(random.random() - 0.5)
 
-            #add_Hexa(np.array([self.img_width/2, self.img_height/2]), theta_0)
-            #return
+            # add_Hexa(np.array([self.img_width/2, self.img_height/2]), theta_0)
+            # return
 
             gv_dist = Distance(True, 55.4938) * factor
             gv_a_w = theta_0 + bog(179.782)
@@ -702,7 +694,7 @@ class DataFrame:
             gv_a = np.array([gv_dist * np.sin(gv_a_w), -gv_dist * np.cos(gv_a_w)])
             gv_b = np.array([gv_dist * np.sin(gv_b_w), -gv_dist * np.cos(gv_b_w)])
 
-            #print(gv_a, gv_b)
+            # print(gv_a, gv_b)
 
             offset_loc = offset + gv_dist
 
@@ -715,9 +707,10 @@ class DataFrame:
             i_max = int(np.ceil(c_temp))
             for i in range(-10, max(100, i_max)):
                 for j in range(-10, max(100, i_max)):
-                    current = start + (gv_a * i) + (gv_b * j) #Sketcy mit 3x Offset
-                    if self.img_width + offset_loc > current[0] > (-1) * offset_loc and offset_loc + self.img_height > current[
-                        1] > (-1) * offset_loc:
+                    current = start + (gv_a * i) + (gv_b * j)  # Sketcy mit 3x Offset
+                    if self.img_width + offset_loc > current[0] > (-1) * offset_loc and offset_loc + self.img_height > \
+                            current[
+                                1] > (-1) * offset_loc:
                         add_Hexa(current, theta_0, chirality)
 
         if type(Object) is not type(Particle):
@@ -740,12 +733,14 @@ class DataFrame:
                 self.objects.remove(part)
                 self.objects.append(self._add_at_pos_dragged(Molecule, pos=part.pos, theta=part.theta))
 
+    # @measureTime
     def is_overlapping(self, part):
         for p in self.objects:
             if p.true_overlap(part):
                 return self.overlapping_energy
         return 0
 
+    # @measureTime
     def atomic_step_init(self):
         for obj in self.objects:
             obj.set_maxHeight(cfg.get_max_height() + cfg.get_atomic_step_height())
@@ -763,6 +758,7 @@ class DataFrame:
 
         return f, m, b
 
+    # @measureTime
     def atomic_step(self, matrix, f, m, b):
 
         fpoints = []
@@ -1485,18 +1481,21 @@ class DataFrame:
 
             # print("Fermi(0, rad) = {}".format(fermi(0, rad)))
 
+    # @measureTime
     def add_Dust_Part(self, part=None):
         if part is None:
             self.dust_particles.append(DustParticle(size=random.random() * 40))
         else:
             self.dust_particles.append(part)
 
+    # @measureTime
     def add_Dust(self):
 
         amnt = int(np.round(np.random.normal(self.dust_amount)))
         for i in range(amnt):
             self.add_Dust_Part()
 
+    # @measureTime
     def create_Image_Visualization(self):
         self.img = MyImage()
         width = self.img_width
@@ -1514,7 +1513,7 @@ class DataFrame:
         max = len(self.objects)
         ct = 0
         for part in self.objects:
-            print("Visu_progress: {:.1f}%".format(100 * ct/max))
+            print("Visu_progress: {:.1f}%".format(100 * ct / max))
             ct += 1
             for tuple in part.get_visualization():
                 # print("Tupel:{}".format(tuple))
@@ -1543,6 +1542,7 @@ class DataFrame:
 
         self.img.addMatrix(matrix)
 
+    # @measureTime
     def get_Image_Dust(self):
         width = self.img_width
         height = self.img_height
@@ -1567,6 +1567,7 @@ class DataFrame:
                     matrix[new_x, new_y] += eff_mat[i, j]
         self.img.addMatrix(matrix)
 
+    # @measureTime
     def get_Image(self):
         if random.random() < self.double_tip_poss:
             print("Double Tipping")
@@ -1585,7 +1586,7 @@ class DataFrame:
                 print("Default")
                 doubled_frame.addObjects()
 
-            #if self.usedust:
+            # if self.usedust:
             #    print("Dusting")
             #    doubled_frame.get_Image_Dust()
 
@@ -1611,14 +1612,14 @@ class DataFrame:
 
         self.img.updateImage()
 
-
-
+    # @measureTime
     def createText(self):
         strings = [Particle.str_Header()]
         for part in self.objects:
             strings.append(str(part))
         self.text = "\n".join(strings)
 
+    # @measureTime
     def save(self, data=True, image=True, sxm=True):
         if self.img is None:
             # self.createImage_efficient()
@@ -1640,10 +1641,12 @@ class DataFrame:
         # if self.has_overlaps():
         # print("Overlaps detected @ {}".format(index))
 
+    # @measureTime
     def hasPoints(self):
         # return not self.points.empty()
         return len(self.objects) > 0
 
+    # @measureTime
     def coverage(self):
         area = self.area
         covered = 0
@@ -1651,6 +1654,7 @@ class DataFrame:
             covered += np.pi * np.square(part.get_dimension().px)
         return covered / area.px
 
+    # @measureTime
     def has_overlaps(self):
         for i in range(len(self.objects)):
             for j in range(i):
@@ -2377,7 +2381,7 @@ class Double_Frame(DataFrame):
         self.shift_x = rel_dist * np.sin(angle)
         self.shift_y = rel_dist * np.cos(angle)
         self.overlap = cfg.get_px_overlap()
-        self.dust_particles *=4
+        self.dust_particles *= 4
 
         if self.shift_x > 0:
             if self.shift_y > 0:
@@ -2398,7 +2402,9 @@ class Double_Frame(DataFrame):
             self.passed_args_particles = (1, None, True, 1000)
         else:
             if self.passed_args_particles[0] is None:
-                self.passed_args_particles = (len(self.objects), self.passed_args_particles[1], self.passed_args_particles[2], self.passed_args_particles[3])
+                self.passed_args_particles = (
+                len(self.objects), self.passed_args_particles[1], self.passed_args_particles[2],
+                self.passed_args_particles[3])
             self.passed_args_particles[0] += 1
         if part is None:
             self.objects.append(Double_Particle())
@@ -2438,11 +2444,11 @@ class Double_Frame(DataFrame):
                 return p
         return p
 
-    def addParticles(self,  optimumEnergy=False, amount=None, coverage=None, overlapping=False, maximum_tries=1000):
+    def addParticles(self, optimumEnergy=False, amount=None, coverage=None, overlapping=False, maximum_tries=1000):
 
         self.passed_args_particles = (amount, coverage, overlapping, maximum_tries)
 
-        #print("DF aP Got Args: {}".format(self.passed_args_particles))
+        # print("DF aP Got Args: {}".format(self.passed_args_particles))
         if not self.use_range:
             if self.angle_char_len == 0:
                 if not overlapping:
@@ -2608,7 +2614,7 @@ class Double_Frame(DataFrame):
         # else:
 
     def _randomPos(self):
-        return np.array([self.img_width * random.random(), self.img_height*random.random()])
+        return np.array([self.img_width * random.random(), self.img_height * random.random()])
 
     def add_Dust_Part(self, part=None):
         if part is None:
@@ -2634,8 +2640,6 @@ class Double_Frame(DataFrame):
         matrix = np.zeros((width, height))
 
         use_atomstep = random.random() < cfg.get_atomic_step_poss()
-
-
 
         # Set Max Height for parts
         if use_atomstep:
@@ -2742,7 +2746,7 @@ class Double_Frame(DataFrame):
         self.passed_args_particles = (amount, coverage, overlapping, maximum_tries)
         print("DF aObj {}, {}, {}".format(self.use_range, self.angle_char_len, overlapping))
         if amount is not None:
-            for i in range(4*amount):
+            for i in range(4 * amount):
                 if random.random() < self.dragging_possibility:
                     p = get_dragged_that_not_overlaps(maximum_tries)
                     self.objects.append(p)
@@ -2758,19 +2762,19 @@ class Double_Frame(DataFrame):
                     p = _get_thatnot_overlaps(maximum_tries)
                     self.objects.append(p)
         else:
-            for i in range(4*cfg.get_particles_per_image()):
-                    if random.random() < self.dragging_possibility:
-                        p = get_dragged_that_not_overlaps(maximum_tries)
-                        self.objects.append(p)
-                    else:
-                        p = _get_thatnot_overlaps(maximum_tries)
-                        self.objects.append(p)
+            for i in range(4 * cfg.get_particles_per_image()):
+                if random.random() < self.dragging_possibility:
+                    p = get_dragged_that_not_overlaps(maximum_tries)
+                    self.objects.append(p)
+                else:
+                    p = _get_thatnot_overlaps(maximum_tries)
+                    self.objects.append(p)
 
     def extract_Smaller(self):
         self.create_Image_Visualization()
-        #print("Start extractSmaller")
-        #plt.imshow(self.img.get_matrix())
-        #plt.show()
+        # print("Start extractSmaller")
+        # plt.imshow(self.img.get_matrix())
+        # plt.show()
 
         self.img.double_tip(self.strength, self.rel_dist, self.dt_angle)
 
@@ -2783,9 +2787,9 @@ class Double_Frame(DataFrame):
                 x_tilt = x + self.range[0] - 1
                 y_tilt = y + self.range[2] - 1
                 smaller[x, y] = bigger[x_tilt, y_tilt]
-        #print("Extracted One")
-        #plt.imshow(smaller)
-        #plt.show()
+        # print("Extracted One")
+        # plt.imshow(smaller)
+        # plt.show()
         # plt.imshow(bigger)
         # plt.show()
         return MyImage(smaller)
@@ -2827,7 +2831,7 @@ class Double_Frame(DataFrame):
                     if not (0 <= new_x < width and 0 <= new_y < height):
                         continue
                     matrix[new_x, new_y] += eff_mat[i, j]
-        #self.img.addMatrix(matrix)
+        # self.img.addMatrix(matrix)
 
     def createText(self):
         raise NotImplementedError
