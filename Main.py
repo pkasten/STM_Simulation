@@ -55,7 +55,7 @@ def measure_speed():
 def generate(fn_gen):
     dat_frame = DataFrame(fn_gen)
     #dat_frame.addParticles()
-    dat_frame.addObjects(Molecule, amount=1)
+    dat_frame.add_Ordered()
     dat_frame.get_Image()
     dat_frame.save()
 
@@ -92,7 +92,7 @@ def multi_test_fn(t, fgen):
         gen.kill()
 
 
-def every_thread_one():
+def every_thread_n(n):
     BaseManager.register('FilenameGenerator', FilenameGenerator)
     filemanager = BaseManager()
     filemanager.start()
@@ -104,13 +104,17 @@ def every_thread_one():
             self.fn = fn
 
         def run(self) -> None:
-            generate(self.fn)
+            for i in range(n):
+                generate(self.fn)
 
     ts = []
     for i in range(cfg.get_threads()):
         ts.append(Gen1(fn_gen))
     for t in ts:
         t.start()
+    for t in ts:
+        t.join()
+    return True
 
 
 class Generator(Process):
@@ -247,18 +251,23 @@ if __name__ == "__main__":
    # plt.plot(accs, times)
    # plt.title("Computing time over Accuracy")
    # plt.show()
+    while True:
+        done = every_thread_n(10)
+        if done:
+            break
+        else:
+            time.sleep(5)
 
-    every_thread_one()
 
     #img = MyImage()
     #img.rgb_map_test()
     #for i in range(0, 360, 10):
-    #    dat = DataFrame(fn)
-    #    dat.add_Ordered(Molecule, theta=np.pi * i / 180)
-    #    dat.get_Image()
-    #    dat.save()
+     #   dat = DataFrame(fn)
+      #  dat.add_Ordered(Molecule, theta=np.pi * i / 180)
+       # dat.get_Image()
+        #dat.save()
     #    print("Dur: {:.2f}s".format(time.perf_counter() - start))
-    #    start = time.perf_counter()
+     #   start = time.perf_counter()
     ##    break
         #for i in range(5):
     #    dat = DataFrame(fn)

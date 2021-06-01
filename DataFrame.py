@@ -1513,7 +1513,7 @@ class DataFrame:
         max = len(self.objects)
         ct = 0
         for part in self.objects:
-            print("Visu_progress: {:.1f}%".format(100 * ct / max))
+            #print("Visu_progress: {:.1f}%".format(100 * ct / max))
             ct += 1
             for tuple in part.get_visualization():
                 # print("Tupel:{}".format(tuple))
