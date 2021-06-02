@@ -50,6 +50,7 @@ class DataFrame:
         self.passed_args_particles = None
         self.passed_args_Obj = None
         self.passed_args_Ordered = None
+        self.passed_args_One = None
         self.img_width = cfg.get_width()
         self.img_height = cfg.get_height()
         self.use_crystal_orientations = cfg.get_crystal_orientation_usage()
@@ -85,6 +86,7 @@ class DataFrame:
 
     # adds a given particle or, if not provided a random one
     def addParticle(self, part=None):
+        self.passed_args_One = Particle()
         if self.passed_args_particles is None:
             self.passed_args_particles = (1, None, True, 1000)
         else:
@@ -398,6 +400,7 @@ class DataFrame:
                         self.objects.append(p)
 
     def addObject(self, ob):
+        self.passed_args_One = ob
         self.objects.append(ob)
 
     def addObjects(self, Object=Molecule, amount=None, coverage=None, overlapping=False, maximum_tries=1000):
@@ -488,6 +491,10 @@ class DataFrame:
     def add_Ordered(self, Object=Molecule, theta=None, factor=1.0):
         offset = Distance(False, cfg.get_px_overlap())
         self.passed_args_Ordered = (Object, theta)
+        var_pos = cfg.get_order_pos_var() * Molecule().get_simple_length()
+        var_ang = cfg.get_order_ang_var() * 2 * 3.141592653589793238462643
+        vary_params = cfg.get_use_ordered_variation()
+
 
         def bog(deg):
             return np.pi * deg / 180
@@ -505,8 +512,8 @@ class DataFrame:
             gv_a = np.array([dist_h * np.cos(theta_0), dist_h * np.sin(theta_0)])
             gv_b = np.array([-dist_v * np.sin(theta_0), dist_v * np.cos(theta_0)])
 
-            ang_a = theta_0 + bog(19.61545)
-            ang_b = theta_0 + bog(59.40909)
+            ang_a = (theta_0 + bog(19.61545))
+            ang_b = (theta_0 + bog(59.40909))
 
             pairs = []
 
@@ -524,7 +531,17 @@ class DataFrame:
                     # print(current[0], self.img_width)
                     if self.img_width + offset > current[0] > (-1) * offset and offset + self.img_height > current[
                         1] > (-1) * offset:
-                        pairs.append((current, ang_a if (i + j) % 2 == 0 else ang_b))
+                        if vary_params:
+                            wid = Distance(False, np.random.normal(0, var_pos.px))
+                            rang = random.random() * 2 * np.pi
+                            pos = current + np.array([wid * np.cos(rang), wid*np.sin(rang)])
+                            angdiff = np.random.normal(ang_a if (i + j) % 2 == 0 else ang_b, var_ang)
+                            angdiff = angdiff % (2*np.pi)
+                            pairs.append((pos, angdiff))
+                        else:
+                            ang = ang_a if (i + j) % 2 == 0 else ang_b
+                            ang = ang % (np.pi * 2)
+                            pairs.append((current, ang))
 
             for pair in pairs:
                 self.objects.append(Object(pos=pair[0], theta=pair[1]))
@@ -575,56 +592,34 @@ class DataFrame:
                     current = start + (vec_u * i) + (vec_r * j)
                     if self.img_width + offset > current[0] > (-1) * offset and offset + self.img_height > current[
                         1] > (-1) * offset:
-                        pairs.append((current, ang_ud))
+                        if vary_params:
+                            wid = Distance(False, np.random.normal(0, var_pos.px))
+                            rang = random.random() * 2 * np.pi
+                            pos = current + np.array([wid * np.cos(rang), wid*np.sin(rang)])
+                            angdiff = np.random.normal(ang_ud, var_ang)
+                            angdiff = angdiff % (2*np.pi)
+                            pairs.append((pos, angdiff))
+                        else:
+                            pairs.append((current, ang_ud))
                         # print("No {} Appended ({},{})at {}".format(len(pairs), i, j, current))
                     secnd = current + vec_ud_lr
                     if self.img_width + offset > secnd[0] > (-1) * offset and offset + self.img_height > secnd[
                         1] > (-1) * offset:
-                        pairs.append((secnd, ang_lr))
+                        if vary_params:
+                            wid = Distance(False, np.random.normal(0, var_pos.px))
+                            rang = random.random() * 2 * np.pi
+                            pos = secnd + np.array([wid * np.cos(rang), wid * np.sin(rang)])
+                            angdiff = np.random.normal(ang_lr, var_ang)
+                            angdiff = angdiff % (2 * np.pi)
+                            pairs.append((pos, angdiff))
+                        else:
+                            pairs.append((secnd, ang_lr))
                     # print("No {} Appended ({},{})at {}".format(len(pairs), i, j, secnd))
 
             for pair in pairs:
                 # print(pair)
                 self.objects.append(Object(pos=pair[0], theta=pair[1]))
 
-        #    if theta is None:
-        #        theta_0 = random.random() * np.pi * 2
-        #    else:
-        #        theta_0 = theta
-        #    chirality = np.sign(random.random() - 0.5)#
-
-        #    dist_v = Distance(True, 23.75)
-        #    dist_h = Distance(True, 22.23)
-        #    chirality = -1
-
-        #    if chirality > 0:
-        #        gv_a = np.array([dist_h * np.cos(theta_0), dist_h * np.sin(theta_0)])
-        #        gv_b = np.array([-dist_v * np.sin(theta_0), dist_v * np.cos(theta_0)])
-        #    else:
-        #        gv_a = np.array([dist_h * np.cos(theta_0 + np.pi / 4), dist_h * np.sin(theta_0 + np.pi / 4)])
-        #        gv_b = np.array([-dist_v * np.sin(theta_0 + np.pi / 4), dist_v * np.cos(theta_0 + np.pi / 4)])
-
-        #    pairs = []
-
-        #    ang_a = (theta_0 + bog(25)) % (2*np.pi)
-        #    ang_b = (theta_0 + bog(123.1)) % (2 * np.pi)
-
-        #    start = np.array([Distance(True, 0), Distance(True, 0)])
-        #    current = np.array([0, 0])
-        #    a_temp = self.img_width / gv_b[0] if gv_b[0].px != 0 else -np.infty
-        #    b_temp = self.img_height / gv_b[1] if gv_b[1].px != 0 else -np.infty
-        #    j_max = int(np.ceil(max(a_temp, b_temp)))
-        #    c_temp = ((self.img_width + j_max * gv_b[0]) / gv_a[0]) if gv_a[0].px != 0 else j_max
-        #    i_max = int(np.ceil(c_temp))
-        #    for i in range(-10, max(100, i_max)):
-        #        for j in range(-10, max(100, i_max)):
-        #            current = start + (gv_a * i) + (gv_b * j)
-        #            if self.img_width + offset > current[0] > (-1) * offset and offset + self.img_height > current[
-        #                1] > (-1) * offset:
-        #                pairs.append((current, ang_a if (i + j) % 2 == 0 else ang_b))
-
-        #    for pair in pairs:
-        #        self.objects.append(Object(pos=pair[0], theta=pair[1]))
 
         def add_ordered_NCPh5CN(theta=None):
 
@@ -672,7 +667,15 @@ class DataFrame:
                     position = center + turnvec(d, phis[i])
                     if self.img_width + offset > position[0] > (-1) * offset and offset + self.img_height > position[
                         1] > (-1) * offset:
-                        pairs.append((position, thetas[i]))
+                        if vary_params:
+                            wid = Distance(False, np.random.normal(0, var_pos.px))
+                            rang = random.random() * 2 * np.pi
+                            pos = position + np.array([wid * np.cos(rang), wid * np.sin(rang)])
+                            angdiff = np.random.normal(thetas[i], var_ang)
+                            angdiff = angdiff % (2 * np.pi)
+                            pairs.append((pos, angdiff))
+                        else:
+                            pairs.append((position, thetas[i]))
 
                 for pair in pairs:
                     self.objects.append(Object(pos=pair[0], theta=pair[1]))
@@ -697,6 +700,10 @@ class DataFrame:
             # print(gv_a, gv_b)
 
             offset_loc = offset + gv_dist
+            #print("-----")
+            #print(offset_loc)
+            #print(offset)
+            #print(gv_dist)
 
             start = np.array([Distance(True, 0), Distance(True, 0)])
             current = np.array([0, 0])
@@ -705,13 +712,14 @@ class DataFrame:
             j_max = int(np.ceil(max(a_temp, b_temp)))
             c_temp = ((self.img_width + j_max * gv_b[0]) / gv_a[0]) if gv_a[0].px != 0 else j_max
             i_max = int(np.ceil(c_temp))
-            for i in range(-10, max(100, i_max)):
-                for j in range(-10, max(100, i_max)):
+            for i in range(-100, max(100, i_max)):
+                for j in range(-100, max(100, i_max)):
                     current = start + (gv_a * i) + (gv_b * j)  # Sketcy mit 3x Offset
                     if self.img_width + offset_loc > current[0] > (-1) * offset_loc and offset_loc + self.img_height > \
                             current[
                                 1] > (-1) * offset_loc:
                         add_Hexa(current, theta_0, chirality)
+                        #print("Add at current = {}".format(current))
 
         if type(Object) is not type(Particle):
             raise NotImplementedError
@@ -1568,13 +1576,18 @@ class DataFrame:
         self.img.addMatrix(matrix)
 
     # @measureTime
-    def get_Image(self):
+    def get_Image(self, ang=None):
         if random.random() < self.double_tip_poss:
             print("Double Tipping")
             # ToDo: Step
             strength = 0.3 + 0.5 * random.random()
             rel_dist = 0.1 * random.random()  # ToDO: Let loose
-            angle = 2 * np.pi * random.random()
+            #rel_dist = 0.05
+            #strength = 0.8
+            if ang is None:
+                angle = 2 * np.pi * random.random()
+            else:
+                angle = ang
             doubled_frame = Double_Frame(self.fn_gen, strength, rel_dist, angle)
             if self.passed_args_particles is not None:
                 doubled_frame.addParticles(*self.passed_args_particles)
@@ -1582,6 +1595,8 @@ class DataFrame:
                 doubled_frame.addObjects(*self.passed_args_Obj)
             elif self.passed_args_Ordered is not None:
                 doubled_frame.add_Ordered(*self.passed_args_Ordered)
+            elif self.passed_args_One is not None:
+                doubled_frame.addOne(self.passed_args_One)
             else:
                 print("Default")
                 doubled_frame.addObjects()
@@ -1638,6 +1653,7 @@ class DataFrame:
                 dat_file.write(self.text)
         self.img.saveImage(img_path)
         My_SXM.write_sxm(sxm_path, self.img.get_matrix())
+        return index
         # if self.has_overlaps():
         # print("Overlaps detected @ {}".format(index))
 
@@ -1900,7 +1916,7 @@ class DataFrame:
                 self.add_To_Potential.append(c)
         self.potential_map = self.calc_potential_map()
         plt.imshow(self.potential_map)
-        plt.show()
+        #plt.show()
 
     @DeprecationWarning
     def add_ALL_at_optimum_energy_new(self, n):
@@ -2034,7 +2050,7 @@ class DataFrame:
             for c in p.get_charges():
                 self.add_To_Potential.append(c)
         self.potential_map = self.calc_potential_map()
-        plt.imshow(self.potential_map)
+        #plt.imshow(self.potential_map)
         plt.show()
 
     @DeprecationWarning
@@ -2383,20 +2399,20 @@ class Double_Frame(DataFrame):
         self.overlap = cfg.get_px_overlap()
         self.dust_particles *= 4
 
-        if self.shift_x > 0:
+
+        if self.shift_x >= 0:
             if self.shift_y > 0:
                 self.range = int(int(np.ceil(self.img_width.px)) / 2), int(np.ceil(self.img_width.px)), int(
                     np.ceil((self.img_height.px / 2))), int(np.ceil(self.img_height.px))
             else:
-                self.range = int(int(np.ceil(self.img_width.px)) / 2), self.img_width.px, 0, int(
+                self.range = int(int(np.ceil(self.img_width.px)) / 2), int(np.ceil(self.img_width.px)), 0, int(
                     np.ceil((self.img_height.px / 2)))
         else:
             if self.shift_y > 0:
-                self.range = 0, int(int(np.ceil(self.img_width.px)) / 2), 0, int(
+                self.range = 0, int(int(np.ceil(self.img_width.px)) / 2),  int(
                     np.ceil((self.img_height.px / 2))), int(np.ceil(self.img_height.px))
             else:
                 self.range = 0, int(int(np.ceil(self.img_width.px)) / 2), 0, int(np.ceil((self.img_height.px / 2)))
-
     def addParticle(self, part=None):
         if self.passed_args_particles is None:
             self.passed_args_particles = (1, None, True, 1000)
@@ -2628,6 +2644,23 @@ class Double_Frame(DataFrame):
         for i in range(amnt):
             self.add_Dust_Part()
 
+    def addOne(self, ob):
+        pos = ob.pos
+        ang = ob.theta
+        npos1 = pos
+        lob = Molecule(npos1, ang)
+        self.objects.append(lob)
+        npos2 = np.array([pos[0] + self.img_width/2, pos[1]])
+        lob2 = Molecule(npos2, ang)
+        self.objects.append(lob2)
+        npos3 = np.array([pos[0], pos[1] + self.img_height/2])
+        lob3 = Molecule(npos3, ang)
+        self.objects.append(lob3)
+        npos4 = np.array([pos[0] + self.img_width / 2, pos[1] + self.img_height / 2])
+        lob4 = Molecule(npos4, ang)
+        self.objects.append(lob4)
+
+
     def create_Image_Visualization(self):
         self.img = MyImage()
         self.img.setWidth(int(np.ceil(self.img_width.px)))
@@ -2744,7 +2777,7 @@ class Double_Frame(DataFrame):
             return p
 
         self.passed_args_particles = (amount, coverage, overlapping, maximum_tries)
-        print("DF aObj {}, {}, {}".format(self.use_range, self.angle_char_len, overlapping))
+        #print("DF aObj {}, {}, {}".format(self.use_range, self.angle_char_len, overlapping))
         if amount is not None:
             for i in range(4 * amount):
                 if random.random() < self.dragging_possibility:
@@ -2772,9 +2805,13 @@ class Double_Frame(DataFrame):
 
     def extract_Smaller(self):
         self.create_Image_Visualization()
-        # print("Start extractSmaller")
-        # plt.imshow(self.img.get_matrix())
-        # plt.show()
+        #print("Start extractSmaller")
+        #plt.imshow(self.img.colors)
+        #plt.show()
+        #print("extract smaller start")
+        #plt.imshow(self.img.colors)
+        #plt.show()
+
 
         self.img.double_tip(self.strength, self.rel_dist, self.dt_angle)
 
@@ -2787,11 +2824,15 @@ class Double_Frame(DataFrame):
                 x_tilt = x + self.range[0] - 1
                 y_tilt = y + self.range[2] - 1
                 smaller[x, y] = bigger[x_tilt, y_tilt]
-        # print("Extracted One")
-        # plt.imshow(smaller)
-        # plt.show()
+        #print("Extracted One")
+        #plt.imshow(smaller)
+        #plt.show()
         # plt.imshow(bigger)
         # plt.show()
+
+        #print("Extract smaller end")
+        #plt.imshow(smaller)
+        #plt.show()
         return MyImage(smaller)
 
     def get_objects(self):

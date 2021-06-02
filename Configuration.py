@@ -37,20 +37,20 @@ val_sxm_folder = None
 
 cat_image_basics = 'image_settings'
 def_px_per_angstrom = 'Pixel per Angstrom', 2
-def_prefix_image = 'prefix_image', 'Image'
-def_suffix_image = 'suffix_image', '.png'
-def_prefix_data = 'prefix_data', 'Data'
-def_suffix_data = 'suffix_data', '.txt'
-def_prefix_sxm = 'prefix_sxm', 'Image'
-def_suffix_sxm = 'suffix_sxm', '.sxm'
-def_color_scheme = 'Color scheme (gray, WSXM)', 'WSXM'
-def_width = 'width (Ang)', 100
-def_height = 'height (Ang)', 100
-def_particles = 'no_of_particles', 20
-def_px_overlap = 'pixels_overlap (in px)', 40
-def_anti_aliasing = 'Anti-Aliasing', 1
-def_noise_mu = 'Image-noise_Average', 40
-def_noise_std_deriv = 'Image-noise-Standard_derivation', 0.7 * def_noise_mu[1]
+def_prefix_image = 'Prefix for Image file', 'Image'
+def_suffix_image = 'Suffix for Image file', '.png'
+def_prefix_data = 'Prefix for data file', 'Data'
+def_suffix_data = 'Suffix for data file', '.txt'
+def_prefix_sxm = 'Prefix for sxm file', 'Image'
+def_suffix_sxm = 'Suffix for sxm file', '.sxm'
+def_color_scheme = 'Color scheme (Gray, WSXM)', 'WSXM'
+def_width = 'Image width (Ang)', 100
+def_height = 'Image height (Ang)', 100
+def_particles = 'Default number of particles per Image', 20
+def_px_overlap = 'Pixel overlap where Particles can be (in px)', 40
+def_anti_aliasing = 'Use Anti Aliasing (1 True, 0 False)', 1
+def_noise_mu = 'Grayscale value of mean noise', 40
+def_noise_std_deriv = 'Image noise standard derivation', 0.7 * def_noise_mu[1]
 image_basics_settings = [def_prefix_image, def_suffix_image, def_prefix_data, def_suffix_data, def_prefix_sxm,
                          def_suffix_sxm, def_color_scheme, def_px_per_angstrom, def_width, def_height,
                          def_particles, def_px_overlap, def_anti_aliasing, def_noise_mu, def_noise_std_deriv]
@@ -77,26 +77,30 @@ cat_particle_properties = 'particle_properties'
 def_width_part = 'Particle width (Ang)', 0.4
 def_length_part = 'Particle length (Ang)', 20
 def_height_part = 'Particle height (Ang)', 5
-def_image_path = 'image_path', ""
-def_part_max_height = 'max_height (Ang)', 7.3
-def_std_deriv = 'std_derivate_grain_border', def_length_part[1] / 5
-def_fermi_exp = '1/kbT', 0.1 * def_length_part[1]
-def_angle_characteristic_length = 'Angle Characteristic_relative_length', 0
-def_angle_stdderiv = 'std_derivate_angle_correlation', 0
-def_angle_range_min = 'minimum angle (degree)', 0
-def_angle_range_max = 'maximum angle (degree)', 0
+def_image_path = 'Picture how particles should look like, leave empty for generated image', ""
+def_part_max_height = 'Maximum Height (Ang)', 7.3
+def_std_deriv = 'Standard Derivation of Grain Border (Deprecated)', def_length_part[1] / 5
+def_fermi_exp = 'Exponent 1/kbT in fermi distribution', 0.01 * def_length_part[1]
+def_angle_characteristic_length = 'Angle Characteristic_relative_length (Deprecated)', 0
+def_angle_stdderiv = 'std_derivate_angle_correlation (Deprecated)', 0
+def_angle_range_min = 'minimum angle of particles (degree)', 0
+def_angle_range_max = 'maximum angle of particles (degree)', 0
 def_angle_range_usage = 'use angle range?', 0
-def_use_crystal_orientation = 'Use Crystal orientation', 0
+def_use_crystal_orientation = 'Use Crystal orientation?', 0
 def_no_of_orientations = 'Number of Crystal Orientations', 0
 def_crystal_orientation_1 = 'Crystal Direction 1 (Degrees)', 0
 def_crystal_orientation_2 = 'Crystal Direction 2 (Degrees)', 0
 def_crystal_orientation_3 = 'Crystal Direction 3 (Degrees)', 0
 def_crystal_orientation_4 = 'Crystal Direction 4 (Degrees)', 0
+def_use_ordered_variation = 'Use Variation in ordered position?', 1
+def_order_pos_var = 'Variation in Particle Position when ordered (percent of length)', 0.05
+def_order_ang_var = 'Variation in Particle Angle when ordered (percent of 2pi)', 0.05
+
 particle_properties_settings = [def_width_part, def_image_path, def_length_part, def_height_part, def_fermi_exp,
                                 def_part_max_height, def_angle_range_usage, def_angle_range_min, def_angle_range_max,
                                 def_angle_stdderiv, def_angle_characteristic_length, def_use_crystal_orientation,
                                 def_no_of_orientations, def_crystal_orientation_1, def_crystal_orientation_2,
-                                def_crystal_orientation_3, def_crystal_orientation_4]
+                                def_crystal_orientation_3, def_crystal_orientation_4, def_use_ordered_variation, def_order_pos_var, def_order_ang_var]
 
 val_width_part = None
 val_length_part = None
@@ -116,19 +120,26 @@ val_crystal_orientation_1 = None
 val_crystal_orientation_2 = None
 val_crystal_orientation_3 = None
 val_crystal_orientation_4 = None
+val_use_ordered_variation = None
+val_order_pos_var = None
+val_order_ang_var = None
+
 
 cat_special = 'special settings'
-def_overlap_threshold = 'overlapping_threshold', 10
-def_dragging_error = 'dragging errors', 0
-def_dragging_speed = 'dragging speed',  0.5 * def_width[1]
+def_overlap_threshold = 'Height threshold when particles are overlapping', 10
+def_dragging_error = 'Use dragging errors', 0
+def_dragging_speed = 'dragging speed (in Ang)',  0.5 * def_width[1]
 def_dragging_possibility = 'dragging possibility', 0
 def_raster_angle = 'raster_angle (degrees)', 0
 def_doubletip_possibility= 'possibility of two tips', 0
-def_atomic_step_height = 'Height of atomic step(ang)', 2.3
-def_atomic_step_poss = 'Possibility of atomc step', 0
+def_atomic_step_height = 'Height of atomic step (Ang)', 2.3
+def_atomic_step_poss = 'Possibility of atomic step', 0
 def_dust_amount = 'Medium no of dust particles', 15
 def_use_imgshift = 'Use Image shift', 0
-special_settings = [def_overlap_threshold, def_dragging_error, def_dragging_speed, def_dragging_possibility, def_raster_angle, def_doubletip_possibility, def_atomic_step_height, def_atomic_step_poss, def_dust_amount, def_use_imgshift]
+def_shift_amount_x = 'Stretching factor of image Shift (x-Direction)', 1.05
+def_shift_amount_y = 'Stretching factor of image Shift (y-Direction)', 1.05
+def_shift_style = 'Image Shifting style (Lin/Exp)', "Exp"
+special_settings = [def_overlap_threshold, def_dragging_error, def_dragging_speed, def_dragging_possibility, def_raster_angle, def_doubletip_possibility, def_atomic_step_height, def_atomic_step_poss, def_dust_amount, def_use_imgshift, def_shift_style, def_shift_amount_x, def_shift_amount_y]
 
 val_overlap_threshold = None
 val_dragging_error = None
@@ -140,9 +151,12 @@ val_atomc_step_height = None
 val_atomic_step_poss = None
 val_dust_amount = None
 val_use_img_shift = None
+val_shift_style = None
+val_shift_amount_x = None
+val_shift_amount_y = None
 
 cat_lattice = 'lattice'
-def_nn_dist = 'Distance between nearest neigbours (Ang)', 2.88
+def_nn_dist = 'Distance between nearest neighbours (Ang)', 2.88
 lattice_settings = [def_nn_dist]
 
 val_nn_dist = None
@@ -193,7 +207,8 @@ def update_params():
     global val_crystal_orientation_2, val_crystal_orientation_3, val_crystal_orientation_4, val_overlap_threshold
     global val_dragging_error, val_raster_angle, val_dragging_speed, val_dragging_possibility, val_doubletip_possibility
     global val_prefix_sxm, val_suffix_sxm, val_sxm_folder, val_px_per_angstrom, val_nn_dist, val_atomc_step_height, val_atomic_step_poss
-    global val_dust_amount, val_use_img_shift, val_color_scheme
+    global val_dust_amount, val_use_img_shift, val_color_scheme, val_order_ang_var, val_order_pos_var, val_shift_amount_x, val_shift_amount_y, val_shift_style
+    global val_use_ordered_variation
     val_threads = int(conf[cat_pc][def_threads[0]])
     val_images_per_thread = int(conf[cat_pc][def_images_per_thread[0]])
     val_image_folder = conf[cat_pc][def_image_folder[0]]
@@ -240,8 +255,14 @@ def update_params():
     val_atomic_step_poss = float(conf[cat_special][def_atomic_step_poss[0]])
     val_doubletip_possibility = float(conf[cat_special][def_doubletip_possibility[0]])
     val_use_img_shift = bool(int(conf[cat_special][def_use_imgshift[0]]))
+    val_shift_amount_x = float(conf[cat_special][def_shift_amount_x[0]])
+    val_shift_amount_y = float(conf[cat_special][def_shift_amount_y[0]])
+    val_shift_style = conf[cat_special][def_shift_style[0]]
     val_nn_dist = Distance(True, float(conf[cat_lattice][def_nn_dist[0]]))
     val_dust_amount = float(conf[cat_special][def_dust_amount[0]])
+    val_use_ordered_variation = bool(int(conf[cat_particle_properties][def_use_ordered_variation[0]]))
+    val_order_pos_var = float(conf[cat_particle_properties][def_order_pos_var[0]]) / 100
+    val_order_ang_var = float(conf[cat_particle_properties][def_order_ang_var[0]]) / 100
 
 # return THREADS parameter
 
@@ -628,3 +649,27 @@ def get_use_img_shift():
 def get_color_scheme():
     if not initialized: setupConfigurationManager()
     return val_color_scheme
+
+def get_order_ang_var():
+    if not initialized: setupConfigurationManager()
+    return val_order_ang_var
+
+def get_order_pos_var():
+    if not initialized: setupConfigurationManager()
+    return val_order_pos_var
+
+def get_shift_amount_x():
+    if not initialized: setupConfigurationManager()
+    return val_shift_amount_x
+
+def get_shift_amount_y():
+    if not initialized: setupConfigurationManager()
+    return val_shift_amount_x
+
+def get_shift_style():
+    if not initialized: setupConfigurationManager()
+    return val_shift_style
+
+def get_use_ordered_variation():
+    if not initialized: setupConfigurationManager()
+    return val_use_ordered_variation

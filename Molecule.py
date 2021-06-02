@@ -117,7 +117,7 @@ class Molecule(Particle):
     def get_C6_Ringdist(self, cc_dist):
         return 3 * cc_dist
 
-    def get_simple_length(self, cc_dist, cn_dist):
+    def get_simple_length(self, cc_dist=Distance(True, 1.20), cn_dist=Distance(True, 1.47)):
         n = self.molecule_ph_groups
         if n % 2 == 0:
             amnt = int(n / 2)

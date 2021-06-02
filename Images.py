@@ -32,33 +32,34 @@ class MyImage:
             self.img = self.newImage()
             self.colors = matrix
             self.updateImage()
-    @measureTime
+
+    # @measureTime
     def getWidth(self):
         return self.width
 
-    @measureTime
+    # @measureTime
     def getHeight(self):
         return self.height
 
-    @measureTime
+    # @measureTime
     def setWidth(self, w):
         self.width = w
         self.colors = np.zeros((int(np.ceil(self.width)), int(np.ceil(self.height))))
 
-    @measureTime
+    # @measureTime
     def setHeight(self, h):
         self.height = h
         self.colors = np.zeros((int(np.ceil(self.width)), int(np.ceil(self.height))))
 
-    @measureTime
+    # @measureTime
     def addParticle(self, particle):
         self.colors = self.colors + particle.toMatrix()
 
-    @measureTime
+    # @measureTime
     def addMatrix(self, matrix):
         self.colors = self.colors + matrix
 
-    @DeprecationWarning
+    #@DeprecationWarning
     def double_tip(self, strength, rel_dist, angle):  # ToDo: neues Bild damit auch links oben etc was ist
         # ToDo: Use surrounding Pictures
         print("Deprecated 5462")
@@ -66,6 +67,10 @@ class MyImage:
         vec_y = np.floor(np.sqrt(np.square(self.width) + np.square(self.height)) * rel_dist * np.cos(angle))
         vec_x = int(vec_x)
         vec_y = int(vec_y)
+
+        #print("Images.double_tip start: ")
+        #plt.imshow(self.colors)
+        #plt.show()
 
         newmat = self.colors
 
@@ -84,21 +89,23 @@ class MyImage:
                     pass
 
         self.colors = newmat
+        #print("Double tip end")
+        #plt.imshow(newmat)
+        #plt.show()
         self.updateImage()
 
-    @measureTime
+    # @measureTime
     def shift_image(self, f_horiz=None, f_vert=None):
 
-        #testmat = np.ones(np.shape(self.colors))
-        #testmat *= 200
-        #self.colors = testmat
+        # testmat = np.ones(np.shape(self.colors))
+        # testmat *= 200
+        # self.colors = testmat
 
-        style = "Exp"
-        factor_x = 1.1
-        factor_y = 1.1
+        style = cfg.get_shift_style()
+        factor_x = cfg.get_shift_amount_x()
+        factor_y = cfg.get_shift_amount_y()
 
-
-        if style == "Linear":
+        if style == "Lin":
             if f_horiz is None:
                 f_h = lambda x: factor_x * x
             else:
@@ -109,18 +116,17 @@ class MyImage:
                 f_v = f_vert
 
             print("Calcing inv")
-            f_h_inv = lambda x: x/factor_x
-            f_v_inv = lambda x: x/factor_y
-            #f_h_inv = get_invers_function(f_h)
-            #f_v_inv = get_invers_function(f_v)
+            f_h_inv = lambda x: x / factor_x
+            f_v_inv = lambda x: x / factor_y
+            # f_h_inv = get_invers_function(f_h)
+            # f_v_inv = get_invers_function(f_v)
             print("Got inv")
         elif style == "Exp":
             wid, heigth = np.shape(self.colors)
-            #gamma_x = np.log(wid * factor_x) / wid
-            #gamma_y = np.log(heigth * factor_y) / heigth
-            gamma_x = np.log((factor_x - 1)*wid) / wid
-            gamma_y = np.log((factor_y - 1)*heigth) / heigth
-
+            # gamma_x = np.log(wid * factor_x) / wid
+            # gamma_y = np.log(heigth * factor_y) / heigth
+            gamma_x = np.log((factor_x - 1) * wid) / wid
+            gamma_y = np.log((factor_y - 1) * heigth) / heigth
 
             if f_horiz is None:
                 f_h = lambda x: x + np.exp(gamma_x * x)
@@ -131,11 +137,11 @@ class MyImage:
             else:
                 f_v = f_vert
 
-
             f_h_inv = get_invers_function(f_h)
             f_v_inv = get_invers_function(f_v)
 
         else:
+            print("Unknown Image Shift Style")
             raise NotImplementedError
 
         w = int(np.floor(f_h(np.shape(self.colors)[0] - 1)))
@@ -144,10 +150,10 @@ class MyImage:
         newmat = np.zeros((w, h))
         i_max = np.shape(newmat)[0]
         for i in range(0, np.shape(newmat)[0]):
-            print("Shift progress: {:.1f}%".format(100*i/i_max))
+            #print("Shift progress: {:.1f}%".format(100 * i / i_max))
             for j in range(0, np.shape(newmat)[1]):
                 x_w = f_h_inv(i)
-                #y_w = f_v(j)
+                # y_w = f_v(j)
                 x_lw = int(np.floor(x_w))
                 x_hi = int(np.ceil(x_w))
                 x_mi = x_w % 1.0
@@ -158,14 +164,13 @@ class MyImage:
                 y_mi = y_w % 1.0
                 try:
                     new_wert = x_mi * y_mi * self.colors[x_hi, y_hi]
-                    new_wert += x_mi * (1-y_mi) * self.colors[x_hi, y_lw]
-                    new_wert += (1-x_mi) * y_mi * self.colors[x_lw, y_hi]
-                    new_wert += (1-x_mi) * (1-y_mi) * self.colors[x_lw, y_lw]
+                    new_wert += x_mi * (1 - y_mi) * self.colors[x_hi, y_lw]
+                    new_wert += (1 - x_mi) * y_mi * self.colors[x_lw, y_hi]
+                    new_wert += (1 - x_mi) * (1 - y_mi) * self.colors[x_lw, y_lw]
                     newmat[i, j] = new_wert
                 except IndexError:
                     print("IE Dolle")
                     print(x_lw, x_hi, y_lw, y_hi)
-
 
         self.img = self.newImage(*(np.shape(newmat)))
         self.colors = newmat
@@ -173,14 +178,14 @@ class MyImage:
     def __str__(self):
         return str(self.colors)
 
-    @measureTime
+    # @measureTime
     def updateImage(self):
         pixels = self.img.load()
         for i in range(self.img.size[0]):
             for j in range(self.img.size[1]):
                 pixels[i, j] = self.rgb_map(self.colors[i, j])
 
-    @measureTime
+    # @measureTime
     def newImage(self, w=None, h=None):
         if w is not None:
             wid = w
@@ -195,22 +200,22 @@ class MyImage:
 
     # Add Noise to image
     # currently random dirstibuted, possibly change to normal?
-    @measureTime
+    # @measureTime
     def noise(self, mu, sigma):
         # if self.noised:
         #    return
         # self.noised = True
         self.colors += np.random.normal(mu, sigma, np.shape(self.colors))
 
-    @measureTime
+    # @measureTime
     def get_matrix(self):
         return self.colors
 
-    @measureTime
+    # @measureTime
     def showImage(self):
         self.img.show()
 
-    @measureTime
+    # @measureTime
     def saveImage(self, filename):
         try:
             self.img.save(filename)
@@ -219,7 +224,7 @@ class MyImage:
             self.img.save(filename)
         return filename
 
-    @measureTime
+    # @measureTime
     @lru_cache
     def rgb_map(self, h):
         mode = self.color_scheme
@@ -239,14 +244,14 @@ class MyImage:
         else:
             raise NotImplementedError
 
-
         r = None
         g = None
         b = None
         x = h
-        for i in range(len(xs_green)-1):
-            if xs_green[i] <= x < xs_green[i+1]:
-                g = ys_green[i] + ((ys_green[i + 1] - ys_green[i]) / (xs_green[i + 1] - xs_green[i])) * (x - xs_green[i])
+        for i in range(len(xs_green) - 1):
+            if xs_green[i] <= x < xs_green[i + 1]:
+                g = ys_green[i] + ((ys_green[i + 1] - ys_green[i]) / (xs_green[i + 1] - xs_green[i])) * (
+                            x - xs_green[i])
                 break
         if g is None:
             if x > xs_green[-1]:
@@ -257,11 +262,11 @@ class MyImage:
                 raise ValueError
 
         for i in range(len(xs_blue) - 1):
-            #print("{} <= {} < {}".format(xs_blue[i], x, xs_blue[i+1]))
+            # print("{} <= {} < {}".format(xs_blue[i], x, xs_blue[i+1]))
             if xs_blue[i] <= x < xs_blue[i + 1]:
-                #print("Yes")
-                b = ys_blue[i] + ((ys_blue[i+1] - ys_blue[i])/(xs_blue[i+1] - xs_blue[i])) * (x - xs_blue[i])
-                #print("Ret {}".format(b))
+                # print("Yes")
+                b = ys_blue[i] + ((ys_blue[i + 1] - ys_blue[i]) / (xs_blue[i + 1] - xs_blue[i])) * (x - xs_blue[i])
+                # print("Ret {}".format(b))
                 break
         if b is None:
             if x > xs_blue[-1]:
@@ -273,7 +278,7 @@ class MyImage:
 
         for i in range(len(xs_red) - 1):
             if xs_red[i] <= x < xs_red[i + 1]:
-                r = ys_red[i] + ((ys_red[i+1] - ys_red[i])/(xs_red[i+1] - xs_red[i])) * (x - xs_red[i])
+                r = ys_red[i] + ((ys_red[i + 1] - ys_red[i]) / (xs_red[i + 1] - xs_red[i])) * (x - xs_red[i])
                 break
         if r is None:
             if x > xs_red[-1]:
@@ -282,10 +287,10 @@ class MyImage:
                 r = ys_red[0]
             else:
                 raise ValueError
-        #print("h={:.1f} -> ({}, {}, {})".format(x, 255-int(r), 255-int(g), 255-int(b)))
-        return 255-int(r), 255-int(g), 255-int(b)
+        # print("h={:.1f} -> ({}, {}, {})".format(x, 255-int(r), 255-int(g), 255-int(b)))
+        return 255 - int(r), 255 - int(g), 255 - int(b)
 
-    @measureTime
+    # @measureTime
     def rgb_map_test(self):
         x = []
         r = []
@@ -293,7 +298,6 @@ class MyImage:
         b = []
 
         for i in range(255):
-
             aa, bb, cc = self.rgb_map(i)
             x.append(i)
             r.append(aa)

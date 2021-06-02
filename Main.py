@@ -92,24 +92,26 @@ def multi_test_fn(t, fgen):
         gen.kill()
 
 
+class Gen1(Process):
+    def __init__(self, fn, n):
+        super().__init__()
+        self.fn = fn
+        self.n = n
+
+    def run(self) -> None:
+        for i in range(self.n):
+            generate(self.fn)
+
 def every_thread_n(n):
     BaseManager.register('FilenameGenerator', FilenameGenerator)
     filemanager = BaseManager()
     filemanager.start()
     fn_gen = filemanager.FilenameGenerator()
 
-    class Gen1(Process):
-        def __init__(self, fn):
-            super().__init__()
-            self.fn = fn
-
-        def run(self) -> None:
-            for i in range(n):
-                generate(self.fn)
 
     ts = []
     for i in range(cfg.get_threads()):
-        ts.append(Gen1(fn_gen))
+        ts.append(Gen1(fn_gen, n))
     for t in ts:
         t.start()
     for t in ts:
@@ -149,6 +151,71 @@ def test_Length_and_Sigma():
         inc += dinc
         l += inc
 
+
+class Gen2(Process):
+    def __init__(self, fn, a):
+        super().__init__()
+        self.fn = fn
+        self.a = a
+
+    def run(self) -> None:
+        dat_frame = DataFrame(self.fn)
+        # dat_frame.addParticles()
+        dat_frame.add_Ordered(Molecule, theta=self.a)
+        dat_frame.get_Image()
+        index = dat_frame.save()
+        print("index {} had angle {:.1f}°".format(index, 180 * self.a / 3.14159))
+
+
+def every_angle():
+    BaseManager.register('FilenameGenerator', FilenameGenerator)
+    filemanager = BaseManager()
+    filemanager.start()
+    fn_gen = filemanager.FilenameGenerator()
+
+    ts = []
+    for i in range(cfg.get_threads()):
+        a = ((360 / cfg.get_threads()) * i) * np.pi/180
+        ts.append(Gen2(fn_gen, a))
+    for t in ts:
+        t.start()
+        time.sleep(2)
+    for t in ts:
+        t.join()
+    return True
+
+class Gen3(Process):
+    def __init__(self, fn, a):
+        super().__init__()
+        self.fn = fn
+        self.a = a
+
+    def run(self) -> None:
+
+        dat_frame = DataFrame(self.fn)
+        dat_frame.add_Ordered(theta=0)
+        # dat_frame.addParticles()
+        #dat_frame.addObject(Molecule(pos=np.array([Distance(True, 50), Distance(True, 50)]), theta=0))
+        dat_frame.get_Image(ang=self.a)
+        index = dat_frame.save()
+        print("index {} had angle {:.1f}°".format(index, 180 * self.a / 3.14159))
+
+def every_angle1():
+    BaseManager.register('FilenameGenerator', FilenameGenerator)
+    filemanager = BaseManager()
+    filemanager.start()
+    fn_gen = filemanager.FilenameGenerator()
+
+    ts = []
+    for i in range(cfg.get_threads()):
+        a = ((360 / cfg.get_threads()) * i) * np.pi/180
+        ts.append(Gen3(fn_gen, a))
+    for t in ts:
+        t.start()
+        time.sleep(2)
+    for t in ts:
+        t.join()
+    return True
 
 def testStdderiv(fn_gen, l):
     fn = fn_gen
@@ -232,9 +299,15 @@ if __name__ == "__main__":
     #    dat.get_Image()
     #    dat.save()
 
-    start = time.perf_counter()
-    #f = lambda x: np.exp(0.02*x) + x
-    #approx_invers(f)
+    #start = time.perf_counter()
+    #f = lambda x: x*np.sin(x/100) + 20
+    #finv = get_invers_function(f)
+    #xs = np.linspace(0, 400, 200)
+    #ys = [finv(xy) for xy in xs]
+    #plt.xkcd()
+    #plt.plot(xs, ys)
+    #every_angle()
+    #p#lt.show()
     #print("Dur: {:.2f}s".format(time.perf_counter() - start))
     #times = []
     #accs = []
@@ -251,22 +324,28 @@ if __name__ == "__main__":
    # plt.plot(accs, times)
    # plt.title("Computing time over Accuracy")
    # plt.show()
-    while True:
-        done = every_thread_n(10)
-        if done:
-            break
-        else:
-            time.sleep(5)
+    #every_angle()
+    #print(every_thread_n(10))
+    #dat = DataFrame(fn)
+    #dat.add_Ordered()
+    #dat.get_Image()
+    #dat.save()
+
+    if every_thread_n(10):
+        exit()
+   #         time.sleep(5)
+
+
 
 
     #img = MyImage()
     #img.rgb_map_test()
     #for i in range(0, 360, 10):
-     #   dat = DataFrame(fn)
-      #  dat.add_Ordered(Molecule, theta=np.pi * i / 180)
-       # dat.get_Image()
-        #dat.save()
-    #    print("Dur: {:.2f}s".format(time.perf_counter() - start))
+    #    dat = DataFrame(fn)
+    #    dat.add_Ordered(Molecule, theta=np.pi * i / 180)
+    #    dat.get_Image()
+    #    dat.save()
+    ##    print("Dur: {:.2f}s".format(time.perf_counter() - start))
      #   start = time.perf_counter()
     ##    break
         #for i in range(5):
