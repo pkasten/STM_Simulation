@@ -46,6 +46,14 @@ class My_SXM():
 
     @staticmethod
     def write_image(filename, image):
+
+        ang_per_bright = cfg.get_max_height().ang * 1e-10 / 255
+        newmat = np.zeros(np.shape(image))
+
+        for i in range(np.shape(image)[0]):
+            for j in range(np.shape(image)[1]):
+                newmat[i, j] = ang_per_bright * image[i, j]
+
         with open(filename, "ab") as file:
             file.write(b'\n')
             file.write(b'\x1a')
@@ -88,7 +96,7 @@ class My_SXM():
             #print(d_type)
 
             #print("Shape than: {}".format(np.shape(image)))
-            data = image.reshape(im_size,)
+            data = newmat.reshape(im_size,)
             #print("Shape now: {}".format(np.shape(data)))
 
             format = bitorder + length + d_type

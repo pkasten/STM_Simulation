@@ -63,8 +63,10 @@ def_Z_Controller_Time_const_s = "Z-Controller>Time const (s)", [['102.135E-15']]
 def_Z_Controller_TipLift_m = "Z-Controller>TipLift (m)", [['0E+0']]
 def_Z_Controller_Switch_off_delay_s = "Z-Controller>Switch off delay (s)", [['0E+0']]
 def_Scan_Scanfield = "Scan>Scanfield", [['-97.1187E-9;59.3516E-9;1.80609E-9;1.80609E-9;0E+0']]
-def_Scan_series_name = "Scan>series name", [['HOPG-gxy1z1-p2']]
-def_Scan_channels = "Scan>channels", [['Z', '(m)']]
+#def_Scan_series_name = "Scan>series name", [['HOPG-gxy1z1-p2']]
+def_Scan_series_name = "Scan>series name", [['SimulatedImages']]
+#def_Scan_channels = "Scan>channels", [['Z', '(m)']]
+def_Scan_channels = "Scan>channels", [['Z']]
 def_Scan_pixels_line = "Scan>pixels/line", [['256']]
 def_Scan_lines = "Scan>lines", [['256']]
 def_Scan_speed_forw_m_s = "Scan>speed forw. (m/s)", [['141.101E-9']]
@@ -218,6 +220,10 @@ def set_dimensions(data): #ToDo. Height and width correct?
         return
     storage[def_SCAN_PIXELS[0]][0][0] = str(width)
     storage[def_SCAN_PIXELS[0]][0][1] = str(height)
+
+    #new
+    storage[def_Scan_pixels_line[0]][0][0] = str(width)
+    storage[def_Scan_lines[0]][0][0] = str(height)
 
     rewrite_file()
     update_params()
