@@ -126,23 +126,28 @@ class Particle:
             self.dragged_angle))
 
     def visualize_pixel(self, x, y):
-        if not self.fromImage:
-            # return self._line_gauss(x, y)
-            return self._line_fermi(x, y)
-        else:
-            cx = self.img.size[0] / 2
-            cy = self.img.size[1] / 2
-            try:
-                return self.pixels[x + cx, y + cy]
-            except IndexError:
-                return 0
+        mode = "LineFermi"
+        if mode == "Line":
+            return self._line(x, y)
+
+        if mode=="LineFermi":
+            if not self.fromImage:
+                # return self._line_gauss(x, y)
+                return self._line_fermi(x, y)
+            else:
+                cx = self.img.size[0] / 2
+                cy = self.img.size[1] / 2
+                try:
+                    return self.pixels[x + cx, y + cy]
+                except IndexError:
+                    return 0
 
     def _ball(self, x, y):
         return 255 if (abs(x) <= 1 and abs(y) <= 1) else 0
 
     def _line(self, x, y):
-        if -self.width / 2 <= x < self.width - self.width / 2 and \
-                -self.length / 2 <= y < self.length - self.length / 2:
+        if -self.width.px / 2 <= x < self.width.px - self.width.px / 2 and \
+                -self.length.px / 2 <= y < self.length.px - self.length.px / 2:
             # if y > 0:
             return self._color(self.height)
             # else:
@@ -212,18 +217,18 @@ class Particle:
 
     def set_x(self, x):
         self.x = x
-        self.calc_charges()
+     #   self.calc_charges()
 
     def set_y(self, y):
         self.y = y
-        self.calc_charges()
+      #  self.calc_charges()
 
     def get_theta(self):
         return self.theta
 
     def set_theta(self, theta):
         self.theta = theta
-        self.calc_charges()
+     #   self.calc_charges()
 
     def set_length(self, length):
         self.length = length
@@ -231,8 +236,9 @@ class Particle:
     def set_height(self, height):
         self.height = height
 
-    def get_charges(self):
-        return self.charges
+    @DeprecationWarning
+    #def get_charges(self):
+    #    return self.charges
 
     def get_dimension(self):
         return max(self.width, self.length)

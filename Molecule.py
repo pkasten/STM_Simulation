@@ -112,7 +112,7 @@ class Molecule(Particle):
         return self.molecule_class
 
     def __repr__(self):
-        return "Molecule {} (N={})".format(self.molecule_class, self.molecule_ph_groups)
+        return "Molecule {} (x={})".format(self.molecule_class, self.molecule_ph_groups)
 
     def get_C6_Ringdist(self, cc_dist):
         return 3 * cc_dist

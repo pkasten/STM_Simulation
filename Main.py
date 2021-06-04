@@ -331,8 +331,14 @@ if __name__ == "__main__":
     #dat.get_Image()
     #dat.save()
 
-    if every_thread_n(10):
-        exit()
+    #dat = DataFrame(fn)
+    #p = Particle(Distance(True, 35), Distance(True, 35), 0)
+    #dat.addParticle(p)
+    #dat.get_Image()
+    #dat.save()
+    every_thread_n(5)
+    #if every_thread_n(10):
+    #    exit()
    #         time.sleep(5)
 
 
