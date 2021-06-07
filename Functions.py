@@ -46,135 +46,107 @@ def evaluateLog():
             file.write(str(key) + ": {} calls\n".format(stat_dict_app[key]))
             file.write(str(key) + ": {:.3f} ms total\n\n".format(stat_dict_totalTime[key]))
 
+def turnMatrix(mat, theta):
+    w, h = np.shape(mat)
+    b = abs(np.sqrt(np.square(h) / (1 + np.square(np.tan(theta)))))
+    a = abs(b * np.tan(theta))
 
-def turnMatrix(mat, theta):  # ToDo: Improve Anti-Aliasing
-    shp = np.shape(mat) #ToDo: Turn Correctly
-    matrix = mat
-    w = shp[0]
-    h = shp[1]
-    anti_aliasing = cfg.get_anti_aliasing()  # ToDo: Ask
-    while True:
-        if 0 <= theta < np.pi / 2:
-            break
-        elif np.pi / 2 <= theta < np.pi:
-            theta = theta % (np.pi / 2)
-            newmat = np.zeros(np.shape(matrix))
-            xlen = np.shape(matrix)[0]
-            ylen = np.shape(matrix)[1]
-            for x in range(xlen):
-                for y in range(ylen):
-                    newmat[x, y] = matrix[y, xlen - x - 1]
-            matrix = newmat
-            #matrix = matrix.transpose(0,1)  # ToDo: possible Error
-        elif np.pi <= theta < 3 * np.pi / 2:
-            newmat = np.zeros(np.shape(matrix))
-            xlen = np.shape(matrix)[0]
-            ylen = np.shape(matrix)[1]
-            # midpoint = ylen/2 + 0.5
-            for x in range(xlen):
-                for y in range(ylen):
-                    newmat[x, y] = matrix[x, ylen - y - 1]  # -1 fpr Index Error
+    # mat_loc, th_loc = _prepare_matrix(mat, theta)
+    mat_loc = mat
+    th_loc = theta
 
-            theta = theta % np.pi
-            matrix = newmat
-        elif 3 * np.pi / 2 <= theta < 2 * np.pi:
-            matrix.transpose()
-            newmat = np.zeros(np.shape(matrix))
-            xlen = np.shape(matrix)[0]
-            ylen = np.shape(matrix)[1]
-            for x in range(xlen):
-                for y in range(ylen):
-                    newmat[x, y] = matrix[y, xlen - x - 1]
-            matrix = newmat
-            # midpoint = ylen/2 + 0.5
-            newmat = np.zeros(np.shape(matrix))
-            for x in range(xlen):
-                for y in range(ylen):
-                    newmat[x, y] = matrix[xlen - x - 1, ylen - y - 1]  # -1 fpr Index Error
+    h_new = math.ceil(w * abs(np.sin(th_loc)) + b)
+    w_new = math.ceil(w * abs(np.cos(th_loc)) + a)
 
-            theta = theta % (3 * np.pi / 2)
-            matrix = newmat
 
-        else:
-            theta = theta % 2 * np.pi
-
-    b = np.sqrt(np.square(h) / (1 + np.square(np.tan(theta))))
-    a = b * np.tan(theta)
-
-    # print(a, b, theta)
-
-    h_new = math.ceil(w * np.sin(theta) + b)
-    w_new = math.ceil(w * np.cos(theta) + a)
-    cx = w / 2
-    cy = h / 2
-
-    limit = 255  # ToDo: SoftCode
-
+    cx = w_new / 2
+    cy = h_new / 2
+    cx_old = w / 2
+    cy_old = h / 2
+    center_new = np.array([cx, cy])
+    center_old = np.array([cx_old, cy_old])
     new_mat = np.zeros((w_new, h_new))
 
-    if not anti_aliasing:
-        for i in range(0, 2 * w):  # Step 0.5 zum lösen drees Problems von durch rundung nicht getroffenen Feldern
-            for j in range(0, 2 * h):
-                i_temp = i/2
-                j_temp = j/2
-                if matrix[min(round(i_temp), w-1), min(round(j_temp), h-1)] == 0:  # Min für Indexerror
-                    continue
-                else:
-                    #print(i, j)
-                    cx = w / 2
-                    cy = h / 2
-                    i_tilt = i_temp - cx
-                    j_tilt = j_temp - cy
-                    i_tilt_new = i_tilt * np.cos(theta) - j_tilt * np.sin(theta)
-                    j_tilt_new = i_tilt * np.sin(theta) + j_tilt * np.cos(theta)
-                    i_new = i_tilt_new + (w_new / w) * cx
-                    j_new = j_tilt_new + (h_new / h) * cy
-                    try:
-                        if i_new % 1 == 0.5 or j_new % 1 == 0.5:
-                            new_mat[round(i_new), round(j_new)] += 0.5 * matrix[
-                                min(round(i_temp), w - 1), min(round(j_temp), h - 1)]
-                            new_mat[round(i_new-0.1), round(j_new-0.1)] += 0.5 * matrix[
-                                min(round(i_temp-0.1), w - 1), min(round(j_temp-.01), h - 1)]
-                        else:
-                            new_mat[round(i_new), round(j_new)] += 0.5 * matrix[min(round(i_temp), w-1), min(round(j_temp), h-1)]
-                    except IndexError:
-                        pass
-    else:
-        for i in range(w):
-            for j in range(h):
-                if matrix[i, j] == 0:
-                    continue
-                else:
-                    cx = w / 2
-                    cy = h / 2
-                    i_tilt = i - cx
-                    j_tilt = j - cy
-                    i_tilt_new = i_tilt * np.cos(theta) - j_tilt * np.sin(theta)
-                    j_tilt_new = i_tilt * np.sin(theta) + j_tilt * np.cos(theta)
-                    i_new = i_tilt_new + (w_new / w) * cx
-                    j_new = j_tilt_new + (h_new / h) * cy
+    for x_abs in range(np.shape(new_mat)[0]):
+        for y_abs in range(np.shape(new_mat)[1]):
+            x = x_abs - cx
+            y = y_abs - cy
+            pos = np.array([x, y])
+            d = np.linalg.norm(pos)
 
-                    i_new_abs, i_new_chi = np.divmod(i_new, 1)
-                    j_new_abs, j_new_chi = np.divmod(j_new, 1)
-                    i_new_abs = int(i_new_abs)
-                    j_new_abs = int(j_new_abs)
-                    a = matrix[i, j]
-                    new_mat[i_new_abs, j_new_abs] += a * (1 - i_new_chi) * (1 - j_new_chi)
-                    # new_mat[i_new_abs, j_new_abs] = min(limit, new_mat[i_new_abs, j_new_abs])
-                    try:
-                        new_mat[i_new_abs + 1, j_new_abs] += a * i_new_chi * (1 - j_new_chi)
-                        # new_mat[i_new_abs + 1, j_new_abs] = min(limit, new_mat[i_new_abs + 1, j_new_abs])
-                    except IndexError:
-                        pass
-                    try:
-                        new_mat[i_new_abs, j_new_abs + 1] += a * (1 - i_new_chi) * j_new_chi
-                        # new_mat[i_new_abs, j_new_abs + 1] = min(limit, new_mat[i_new_abs, j_new_abs + 1])
-                        new_mat[i_new_abs + 1, j_new_abs + 1] += a * i_new_chi * j_new_chi
-                        # new_mat[i_new_abs + 1, j_new_abs + 1] = min(limit, new_mat[i_new_abs + 1, j_new_abs + 1])
-                    except IndexError:
-                        pass
+            if x > 0 and y > 0:
+                theta_pos = np.pi / 2 + np.arctan(y / x)
+            elif x > 0 and y < 0:
+                theta_pos = np.arctan(- x / y)
+            elif x < 0 and y > 0:
+                theta_pos = np.pi + np.arctan(-x / y)
+            elif x < 0 and y < 0:
+                theta_pos = 2 * np.pi - np.arctan(x / y)
+            elif y == 0 and x < 0:
+                theta_pos = (3 / 2) * np.pi
+            elif y == 0 and x >= 0:
+                theta_pos = np.pi / 2
+            elif x == 0 and y <= 0:
+                theta_pos = 0
+            elif x == 0 and y > 0:
+                theta_pos = np.pi
+            else:
+                raise ValueError
 
-    return new_mat, (w_new / w) * cx, (h_new / h) * cy
+            theta_old = (theta_pos - th_loc + 2 * np.pi) % (2 * np.pi)
+            assert 0 <= theta_old <= 2 * np.pi
+            x_old = d * np.sin(theta_old)
+            y_old = - d * np.cos(theta_old)
+
+            pos_old = np.array([x_old, y_old])
+            pos_old_abs = pos_old + center_old
+
+            x_old_abs = pos_old_abs[0]
+            y_old_abs = pos_old_abs[1]
+
+            x_old_abs_rd = int(np.round(x_old_abs))
+            y_old_abs_rd = int(np.round(y_old_abs))
+
+            if not (0 <= x_old_abs_rd <= w and 0 <= y_old_abs_rd <= h):
+                continue
+
+            left_x = int(np.floor(pos_old_abs[0]))
+            right_x = left_x + 1
+            up_y = int(np.floor(pos_old_abs[1]))
+            down_y = up_y + 1
+
+
+            x_sep = pos_old_abs[0] - left_x
+            y_sep = pos_old_abs[1] - up_y
+
+            if left_x < 0:
+                left_x = 1000000
+            if up_y < 0:
+                up_y = 10000000
+
+            l_ant = 1 - x_sep
+            r_ant = x_sep
+            u_ant = 1-y_sep
+            d_ant = y_sep
+
+            sumcol = 0
+            try:
+                sumcol += l_ant * u_ant * mat_loc[left_x, up_y]
+                sumcol += l_ant * d_ant * mat_loc[left_x, down_y]
+                sumcol += r_ant * u_ant * mat_loc[right_x, up_y]
+                sumcol += r_ant * d_ant * mat_loc[right_x, down_y]
+            except IndexError:
+                sumcol = 0
+
+
+            sumcol = max(0, sumcol)
+            sumcol = min(255, sumcol)
+
+            new_mat[x_abs, y_abs] = sumcol
+
+
+    return new_mat, (w_new / w) * cx_old, (h_new / h) * cy_old
+
 
 def approx_invers(f, min=0, max=400):
     genauigkeit = 5
@@ -192,14 +164,14 @@ def approx_invers(f, min=0, max=400):
     xs_inv = []
     ys_inv = []
 
-    for l in np.linspace(genauigkeit * int(np.min(ys_n) - 0.5), genauigkeit * int(np.max(ys_n)+0.5), y_steps):
-        i = l/genauigkeit
+    for l in np.linspace(genauigkeit * int(np.min(ys_n) - 0.5), genauigkeit * int(np.max(ys_n) + 0.5), y_steps):
+        i = l / genauigkeit
         testx = []
         testd = []
         new_min = int(f(min) - 2)
         new_max = int(f(max) + 2)
 
-        for k in range(genauigkeit * new_min, genauigkeit* new_max):
+        for k in range(genauigkeit * new_min, genauigkeit * new_max):
             x = k / genauigkeit
             testx.append(x)
             testd.append(abs(f(x) - i))
@@ -210,13 +182,15 @@ def approx_invers(f, min=0, max=400):
                 xs_inv.append(f(testx[h]))
                 ys_inv.append(testx[h])
                 break
-            #print("Not it")
+            # print("Not it")
 
     print(xs_inv)
     print(ys_inv)
 
 
-maxInv = max( int(np.ceil(cfg.get_height().px)), int(np.ceil(cfg.get_width().px)))
+maxInv = max(int(np.ceil(cfg.get_height().px)), int(np.ceil(cfg.get_width().px)))
+
+
 def get_invers_function(f, min=0, max=maxInv, acc=20):
     genauigkeit = acc
     xs = []
@@ -231,20 +205,15 @@ def get_invers_function(f, min=0, max=maxInv, acc=20):
     def f_inv(x):
         distances = [abs(y_lc - x) for y_lc in ys]
         dmin = np.min(distances)
-        #print("dmin = {:.3f}".format(dmin))
+        # print("dmin = {:.3f}".format(dmin))
         for i in range(len(distances)):
             if distances[i] == dmin:
-                #print("Ret xs[i]  {}".format(xs[i]))
+                # print("Ret xs[i]  {}".format(xs[i]))
                 return xs[i]
 
         return np.infty
 
-
     return f_inv
-
-
-
-
 
 
 # def statistics(name, duration):
@@ -289,6 +258,146 @@ def measureTime(func):
         return ret
 
     return measure
+
+
+@DeprecationWarning
+def turnMatrix_old(mat, theta):  # ToDo: Improve Anti-Aliasing
+    return turnMatrix(mat, theta)
+
+    shp = np.shape(mat)  # ToDo: Turn Correctly
+    matrix = mat
+    w = shp[0]
+    h = shp[1]
+    anti_aliasing = cfg.get_anti_aliasing()
+
+    matrix, theta = _prepare_matrix(matrix, theta)
+
+    b = np.sqrt(np.square(h) / (1 + np.square(np.tan(theta))))
+    a = b * np.tan(theta)
+
+    # print(a, b, theta)
+
+    h_new = math.ceil(w * np.sin(theta) + b)
+    w_new = math.ceil(w * np.cos(theta) + a)
+    cx = w / 2
+    cy = h / 2
+
+    limit = 255  # ToDo: SoftCode
+
+    new_mat = np.zeros((w_new, h_new))
+
+    if not anti_aliasing:
+        for i in range(0, 2 * w):  # Step 0.5 zum lösen drees Problems von durch rundung nicht getroffenen Feldern
+            for j in range(0, 2 * h):
+                i_temp = i / 2
+                j_temp = j / 2
+                if matrix[min(round(i_temp), w - 1), min(round(j_temp), h - 1)] == 0:  # Min für Indexerror
+                    continue
+                else:
+                    # print(i, j)
+                    cx = w / 2
+                    cy = h / 2
+                    i_tilt = i_temp - cx
+                    j_tilt = j_temp - cy
+                    i_tilt_new = i_tilt * np.cos(theta) - j_tilt * np.sin(theta)
+                    j_tilt_new = i_tilt * np.sin(theta) + j_tilt * np.cos(theta)
+                    i_new = i_tilt_new + (w_new / w) * cx
+                    j_new = j_tilt_new + (h_new / h) * cy
+                    try:
+                        if i_new % 1 == 0.5 or j_new % 1 == 0.5:
+                            new_mat[round(i_new), round(j_new)] += 0.5 * matrix[
+                                min(round(i_temp), w - 1), min(round(j_temp), h - 1)]
+                            new_mat[round(i_new - 0.1), round(j_new - 0.1)] += 0.5 * matrix[
+                                min(round(i_temp - 0.1), w - 1), min(round(j_temp - .01), h - 1)]
+                        else:
+                            new_mat[round(i_new), round(j_new)] += 0.5 * matrix[
+                                min(round(i_temp), w - 1), min(round(j_temp), h - 1)]
+                    except IndexError:
+                        pass
+    else:
+        for i in range(w):
+            for j in range(h):
+                if matrix[i, j] == 0:
+                    continue
+                else:
+                    cx = w / 2
+                    cy = h / 2
+                    i_tilt = i - cx
+                    j_tilt = j - cy
+                    i_tilt_new = i_tilt * np.cos(theta) - j_tilt * np.sin(theta)
+                    j_tilt_new = i_tilt * np.sin(theta) + j_tilt * np.cos(theta)
+                    i_new = i_tilt_new + (w_new / w) * cx
+                    j_new = j_tilt_new + (h_new / h) * cy
+
+                    i_new_abs, i_new_chi = np.divmod(i_new, 1)
+                    j_new_abs, j_new_chi = np.divmod(j_new, 1)
+                    i_new_abs = int(i_new_abs)
+                    j_new_abs = int(j_new_abs)
+                    a = matrix[i, j]
+                    new_mat[i_new_abs, j_new_abs] += a * (1 - i_new_chi) * (1 - j_new_chi)
+                    # new_mat[i_new_abs, j_new_abs] = min(limit, new_mat[i_new_abs, j_new_abs])
+                    try:
+                        new_mat[i_new_abs + 1, j_new_abs] += a * i_new_chi * (1 - j_new_chi)
+                        # new_mat[i_new_abs + 1, j_new_abs] = min(limit, new_mat[i_new_abs + 1, j_new_abs])
+                    except IndexError:
+                        pass
+                    try:
+                        new_mat[i_new_abs, j_new_abs + 1] += a * (1 - i_new_chi) * j_new_chi
+                        # new_mat[i_new_abs, j_new_abs + 1] = min(limit, new_mat[i_new_abs, j_new_abs + 1])
+                        new_mat[i_new_abs + 1, j_new_abs + 1] += a * i_new_chi * j_new_chi
+                        # new_mat[i_new_abs + 1, j_new_abs + 1] = min(limit, new_mat[i_new_abs + 1, j_new_abs + 1])
+                    except IndexError:
+                        pass
+
+    return new_mat, (w_new / w) * cx, (h_new / h) * cy
+
+@DeprecationWarning
+def _prepare_matrix(mat, theta):
+    matrix = mat
+    while True:
+        if 0 <= theta < np.pi / 2:
+            break
+        elif np.pi / 2 <= theta < np.pi:
+            theta = theta % (np.pi / 2)
+            newmat = np.zeros(np.shape(matrix))
+            xlen = np.shape(matrix)[0]
+            ylen = np.shape(matrix)[1]
+            for x in range(xlen):
+                for y in range(ylen):
+                    newmat[x, y] = matrix[y, xlen - x - 1]
+            matrix = newmat
+        elif np.pi <= theta < 3 * np.pi / 2:
+            newmat = np.zeros(np.shape(matrix))
+            xlen = np.shape(matrix)[0]
+            ylen = np.shape(matrix)[1]
+            for x in range(xlen):
+                for y in range(ylen):
+                    newmat[x, y] = matrix[x, ylen - y - 1]  # -1 fpr Index Error
+
+            theta = theta % np.pi
+            matrix = newmat
+        elif 3 * np.pi / 2 <= theta < 2 * np.pi:
+            matrix.transpose()
+            newmat = np.zeros(np.shape(matrix))
+            xlen = np.shape(matrix)[0]
+            ylen = np.shape(matrix)[1]
+            for x in range(xlen):
+                for y in range(ylen):
+                    newmat[x, y] = matrix[y, xlen - x - 1]
+            matrix = newmat
+            newmat = np.zeros(np.shape(matrix))
+            for x in range(xlen):
+                for y in range(ylen):
+                    newmat[x, y] = matrix[xlen - x - 1, ylen - y - 1]  # -1 fpr Index Error
+
+            theta = theta % (3 * np.pi / 2)
+            matrix = newmat
+
+        else:
+            theta = theta % 2 * np.pi
+
+    return matrix, theta
+
 
 
 class Functions:

@@ -62,7 +62,6 @@ class MyImage:
     #@DeprecationWarning
     def double_tip(self, strength, rel_dist, angle):  # ToDo: neues Bild damit auch links oben etc was ist
         # ToDo: Use surrounding Pictures
-        print("Deprecated 5462")
         vec_x = np.floor(np.sqrt(np.square(self.width) + np.square(self.height)) * rel_dist * np.sin(angle))
         vec_y = np.floor(np.sqrt(np.square(self.width) + np.square(self.height)) * rel_dist * np.cos(angle))
         vec_x = int(vec_x)
@@ -175,6 +174,32 @@ class MyImage:
         self.img = self.newImage(*(np.shape(newmat)))
         self.colors = newmat
 
+    def scan_lines(self):
+        style = "horizontal"
+        if style == "horizontal":
+            med_strength = 0.1 * cfg.get_width().px
+            variation = med_strength
+            poss = 0.5
+            y = 0
+            while y < np.shape(self.colors)[1]:
+                if random.random() < poss:
+                    x_med = int(random.randint(0, np.shape(self.colors)[0]))
+                    x_len = int(np.random.normal(med_strength, variation) / 2)
+                    x_start = max(0, x_med - x_len)
+                    x_end = min(x_med + x_len, np.shape(self.colors)[0])
+                    #print("xmed = {}, xlen = {}, xstart = {}, xend = {}".format(x_med, x_len, x_start, x_end))
+                    if x_start >= x_end:
+                     #   print("Start >= End")
+                        y += 1
+                        continue
+                    cols = self.colors[x_start:x_end, y]
+                    color = random.choice(cols)
+                    for x in range(x_start, x_end):
+                        self.colors[x,y] = color
+                else:
+                    y += 1
+
+
     def __str__(self):
         return str(self.colors)
 
@@ -228,11 +253,12 @@ class MyImage:
     @lru_cache
     def rgb_map(self, h):
         mode = self.color_scheme
-        if mode == "Gray":
+        mode = mode.lower()
+        if mode == "gray":
             gsc = int(h)
             return gsc, gsc, gsc
 
-        if mode == "WSXM":
+        if mode == "wsxm":
             xs_blue = [0, 85, 160, 220, 255]
             ys_blue = [255, 255, 179, 42, 2]
 
@@ -242,6 +268,7 @@ class MyImage:
             xs_red = [0, 32, 94, 152, 188, 255]
             ys_red = [255, 136, 57, 17, 6, 6]
         else:
+            print("ERROR: Could not recognize imaging mode {}".format(mode))
             raise NotImplementedError
 
         r = None

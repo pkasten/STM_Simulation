@@ -21,6 +21,7 @@ class Particle:
             self.y = y
             self.theta = theta
         self.width = cfg.get_part_width()
+        self.pos = np.array([self.x, self.y])
         self.height = cfg.get_part_height()
         self.length = cfg.get_part_length()
         self.img_width = cfg.get_width()
@@ -170,7 +171,7 @@ class Particle:
         upper_y = self.length - self.length / 2
 
         top_fak = 1 #ToDO: Remove bzw 1
-
+        lfak = 1
         if x < left_x.px - self.fermi_range_w or \
                 y < lower_y.px - self.fermi_range_h or \
                 x > right_x.px + self.fermi_range_w or \
@@ -178,9 +179,9 @@ class Particle:
 
             return 0
         elif x < 0 and y < 0:
-            return self._color(self.height) * self._fermi(x, left_x, y, lower_y)
+            return lfak * self._color(self.height) * self._fermi(x, left_x, y, lower_y)
         elif x < 0 and y >= 0:
-            return top_fak * self._color(self.height) * self._fermi(x, left_x, y, upper_y)
+            return lfak * top_fak * self._color(self.height) * self._fermi(x, left_x, y, upper_y)
         elif x >= 0 and y < 0:
             return self._color(self.height) * self._fermi(x, right_x, y, lower_y)
         elif x >= 0 and y >= 0:

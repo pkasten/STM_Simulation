@@ -80,7 +80,7 @@ def_height_part = 'Particle height (Ang)', 5
 def_image_path = 'Picture how particles should look like, leave empty for generated image', ""
 def_part_max_height = 'Maximum Height (Ang)', 7.3
 def_std_deriv = 'Standard Derivation of Grain Border (Deprecated)', def_length_part[1] / 5
-def_fermi_exp = 'Exponent 1/kbT in fermi distribution', 0.01 * def_length_part[1]
+def_fermi_exp = 'Exponent 1/kbT in fermi distribution', 0.4
 def_angle_characteristic_length = 'Angle Characteristic_relative_length (Deprecated)', 0
 def_angle_stdderiv = 'std_derivate_angle_correlation (Deprecated)', 0
 def_angle_range_min = 'minimum angle of particles (degree)', 0
@@ -193,6 +193,8 @@ def setupConfigurationManager():
     initialized = True
     if not os.path.exists(settings_file):
         _writeDefaults()
+        print("No settings file found. Created file in {}".format(settings_file))
+        exit(0)
 
     conf.read(settings_file)
     update_params()
@@ -234,7 +236,7 @@ def update_params():
     val_length_part = Distance(True, float(conf[cat_particle_properties][def_length_part[0]]))
     val_image_path = conf[cat_particle_properties][def_image_path[0]]
     val_part_max_height = Distance(True, float(conf[cat_particle_properties][def_part_max_height[0]]))
-    val_fermi_exp = float(conf[cat_particle_properties][def_fermi_exp[0]])
+    val_fermi_exp = float(conf[cat_particle_properties][def_fermi_exp[0]]) / val_px_per_angstrom
     val_angle_stdderiv = float(conf[cat_particle_properties][def_angle_stdderiv[0]])
     val_angle_characteristic_length = float(conf[cat_particle_properties][def_angle_characteristic_length[0]])
     val_angle_range_min = np.pi * float(conf[cat_particle_properties][def_angle_range_min[0]]) / 180

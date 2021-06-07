@@ -281,11 +281,79 @@ def test_finv_len():
     plt.title("Computing time over Accuracy")
     plt.show()
 
+class Gen4(Process):
+    def __init__(self, fn, a):
+        super().__init__()
+        self.fn = fn
+        self.a = a
+
+    def run(self) -> None:
+
+        dat_frame = DataFrame(self.fn)
+        p = Particle(cfg.get_width()/2, cfg.get_height()/2, self.a)
+        dat_frame.addParticle(p)
+        dat_frame.get_Image()
+        index = dat_frame.save()
+        print("index {} had angle {:.1f}°".format(index, 180 * self.a / 3.14159))
+
+
+def every_angle2():
+    BaseManager.register('FilenameGenerator', FilenameGenerator)
+    filemanager = BaseManager()
+    filemanager.start()
+    fn_gen = filemanager.FilenameGenerator()
+
+    ts = []
+    for i in range(cfg.get_threads()):
+        a = ((180 / cfg.get_threads()) * i) * np.pi/180
+        ts.append(Gen4(fn_gen, a))
+    for t in ts:
+        t.start()
+        time.sleep(0.5)
+    for t in ts:
+        t.join()
+    return True
+
 if __name__ == "__main__":
     clearLog()
     # lo = Lock()
     #start = time.perf_counter()
     fn = FilenameGenerator()
+    #
+    #every_angle2()
+    #dat = DataFrame(fn)
+    #p = Particle(cfg.get_width()/2, cfg.get_height()/2, 0)
+    #dat.addParticle(p)
+    #dat.get_Image()
+    #dat.save()
+    #dat = DataFrame(fn)
+    #dat.add_Ordered()
+    #dat.get_Image()
+    #dat.save()
+    #every_angle2()
+    #mat = 200 * np.ones((200, 200))
+    #for i in range(np.shape(mat)[0]):
+    #    for j in range(np.shape(mat)[1]):
+    #        col = 0
+    #        if i > np.shape(mat)[0]/2:
+    #            col += 75
+    ##        else:
+    #            col += 25
+
+    #        if j > np.shape(mat)[1]/2:
+    #            col += 100
+    #        else:
+    #            col += 0
+    #        mat[i, j] = col
+    every_thread_n(1)
+    #plt.imshow(mat)
+    #plt.show()
+    #for i in range(0, 360, 10):
+    #    mat2, a, b = turn_matrix2(mat, i * 3.14159/180)
+    #    plt.imshow(mat2)
+    #    plt.show()
+
+    #every_thread_n(1)
     #multi_test(1)
     #m = Molecule()
     #Tests_Gitterpot().test()
@@ -336,7 +404,7 @@ if __name__ == "__main__":
     #dat.addParticle(p)
     #dat.get_Image()
     #dat.save()
-    every_thread_n(5)
+    #every_thread_n(5)
     #if every_thread_n(10):
     #    exit()
    #         time.sleep(5)

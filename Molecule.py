@@ -13,17 +13,19 @@ import matplotlib.pyplot as plt
 
 class Molecule(Particle):
     molecule_class = "NCPhCN"
-    molecule_ph_groups = 4
+    #molecule_ph_groups = 3
     molecule_style = "Simple"  # "Complex" "Simple"
 
     def __init__(self, pos=None, theta=None, lookup_table=None, gitter=None, molecule_class=None, molecule_ph_groups=0):
+        if molecule_ph_groups > 0:
+            self.molecule_ph_groups = molecule_ph_groups
+        else:
+            self.molecule_ph_groups = random.randint(1, 5)
+
         if molecule_class is not None:
             self.molecule_class = molecule_class
-            if self.molecule_class == "NCPhCN":
-                if molecule_ph_groups > 0:
-                    self.molecule_ph_groups = molecule_ph_groups
-                else:
-                    self.molecule_ph_groups = random.randint(1, 5)
+
+
         #self.molecule_ph_groups = random.randint(1, 5)
         if pos is None:
             x = Distance(False, random.randint(0 - cfg.get_px_overlap(), cfg.get_width().px + cfg.get_px_overlap()))
@@ -43,13 +45,17 @@ class Molecule(Particle):
         self.img_h = cfg.get_height()
         self.lookup_table = lookup_table
 
-        self.ch_len_def = Distance(True, 1.06)
-        self.cn_len_def = Distance(True, 1.47) # Min
-        self.cc_len_def = Distance(True, 1.20)
+        #self.ch_len_def = Distance(True, 1.06)
+        #self.cn_len_def = Distance(True, 1.47) # Min
+        #self.cc_len_def = Distance(True, 1.20)
 
         # self.ch_len_def = Distance(True, 1.08)
         # self.cn_len_def = Distance(True, 1.78) # Mid
         # self.cc_len_def = Distance(True, 1.37)
+
+        self.ch_len_def = Distance(True, 1.07)
+        self.cn_len_def = Distance(True, 1.155)  # Lit
+        self.cc_len_def = Distance(True, 1.40)
 
         self.gitter = gitter
         if gitter is not None and lookup_table is None:
