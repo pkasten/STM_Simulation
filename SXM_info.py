@@ -215,8 +215,12 @@ def get_time():
 
 def set_dimensions(data): #ToDo. Height and width correct?
     global def_SCAN_PIXELS, storage
-    width = np.shape(data)[0]
-    height = np.shape(data)[1]
+
+    #ToDo Hier evtl verbessern
+    width = max(np.shape(data)[0], np.shape(data)[1])
+    height = max(np.shape(data)[0], np.shape(data)[1])
+
+
     if storage[def_SCAN_PIXELS[0]][0][0] == str(width) and storage[def_SCAN_PIXELS[0]][0][1] == str(height):
         return
     storage[def_SCAN_PIXELS[0]][0][0] = str(width)

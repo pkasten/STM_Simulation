@@ -151,7 +151,7 @@ class DataFrame:
                 else:
                     return p
             print("MaxTries Exhausted")
-            return p
+            return None
 
         if len(self.objects) == 0:
             return Particle()
@@ -165,8 +165,39 @@ class DataFrame:
         # print("MaxTries Exhausted_a")
         return p
 
+    def _get_molec_thatnot_overlaps(self, Obj=Molecule, ph=3,  maximumtries=1000):
+
+        @measureTime
+        def _overlaps_M_any(part):
+            # start = time.perf_counter()
+
+            if len(self.objects) == 0:
+                # print("Overlaps any took {}".format(time.perf_counter() - start))
+                return False
+            for p in self.objects:
+                if not part.dragged and not p.dragged:
+
+                    if math.dist([p.x.px, p.y.px], [part.x.px, part.y.px]) > np.sqrt(2) * max(part.effect_range,
+                                                                                              p.effect_range):
+                        continue
+                    else:
+                        return True
+            # print("Overlaps any took {}".format(time.perf_counter() - start))
+            return False
+
+        if len(self.objects) == 0:
+            return Obj(molecule_ph_groups=ph)
+        p = Obj(molecule_ph_groups=ph)
+        for i in range(maximumtries):
+            if _overlaps_M_any(p):
+                p = Obj(molecule_ph_groups=ph)
+            else:
+                return p
+
+        return None
+
     @measureTime
-    def     get_dragged_that_mot_overlaps(self, maximumtries, angle=None, setangle=False):
+    def get_dragged_that_mot_overlaps(self, maximumtries, angle=None, setangle=False):
         @measureTime
         def _set_p():
             p = Particle()
@@ -1939,6 +1970,9 @@ class DataFrame:
     @measureTime
     def realign_along_border(self, lines, matrix, sideA, updown):
 
+        if self.passed_args_Ordered is None:
+            return
+
         def _create_Border():
             if updown:
                 border = []
@@ -1988,10 +2022,10 @@ class DataFrame:
                     return not posy < border[posx][1], dist
 
         def rempos(part, dist): # 1 at 3pd, 0 at 7pd
-            return 1.75 - (dist / (4* part.get_dimension().px))
+            return (1+(3/16)) - (dist / (16* part.get_dimension().px))
 
 
-        assert self.passed_args_Ordered is not None
+
         old_objs = self.objects.copy()
         self.objects = []
         assert len(old_objs) > 0
@@ -2028,6 +2062,19 @@ class DataFrame:
         for i in range(len(lower_obs)):
             if i not in rem_ind_lower:
                 self.objects.append(lower_obs[i])
+
+        start = time.perf_counter()
+        i = 0
+        while i < 100:
+            no = self._get_molec_thatnot_overlaps(self.passed_args_Ordered[0], ph=ph_groups, maximumtries=5000)
+            if no is None:
+                break
+            i += 1
+            self.objects.append(no)
+        print("Got {} after {:.2f}ms".format(i, time.perf_counter() - start))
+
+
+
 
 
 
@@ -3001,7 +3048,7 @@ class Double_Frame(DataFrame):
                 p = Double_Particle()
             else:
                 return p
-        return p
+        return None
 
     @measureTime
     def addParticles(self, optimumEnergy=False, amount=None, coverage=None, overlapping=False, maximum_tries=1000):

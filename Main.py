@@ -54,7 +54,7 @@ def measure_speed():
 
 def generate(fn_gen):
     dat_frame = DataFrame(fn_gen)
-    #dat_frame.addParticles()
+    # dat_frame.addParticles()
     dat_frame.add_Ordered()
     dat_frame.get_Image()
     dat_frame.save()
@@ -73,8 +73,8 @@ def multi_test(t):
     for gen in gens:
         gen.start()
 
-    #time.sleep(t)
-    #for gen in gens:
+    # time.sleep(t)
+    # for gen in gens:
     #    gen.kill()
 
 
@@ -102,12 +102,12 @@ class Gen1(Process):
         for i in range(self.n):
             generate(self.fn)
 
+
 def every_thread_n(n):
     BaseManager.register('FilenameGenerator', FilenameGenerator)
     filemanager = BaseManager()
     filemanager.start()
     fn_gen = filemanager.FilenameGenerator()
-
 
     ts = []
     for i in range(cfg.get_threads()):
@@ -126,9 +126,9 @@ class Generator(Process):
 
     def run(self):
         # i = 0
-        #while True:
-            # i+= 1
-            # print("{} running for {}th time".format(str(self), i))
+        # while True:
+        # i+= 1
+        # print("{} running for {}th time".format(str(self), i))
         generate(self.fn_gen)
 
 
@@ -175,7 +175,7 @@ def every_angle():
 
     ts = []
     for i in range(cfg.get_threads()):
-        a = ((360 / cfg.get_threads()) * i) * np.pi/180
+        a = ((360 / cfg.get_threads()) * i) * np.pi / 180
         ts.append(Gen2(fn_gen, a))
     for t in ts:
         t.start()
@@ -184,6 +184,7 @@ def every_angle():
         t.join()
     return True
 
+
 class Gen3(Process):
     def __init__(self, fn, a):
         super().__init__()
@@ -191,14 +192,14 @@ class Gen3(Process):
         self.a = a
 
     def run(self) -> None:
-
         dat_frame = DataFrame(self.fn)
         dat_frame.add_Ordered(theta=0)
         # dat_frame.addParticles()
-        #dat_frame.addObject(Molecule(pos=np.array([Distance(True, 50), Distance(True, 50)]), theta=0))
+        # dat_frame.addObject(Molecule(pos=np.array([Distance(True, 50), Distance(True, 50)]), theta=0))
         dat_frame.get_Image(ang=self.a)
         index = dat_frame.save()
         print("index {} had angle {:.1f}°".format(index, 180 * self.a / 3.14159))
+
 
 def every_angle1():
     BaseManager.register('FilenameGenerator', FilenameGenerator)
@@ -208,7 +209,7 @@ def every_angle1():
 
     ts = []
     for i in range(cfg.get_threads()):
-        a = ((360 / cfg.get_threads()) * i) * np.pi/180
+        a = ((360 / cfg.get_threads()) * i) * np.pi / 180
         ts.append(Gen3(fn_gen, a))
     for t in ts:
         t.start()
@@ -216,6 +217,7 @@ def every_angle1():
     for t in ts:
         t.join()
     return True
+
 
 def testStdderiv(fn_gen, l):
     fn = fn_gen
@@ -239,6 +241,7 @@ def testStdderiv(fn_gen, l):
         s += inc
         # print(s)
 
+
 def test_finv_acc():
     start = time.perf_counter()
     # f = lambda x: np.exp(0.02*x) + x
@@ -246,7 +249,7 @@ def test_finv_acc():
     # print("Dur: {:.2f}s".format(time.perf_counter() - start))
     times = []
     accs = []
-    for i in range(1,1000, 5):
+    for i in range(1, 1000, 5):
         start = time.perf_counter()
         f = lambda x: np.exp(x)
         finv = get_invers_function(f, 0, 400, i)
@@ -260,6 +263,7 @@ def test_finv_acc():
     plt.title("Computing time over Accuracy")
     plt.show()
 
+
 def test_finv_len():
     start = time.perf_counter()
     # f = lambda x: np.exp(0.02*x) + x
@@ -267,7 +271,7 @@ def test_finv_len():
     # print("Dur: {:.2f}s".format(time.perf_counter() - start))
     times = []
     lens = []
-    for i in range(1,100,5):
+    for i in range(1, 100, 5):
         start = time.perf_counter()
         f = lambda x: np.exp(x)
         finv = get_invers_function(f, 0, i)
@@ -281,6 +285,7 @@ def test_finv_len():
     plt.title("Computing time over Accuracy")
     plt.show()
 
+
 class Gen4(Process):
     def __init__(self, fn, a):
         super().__init__()
@@ -288,9 +293,8 @@ class Gen4(Process):
         self.a = a
 
     def run(self) -> None:
-
         dat_frame = DataFrame(self.fn)
-        p = Particle(cfg.get_width()/2, cfg.get_height()/2, self.a)
+        p = Particle(cfg.get_width() / 2, cfg.get_height() / 2, self.a)
         dat_frame.addParticle(p)
         dat_frame.get_Image()
         index = dat_frame.save()
@@ -305,7 +309,7 @@ def every_angle2():
 
     ts = []
     for i in range(cfg.get_threads()):
-        a = ((180 / cfg.get_threads()) * i) * np.pi/180
+        a = ((180 / cfg.get_threads()) * i) * np.pi / 180
         ts.append(Gen4(fn_gen, a))
     for t in ts:
         t.start()
@@ -314,25 +318,95 @@ def every_angle2():
         t.join()
     return True
 
+
+"""
+Add Code here
+"""
+thrds = cfg.get_threads()
+recursions = 1
+
+
+def act(dat):
+    pos1 = np.array([Distance(True, 20), cfg.get_height() / 4])
+    pos2 = np.array([Distance(True, 50), cfg.get_height() / 4])
+    pos3 = np.array([Distance(True, 80), cfg.get_height() / 4])
+
+    m1 = Molecule(pos1, theta=0, molecule_ph_groups=3)
+    m2 = Molecule(pos2, theta=0, molecule_ph_groups=4)
+    m3 = Molecule(pos3, theta=0, molecule_ph_groups=5)
+
+    pos10 = np.array([Distance(True, 20), 6 * cfg.get_height() / 8])
+    pos20 = np.array([Distance(True, 50), 6 * cfg.get_height() / 8])
+    pos30 = np.array([Distance(True, 80), 6 * cfg.get_height() / 8])
+
+    m10 = Molecule(pos10, theta=0, molecule_ph_groups=3, style="Complex")
+    m20 = Molecule(pos20, theta=0, molecule_ph_groups=4, style="Complex")
+    m30 = Molecule(pos30, theta=0, molecule_ph_groups=5, style="Complex")
+
+    dat.addObject(m10)
+    dat.addObject(m1)
+    dat.addObject(m20)
+    dat.addObject(m2)
+    dat.addObject(m30)
+    dat.addObject(m3)
+
+    #dat.add_Ordered()
+
+    dat.get_Image()
+    dat.save()
+
+
+class GenExc(Process):
+    def __init__(self, fn, amnt):
+        super().__init__()
+        self.fn = fn
+        self.am = amnt
+
+    def run(self) -> None:
+        for i in range(self.am):
+            dat = DataFrame(self.fn)
+            act(dat)
+
+
+def execNthreads(n, amnt=1):
+    BaseManager.register('FilenameGenerator', FilenameGenerator)
+    filemanager = BaseManager()
+    filemanager.start()
+    fn_gen = filemanager.FilenameGenerator()
+
+    ts = []
+    for i in range(n):
+        ts.append(GenExc(fn_gen, amnt))
+    for t in ts:
+        t.start()
+        time.sleep(0.1)
+    for t in ts:
+        t.join()
+    return True
+
+
 if __name__ == "__main__":
     clearLog()
+
+    execNthreads(thrds, recursions)
+
     # lo = Lock()
-    #start = time.perf_counter()
-    fn = FilenameGenerator()
+    # start = time.perf_counter()
+    # fn = FilenameGenerator()
     #
-    #every_angle2()
-    #dat = DataFrame(fn)
-    #p = Particle(cfg.get_width()/2, cfg.get_height()/2, 0)
-    #dat.addParticle(p)
-    #dat.get_Image()
-    #dat.save()
-    #dat = DataFrame(fn)
-    #dat.add_Ordered()
-    #dat.get_Image()
-    #dat.save()
-    #every_angle2()
-    #mat = 200 * np.ones((200, 200))
-    #for i in range(np.shape(mat)[0]):
+    # every_angle2()
+    # dat = DataFrame(fn)
+    # p = Particle(cfg.get_width()/2, cfg.get_height()/2, 0)
+    # dat.addParticle(p)
+    # dat.get_Image()
+    # dat.save()
+    # dat = DataFrame(fn)
+    # dat.add_Ordered()
+    # dat.get_Image()
+    # dat.save()
+    # every_angle2()
+    # mat = 200 * np.ones((200, 200))
+    # for i in range(np.shape(mat)[0]):
     #    for j in range(np.shape(mat)[1]):
     #        col = 0
     #        if i > np.shape(mat)[0]/2:
@@ -345,131 +419,110 @@ if __name__ == "__main__":
     #        else:
     #            col += 0
     #        mat[i, j] = col
-    #every_thread_n(10)
-    #plt.imshow(mat)
+    # every_thread_n(10)
+    # plt.imshow(mat)
 
-    pos1 = np.array([Distance(True, 20), cfg.get_height()/2])
-    pos2 = np.array([Distance(True, 50), cfg.get_height() / 2])
-    pos3 = np.array([Distance(True, 80), cfg.get_height() / 2])
-
-
-    m1 = Molecule(pos1, theta=0, molecule_ph_groups=3)
-    m2 = Molecule(pos2, theta=0, molecule_ph_groups=4)
-    m3 = Molecule(pos3, theta=0, molecule_ph_groups=5)
-
-    dat = DataFrame(fn)
-    dat.addObject(m1)
-    dat.addObject(m2)
-    dat.addObject(m3)
-
-    dat.get_Image()
-    dat.save
-    #plt.show()
-    #for i in range(0, 360, 10):
+    # plt.show()
+    # for i in range(0, 360, 10):
     #    mat2, a, b = turn_matrix2(mat, i * 3.14159/180)
     #    plt.imshow(mat2)
     #    plt.show()
 
-    #every_thread_n(1)
-    #multi_test(1)
-    #m = Molecule()
-    #Tests_Gitterpot().test()
+    # every_thread_n(1)
+    # multi_test(1)
+    # m = Molecule()
+    # Tests_Gitterpot().test()
 
-    #test_finv_acc()
+    # test_finv_acc()
 
-    #for i in range(1):
+    # for i in range(1):
     #    dat = DataFrame(fn)
     #    dat.addObjects(Molecule)
     #    #dat.add_Dust(DustParticle(np.array([200, 200]), color=i))
     #    dat.get_Image()
     #    dat.save()
 
-    #start = time.perf_counter()
-    #f = lambda x: x*np.sin(x/100) + 20
-    #finv = get_invers_function(f)
-    #xs = np.linspace(0, 400, 200)
-    #ys = [finv(xy) for xy in xs]
-    #plt.xkcd()
-    #plt.plot(xs, ys)
-    #every_angle()
-    #p#lt.show()
-    #print("Dur: {:.2f}s".format(time.perf_counter() - start))
-    #times = []
-    #accs = []
-    #f#or i in range(1000):
+    # start = time.perf_counter()
+    # f = lambda x: x*np.sin(x/100) + 20
+    # finv = get_invers_function(f)
+    # xs = np.linspace(0, 400, 200)
+    # ys = [finv(xy) for xy in xs]
+    # plt.xkcd()
+    # plt.plot(xs, ys)
+    # every_angle()
+    # p#lt.show()
+    # print("Dur: {:.2f}s".format(time.perf_counter() - start))
+    # times = []
+    # accs = []
+    # f#or i in range(1000):
     #    start = time.perf_counter()
     #    f = lambda x:np.exp(x)
     #    finv = get_invers_function(f, 0, 400, i)##
 
     #    xs = [i for i in range(400)]
-     #   ys = [finv(i) for i in range(400)]
-      #  times.append(time.perf_counter() - start)
-       # accs.append(i)
+    #   ys = [finv(i) for i in range(400)]
+    #  times.append(time.perf_counter() - start)
+    # accs.append(i)
 
-   # plt.plot(accs, times)
-   # plt.title("Computing time over Accuracy")
-   # plt.show()
-    #every_angle()
-    #print(every_thread_n(10))
-    #dat = DataFrame(fn)
-    #dat.add_Ordered()
-    #dat.get_Image()
-    #dat.save()
+    # plt.plot(accs, times)
+    # plt.title("Computing time over Accuracy")
+    # plt.show()
+    # every_angle()
+    # print(every_thread_n(10))
+    # dat = DataFrame(fn)
+    # dat.add_Ordered()
+    # dat.get_Image()
+    # dat.save()
 
-    #dat = DataFrame(fn)
-    #p = Particle(Distance(True, 35), Distance(True, 35), 0)
-    #dat.addParticle(p)
-    #dat.get_Image()
-    #dat.save()
-    #every_thread_n(5)
-    #if every_thread_n(10):
+    # dat = DataFrame(fn)
+    # p = Particle(Distance(True, 35), Distance(True, 35), 0)
+    # dat.addParticle(p)
+    # dat.get_Image()
+    # dat.save()
+    # every_thread_n(5)
+    # if every_thread_n(10):
     #    exit()
-   #         time.sleep(5)
+    #         time.sleep(5)
 
-
-
-
-    #img = MyImage()
-    #img.rgb_map_test()
-    #for i in range(0, 360, 10):
+    # img = MyImage()
+    # img.rgb_map_test()
+    # for i in range(0, 360, 10):
     #    dat = DataFrame(fn)
     #    dat.add_Ordered(Molecule, theta=np.pi * i / 180)
     #    dat.get_Image()
     #    dat.save()
     ##    print("Dur: {:.2f}s".format(time.perf_counter() - start))
-     #   start = time.perf_counter()
+    #   start = time.perf_counter()
     ##    break
-        #for i in range(5):
+    # for i in range(5):
     #    dat = DataFrame(fn)
     #    dat.add_Ordered()
     #    dat.get_Image()
     #    dat.save()
 
-    #DustParticle.test()
+    # DustParticle.test()
 
-
-    #dat = DataFrame(fn)
-    #for n in range(0,8, 3):
+    # dat = DataFrame(fn)
+    # for n in range(0,8, 3):
     #    dat.addObject(Molecule(np.array([Distance(False, 200), Distance(False, 200 + 100*n)]), n*0.785))
-    #dat.addObject(Molecule(np.array([Distance(False, 200), Distance(False, 200 + 100)]), 0))
-    #dat.addObject(Particle(Distance(False, 200), Distance(False, 500), 0.9))
-    #dat.addObjects(Molecule, amount=1)
-    #dat.addObject(Molecule(np.array([Distance(False, 200), Distance(False, 200)]), 1*0.785))
-    #dat.addObject(Molecule(np.array([Distance(False, 200), Distance(False, 240)]), 2*0.785))
-    #for i in range(30):
+    # dat.addObject(Molecule(np.array([Distance(False, 200), Distance(False, 200 + 100)]), 0))
+    # dat.addObject(Particle(Distance(False, 200), Distance(False, 500), 0.9))
+    # dat.addObjects(Molecule, amount=1)
+    # dat.addObject(Molecule(np.array([Distance(False, 200), Distance(False, 200)]), 1*0.785))
+    # dat.addObject(Molecule(np.array([Distance(False, 200), Distance(False, 240)]), 2*0.785))
+    # for i in range(30):
     #    print("Iteration I={}".format(i))
     #    dat.addObjects(Molecule, amount=10)
 
-    #dat.objects[0].drag(10, 0)
+    # dat.objects[0].drag(10, 0)
 
-        #start = time.perf_counter()
-        #print(dat.has_overlaps())
-        #print("Has Overlaps: " + str(time.perf_counter() - start))
-        #start = time.perf_counter()
-        #dat.get_Image()
-        #print("Get Image: " + str(time.perf_counter() - start))
-        #dat.save()
-
+    # start = time.perf_counter()
+    # print(dat.has_overlaps())
+    # print("Has Overlaps: " + str(time.perf_counter() - start))
+    # start = time.perf_counter()
+    # dat.get_Image()
+    # print("Get Image: " + str(time.perf_counter() - start))
+    # dat.save()
 
     # filename = "pySPM_Tests/HOPG-gxy1z1-p2020.sxm"
     # filename = "Test_SXM_File.sxm"
@@ -493,9 +546,8 @@ if __name__ == "__main__":
     # generate(fn)
     # data = np.random.random((300, 300))
     # My_SXM.write_sxm("Test4.sxm", data)
-    #def deg(x):
+    # def deg(x):
     #    return x * np.pi / 180
-
 
     # for theta in range(44, 45, 1):
     # multi_test(180)
@@ -504,18 +556,18 @@ if __name__ == "__main__":
     #    generate(fn)
     # multi_test(300)
     #    print(theta, fn.generateIndex())
-     #   a = Particle(200, 200, deg(0))
-     #   b = Particle(220, 220, deg(330))
-     #   dat_frame.addParticle(a)
-     #   dat_frame.addParticle(b)
-     #   print("A overlaps b: {}".format(a.true_overlap(b)))
-    #print("B overlaps a: {}".format(b.true_overlap(a)))
-    #print("DF has overlaps: {}".format(dat_frame.has_overlaps()))
-     #   dat_frame.get_Image()
-     #   dat_frame.save()
-    #every_thread_one()
-    #generate(fn)
-    #for i in range(360):
+    #   a = Particle(200, 200, deg(0))
+    #   b = Particle(220, 220, deg(330))
+    #   dat_frame.addParticle(a)
+    #   dat_frame.addParticle(b)
+    #   print("A overlaps b: {}".format(a.true_overlap(b)))
+    # print("B overlaps a: {}".format(b.true_overlap(a)))
+    # print("DF has overlaps: {}".format(dat_frame.has_overlaps()))
+    #   dat_frame.get_Image()
+    #   dat_frame.save()
+    # every_thread_one()
+    # generate(fn)
+    # for i in range(360):
     #    dat = DataFrame(fn)
     #    dat.addParticle(Particle(300, 300, deg(i)))
     #    dat.calc_potential_map()
@@ -528,24 +580,23 @@ if __name__ == "__main__":
     #    img.updateImage()
     #    img.saveImage(fn.generate_Tuple()[0])
 
-        #plt.imshow(dat.potential_map.transpose())
-        #plt.savefig()
+    # plt.imshow(dat.potential_map.transpose())
+    # plt.savefig()
     #    dat.get_Image()
     #    dat.save()
 
-
-    #dat = DataFrame(fn)
-    #for i in range(60, cfg.get_width() - 60, 60):
+    # dat = DataFrame(fn)
+    # for i in range(60, cfg.get_width() - 60, 60):
     #    for j in range(60, cfg.get_height() - 60, 60):
     #        dat.add_at_optimum_energy_new(100 + 400 * random.random(), 100 + 400 * random.random(), 6.28 * random.random())
     #        dat.get_Image()
     #        dat.save()
     ##dat.add_ALL_at_optimum_energy_new(10)
-    #dat.get_Image()
-    #dat.save()
+    # dat.get_Image()
+    # dat.save()
 
-    #dat_frame.addParticle(Particle(100, 100, 0.5))
-    #for i in range(5):
+    # dat_frame.addParticle(Particle(100, 100, 0.5))
+    # for i in range(5):
     #   a = Particle(200, 200, deg(0))
     #   b = Particle(220, 220, deg(330))
     #   dat_frame.addParticle(a)
@@ -555,8 +606,8 @@ if __name__ == "__main__":
     # print("DF has overlaps: {}".format(dat_frame.has_overlaps()))
     #   dat_frame.get_Image()
     #   dat_frame.save()
-    #every_thread_one()
-    #multi_test(1000000)
+    # every_thread_one()
+    # multi_test(1000000)
     # dat_frame.addParticle(Particle(100, 100, 0.5))
     # for i in range(5):
     #    dat_frame.add_at_optimum_energy_new(100 + 400 * random.random(), 100 + 400 * random.random(), 2* np.pi * random.random())
@@ -567,7 +618,7 @@ if __name__ == "__main__":
     # dat_frame.get_Image()
     # dat_frame.save()
     # generate(fn)
-    #for i in range(10):
+    # for i in range(10):
     #    dat = DataFrame(fn)
     #    dat.addParticles(amount=10)
     #    dat.get_Image()
@@ -605,7 +656,3 @@ if __name__ == "__main__":
     # plt.show()
 
     evaluateLog()
-
-
-
-

@@ -14,13 +14,14 @@ import matplotlib.pyplot as plt
 class Molecule(Particle):
     molecule_class = "NCPhCN"
     #molecule_ph_groups = 3
-    molecule_style = "Simple"  # "Complex" "Simple"
+    # molecule_style = "Complex"
 
-    def __init__(self, pos=None, theta=None, lookup_table=None, gitter=None, molecule_class=None, molecule_ph_groups=0):
+    def __init__(self, pos=None, theta=None, lookup_table=None, gitter=None, molecule_class=None, molecule_ph_groups=0, style="Simple"):
         if molecule_ph_groups > 0:
             self.molecule_ph_groups = molecule_ph_groups
         else:
             self.molecule_ph_groups = random.randint(1, 5)
+        self.molecule_style = style # "Complex" "Simple"
 
         if molecule_class is not None:
             self.molecule_class = molecule_class
@@ -52,6 +53,9 @@ class Molecule(Particle):
         # self.ch_len_def = Distance(True, 1.08)
         # self.cn_len_def = Distance(True, 1.78) # Mid
         # self.cc_len_def = Distance(True, 1.37)
+
+        # Add outer molecules Radius to Molecule width and height
+        self.add_outer_atomradii = False
 
         self.ch_len_def = Distance(True, 1.07)
         self.cn_len_def = Distance(True, 1.155)  # Lit
@@ -108,9 +112,13 @@ class Molecule(Particle):
         if self.molecule_style == "Simple":
             self.simple_length = self.get_simple_length(self.cc_len_def, self.cn_len_def)
             self.simple_width = (2 * self.ch_len_def + 2 * self.cc_len_def) * np.cos(np.pi / 12)
+            if self.add_outer_atomradii:
+                self.simple_width += 2 * Distance(True, 1.06)
             #print("Simple Length = {}, Simple Width = {}".format(self.simple_length.ang, self.simple_width.ang))
             super().set_width(self.simple_width)
             super().set_length(self.simple_length)
+
+            #print("Molecule x={} has l={:.4f} and w={:.4f}".format(self.molecule_ph_groups, self.simple_length.ang, self.simple_width.ang))
 
     def __str__(self):
         if self.molecule_class == "NCPhCN":
@@ -121,7 +129,7 @@ class Molecule(Particle):
         return "Molecule {} (x={})".format(self.molecule_class, self.molecule_ph_groups)
 
     def get_C6_Ringdist(self, cc_dist):
-        return 3 * cc_dist
+        return 2 * cc_dist + Distance(True, 1.52)
 
     def get_simple_length(self, cc_dist=Distance(True, 1.20), cn_dist=Distance(True, 1.47)):
         n = self.molecule_ph_groups
@@ -130,6 +138,8 @@ class Molecule(Particle):
             ringdist = self.get_C6_Ringdist(cc_dist)
             c_dist = ringdist / 2 + (amnt-1) * ringdist + cc_dist + cc_dist
             n_dist = c_dist + cn_dist
+            if self.add_outer_atomradii:
+                n_dist += Distance(True, 1.06)
             return 2*n_dist
         else:
             amnt = int((n - 1) / 2)

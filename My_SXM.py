@@ -45,6 +45,17 @@ class My_SXM():
 
 
     @staticmethod
+    def _fill_with_zeros(mat):
+        w, h = np.shape(mat)
+
+        newmat = np.zeros((max(w, h), max(w, h)))
+        for i in range(w):
+            for j in range(h):
+                newmat[i, j] = mat[i, j]
+
+        return newmat
+
+    @staticmethod
     def write_image(filename, image):
 
         ang_per_bright = cfg.get_max_height().ang * 1e-10 / 255
@@ -53,6 +64,29 @@ class My_SXM():
         for i in range(np.shape(image)[0]):
             for j in range(np.shape(image)[1]):
                 newmat[i, j] = ang_per_bright * image[i, j]
+                newmat[i, j] *= 5e10
+
+        plt.imshow(newmat)
+        plt.show()
+
+        if np.shape(newmat)[0] != np.shape(newmat)[1]:
+            newmat = My_SXM._fill_with_zeros(newmat)
+
+        im_size = np.shape(newmat)[0] * np.shape(newmat)[1]
+        print("XM: {}".format(np.shape(newmat)[0]))
+        print("YM: {}".format(np.shape(newmat)[1]))
+
+        flippedmat = np.zeros(np.shape(newmat))
+        hi = np.shape(flippedmat)[1]
+        wi = np.shape(flippedmat)[0]
+        for i in range(wi):
+            for j in range(hi):
+                flippedmat[i, j] = newmat[hi - j - 1, i]
+
+        newmat = flippedmat
+
+        plt.imshow(newmat)
+        plt.show()
 
         with open(filename, "ab") as file:
             file.write(b'\n')
@@ -69,17 +103,14 @@ class My_SXM():
                 'y': float(header['SCAN_RANGE'][0][1]),
                 'unit': 'm'
             })
-            im_size = size['pixels']['x'] * size['pixels']['y']
-            #print(im_size)
+            print("X: {}".format(size['pixels']['x']))
+            print("Y: {}".format(size['pixels']['y']))
 
             if header['SCANIT_TYPE'][0][1] == 'MSBFIRST':
                 bitorder = '>'
             else:
                 bitorder = '<'
-            #print(bitorder)
 
-            #length = str(im_size)
-            #print(length)
             length = '1'
 
             if header['SCANIT_TYPE'][0][0] == 'FLOAT':
@@ -93,17 +124,10 @@ class My_SXM():
             else:
                 print("Error reading SCANIT_TYPE. Unexpected: {}".format(header['SCANIT_TYPE'][0][0]))
                 d_type = 'f'
-            #print(d_type)
 
-            #print("Shape than: {}".format(np.shape(image)))
             data = newmat.reshape(im_size,)
-            #print("Shape now: {}".format(np.shape(data)))
 
             format = bitorder + length + d_type
-            #print(format)
-            calced_size = struct.calcsize(format)
-            #print(calced_size)
-
 
             for elem in data:
                 file.write(struct.pack(format, elem))

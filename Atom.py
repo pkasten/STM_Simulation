@@ -9,7 +9,7 @@ class Atom:
 
     def __init__(self, relpos, type=None):
 
-        radiusmlt = 5 # ToDo_ Realistisch, besser 1?
+        radiusmlt = 1 # ToDo_ Realistisch, besser 1?
         self.img_w = cfg.get_width()
         self.img_h = cfg.get_height()
         #print("Relpos: {}".format(relpos))
@@ -23,18 +23,23 @@ class Atom:
             self.abspos = relpos
 
         #print("Relpos: {} mit {}, {}".format(self.relpos, self.relpos[0], self.relpos[1]))
-        self.radius = Distance(True, 0.01)
+        self.radius = Distance(True, 1)
         if type == "H":
-            self.radius = Distance(True, 0.032) * radiusmlt
+            self.radius = Distance(True, 1.06) # Lit
+            #self.radius = Distance(True, 0.032) * radiusmlt #
         elif type == "C":
-            self.radius = Distance(True, 0.077) * radiusmlt
+            self.radius = Distance(True, 1.36) # Lit
+            #self.radius = Distance(True, 0.077) * radiusmlt #
         elif type == "N":
-            self.radius = Distance(True, 0.070) * radiusmlt
+            self.radius = Distance(True, 1.06) # Lit
+            #self.radius = Distance(True, 0.070) * radiusmlt #
 
         self.height = cfg.get_part_height()
         self.maxheight = cfg.get_max_height()
         self.fermi_exp = cfg.get_fermi_exp()
-        self.fermi_range = np.log(99) / self.fermi_exp + self.height.px / 2
+        #self.fermi_range = np.log(99) / self.fermi_exp + self.height.px / 2
+        self.fermi_range = np.log(99) / self.fermi_exp + self.radius.px
+
         self.type = type
 
     def __repr__(self):
@@ -72,6 +77,7 @@ class Atom:
         #    return self.color(self.height)
         #else:
         #    return 0
+    @lru_cache()
     def get_effect_range(self):
         c = 0
         while True:
@@ -92,7 +98,7 @@ class Atom:
     def show_rel(self, x, y):
 
         d = np.sqrt(np.power(x, 2) + np.power(y, 2))
-        if d > 30:
+        if d > self.fermi_range:
             return 0
 
         return self.color(self.height * self._fermi1D(d, self.radius))
