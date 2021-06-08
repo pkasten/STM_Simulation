@@ -345,8 +345,25 @@ if __name__ == "__main__":
     #        else:
     #            col += 0
     #        mat[i, j] = col
-    every_thread_n(1)
+    #every_thread_n(10)
     #plt.imshow(mat)
+
+    pos1 = np.array([Distance(True, 20), cfg.get_height()/2])
+    pos2 = np.array([Distance(True, 50), cfg.get_height() / 2])
+    pos3 = np.array([Distance(True, 80), cfg.get_height() / 2])
+
+
+    m1 = Molecule(pos1, theta=0, molecule_ph_groups=3)
+    m2 = Molecule(pos2, theta=0, molecule_ph_groups=4)
+    m3 = Molecule(pos3, theta=0, molecule_ph_groups=5)
+
+    dat = DataFrame(fn)
+    dat.addObject(m1)
+    dat.addObject(m2)
+    dat.addObject(m3)
+
+    dat.get_Image()
+    dat.save
     #plt.show()
     #for i in range(0, 360, 10):
     #    mat2, a, b = turn_matrix2(mat, i * 3.14159/180)

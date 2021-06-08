@@ -1819,7 +1819,8 @@ class DataFrame:
 
 
         if use_atomstep:
-            self.rem_parts_along_border(lines, matrix, rem_Border, rem_Lower, rem_Upper, sideA, updown)
+            #self.rem_parts_along_border(lines, matrix, rem_Border, rem_Lower, rem_Upper, sideA, updown)
+            self.realign_along_border(lines, matrix, sideA, updown)
 
         max = len(self.objects)
         ct = 0
@@ -1933,13 +1934,103 @@ class DataFrame:
 
         # @measureTime
 
+
+
     @measureTime
     def realign_along_border(self, lines, matrix, sideA, updown):
+
+        def _create_Border():
+            if updown:
+                border = []
+                for line in lines:
+                    dy = line[1][1] - line[0][1]
+                    dx = line[1][0] - line[0][0]
+
+                    for y in range(int(line[0][1]), int(line[1][1])):
+                        if 0 <= y < np.shape(matrix)[1]:
+                            border.append(np.array([line[0][0] + dx * (y - line[0][1]) / dy, y]))
+            else:
+                border = []
+                for line in lines:
+                    dy = line[1][1] - line[0][1]
+                    dx = line[1][0] - line[0][0]
+
+                    for x in range(int(line[0][0]), int(line[1][0])):
+                        if 0 <= x < np.shape(matrix)[0]:
+                            border.append(np.array([x, line[0][1] + ((x - line[0][0]) / dx) * dy]))
+
+            return border
+
+        start = time.perf_counter()
+        border = _create_Border()
+        print("Border creation: {:.2f}ms".format(time.perf_counter() - start))
+
+        def _upper_and_dist(x, y):
+
+            posy = max(0, y)
+            posy = int(np.round(min(np.shape(matrix)[1] - 1, posy)))
+            posx = max(0, x)
+            posx = int(np.round(min(np.shape(matrix)[0] - 1, posx)))
+
+            dist = self.dist_to_line(posx, posy, lines)
+
+            if updown:
+                if sideA:
+                    return posx < border[posy][0], dist
+
+                else:
+                    return not posx < border[posy][0], dist
+
+            else:
+                if sideA:
+                    return posy < border[posx][1], dist
+                else:
+                    return not posy < border[posx][1], dist
+
+        def rempos(part, dist): # 1 at 3pd, 0 at 7pd
+            return 1.75 - (dist / (4* part.get_dimension().px))
+
+
         assert self.passed_args_Ordered is not None
         old_objs = self.objects.copy()
         self.objects = []
         assert len(old_objs) > 0
         ph_groups = old_objs[0].molecule_ph_groups
+
+        #Upper
+        self.add_Ordered(*self.passed_args_Ordered, ph_grps=ph_groups)
+        upper_obs = self.objects.copy()
+        self.objects = []
+
+        #Lower
+        self.add_Ordered(*self.passed_args_Ordered, ph_grps=ph_groups)
+        lower_obs = self.objects.copy()
+        self.objects = []
+
+        rem_ind_upper = []
+        for i in range(len(upper_obs)):
+            part = upper_obs[i]
+            rightside, dist = _upper_and_dist(part.pos[0].px, part.pos[1].px)
+            if not rightside or rempos(part, dist) > random.random():
+                rem_ind_upper.append(i)
+
+        rem_ind_lower = []
+        for i in range(len(lower_obs)):
+            part = lower_obs[i]
+            wrongside, dist = _upper_and_dist(part.pos[0].px, part.pos[1].px)
+            if wrongside or rempos(part, dist) > random.random():
+                rem_ind_lower.append(i)
+
+        for i in range(len(upper_obs)):
+            if i not in rem_ind_upper:
+                self.objects.append(upper_obs[i])
+
+        for i in range(len(lower_obs)):
+            if i not in rem_ind_lower:
+                self.objects.append(lower_obs[i])
+
+
+
 
 
 
