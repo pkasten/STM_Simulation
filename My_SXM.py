@@ -64,7 +64,6 @@ class My_SXM():
         for i in range(np.shape(image)[0]):
             for j in range(np.shape(image)[1]):
                 newmat[i, j] = ang_per_bright * image[i, j]
-                newmat[i, j] *= 5e10
 
         plt.imshow(newmat)
         plt.show()
