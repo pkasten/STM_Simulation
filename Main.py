@@ -327,30 +327,50 @@ recursions = 1
 
 
 def act(dat):
-    pos1 = np.array([Distance(True, 20), cfg.get_height() / 4])
-    pos2 = np.array([Distance(True, 50), cfg.get_height() / 4])
-    pos3 = np.array([Distance(True, 80), cfg.get_height() / 4])
+    #pos1 = np.array([Distance(True, 20), cfg.get_height() / 4])
+    #pos2 = np.array([Distance(True, 50), cfg.get_height() / 4])
+    #pos3 = np.array([Distance(True, 80), cfg.get_height() / 4])
 
-    m1 = Molecule(pos1, theta=0, molecule_ph_groups=3)
-    m2 = Molecule(pos2, theta=0, molecule_ph_groups=4)
-    m3 = Molecule(pos3, theta=0, molecule_ph_groups=5)
+    #m1 = Molecule(pos1, theta=0, molecule_ph_groups=3)
+    #m2 = Molecule(pos2, theta=0, molecule_ph_groups=4)
+    #m3 = Molecule(pos3, theta=0, molecule_ph_groups=5)
 
-    pos10 = np.array([Distance(True, 20), 6 * cfg.get_height() / 8])
-    pos20 = np.array([Distance(True, 50), 6 * cfg.get_height() / 8])
-    pos30 = np.array([Distance(True, 80), 6 * cfg.get_height() / 8])
+    #pos10 = np.array([Distance(True, 20), 6 * cfg.get_height() / 8])
+    #pos20 = np.array([Distance(True, 50), 6 * cfg.get_height() / 8])
+    #pos30 = np.array([Distance(True, 80), 6 * cfg.get_height() / 8])
 
-    m10 = Molecule(pos10, theta=0, molecule_ph_groups=3, style="Complex")
-    m20 = Molecule(pos20, theta=0, molecule_ph_groups=4, style="Complex")
-    m30 = Molecule(pos30, theta=0, molecule_ph_groups=5, style="Complex")
+    #m10 = Molecule(pos10, theta=0, molecule_ph_groups=3, style="Complex")
+    #m20 = Molecule(pos20, theta=0, molecule_ph_groups=4, style="Complex")
+    #m30 = Molecule(pos30, theta=0, molecule_ph_groups=5, style="Complex")
 
-    dat.addObject(m10)
-    dat.addObject(m1)
-    dat.addObject(m20)
-    dat.addObject(m2)
-    dat.addObject(m30)
-    dat.addObject(m3)
+    #dat.addObject(m10)
+    #dat.addObject(m1)
+    #dat.addObject(m20)
+    #p = Particle(cfg.get_width()/2, cfg.get_height()/2, 30)
+    #mat1 = p.efficient_Matrix()[0]
+    #for i in range(np.shape(mat1)[0]):
+    #    for j in range(np.shape(mat1)[1]):
+    #        if i < 7 or np.shape(mat1)[0] - i < 7 or j < 7 or np.shape(mat1)[1] - j < 7:
+    #            mat1[i,j] = 200
 
-    #dat.add_Ordered()
+    #mat2 = Functions.turnMatrix(mat1, np.pi/4)[0]
+
+    #mat1 = Functions.turn_matplotlib(mat1)
+    #mat2 = Functions.turn_matplotlib(mat2)
+    #plt.subplot(121)
+    #plt.title("Original Visualization Matrix")
+    ##plt.imshow(mat1)
+    #plt.subplot(122)
+    #plt.title("Matrix turned by 45°")
+    #plt.imshow(mat2)
+    #plt.show()
+
+
+    #dat.addObject(m2)
+    #dat.addObject(m30)
+    #dat.addObject(m3)
+
+    dat.add_Ordered(ph_grps=4, style="Complex")
 
     dat.get_Image()
     dat.save()

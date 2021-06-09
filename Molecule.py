@@ -118,6 +118,8 @@ class Molecule(Particle):
             super().set_width(self.simple_width)
             super().set_length(self.simple_length)
 
+
+
             #print("Molecule x={} has l={:.4f} and w={:.4f}".format(self.molecule_ph_groups, self.simple_length.ang, self.simple_width.ang))
 
     def __str__(self):
@@ -269,11 +271,19 @@ class Molecule(Particle):
         return self.lookup_table.get_nearest_Energy(self.pos, self.theta, self.gitter)[0]
 
     def efficient_Matrix(self):
+        path = os.path.join(os.getcwd(), "Pickle_Data", "Molec{}Vis".format(self.molecule_ph_groups))
+        #if os.path.isfile(path):
+        #    with open(path, "rb") as pth:
+        #        return pickle.load(pth), self.x, self.y
         eff_matrix = np.zeros((2 * self.effect_range, 2 * self.effect_range))
         for i in range(-1 * self.effect_range, 1 * self.effect_range):
             for j in range(-1 * self.effect_range, 1 * self.effect_range):
                 eff_matrix[i + 1 * self.effect_range, j + 1 * self.effect_range] = \
                     self.visualize_pixel(i, j)
+
+        #if not os.path.isfile(path):
+        #    with open(path, "wb") as pth:
+        #        pickle.dump(eff_matrix, pth)
 
         # for atom in self.atoms:
         #    print("Atom pos: {}".format(atom.abspos))

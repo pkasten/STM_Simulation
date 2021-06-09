@@ -351,6 +351,19 @@ def turnMatrix_old(mat, theta):  # ToDo: Improve Anti-Aliasing
 
     return new_mat, (w_new / w) * cx, (h_new / h) * cy
 
+def turn_matplotlib(mat):
+    w, h = np.shape(mat)
+
+    newmat = np.zeros(np.shape(mat))
+
+
+    for i in range(w):
+        for j in range(h):
+            newmat[i, j] = mat[h - j - 1, w - i - 1]
+
+    return newmat
+
+
 @DeprecationWarning
 def _prepare_matrix(mat, theta):
     matrix = mat

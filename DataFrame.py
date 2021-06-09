@@ -543,7 +543,7 @@ class DataFrame:
         return p
 
     @measureTime
-    def add_Ordered(self, Object=Molecule, theta=None, factor=1.0, ph_grps=None):
+    def add_Ordered(self, Object=Molecule, theta=None, factor=1.0, ph_grps=None, style="Simple"):
         start = time.perf_counter()
         offset = Distance(False, cfg.get_px_overlap())
         self.passed_args_Ordered = (Object, theta)
@@ -602,7 +602,7 @@ class DataFrame:
                             pairs.append((current, ang))
 
             for pair in pairs:
-                self.objects.append(Object(pos=pair[0], theta=pair[1], molecule_ph_groups=3))
+                self.objects.append(Object(pos=pair[0], theta=pair[1], molecule_ph_groups=3, style=style))
 
         @measureTime
         def add_ordered_NCPh4CN(theta=None):
@@ -677,7 +677,7 @@ class DataFrame:
 
             for pair in pairs:
                 # print(pair)
-                self.objects.append(Object(pos=pair[0], theta=pair[1], molecule_ph_groups=4))
+                self.objects.append(Object(pos=pair[0], theta=pair[1], molecule_ph_groups=4, style=style))
 
         @measureTime
         def add_ordered_NCPh5CN(theta=None):
@@ -739,7 +739,7 @@ class DataFrame:
                             pairs.append((position, thetas[i]))
 
                 for pair in pairs:
-                    self.objects.append(Object(pos=pair[0], theta=pair[1], molecule_ph_groups=5))
+                    self.objects.append(Object(pos=pair[0], theta=pair[1], molecule_ph_groups=5, style=style))
 
             if theta is None:
                 theta_0 = 2 * np.pi * random.random()

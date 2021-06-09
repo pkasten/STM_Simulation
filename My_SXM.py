@@ -65,15 +65,15 @@ class My_SXM():
             for j in range(np.shape(image)[1]):
                 newmat[i, j] = ang_per_bright * image[i, j]
 
-        plt.imshow(newmat)
-        plt.show()
+        #plt.imshow(newmat)
+        #plt.show()
 
         if np.shape(newmat)[0] != np.shape(newmat)[1]:
             newmat = My_SXM._fill_with_zeros(newmat)
 
         im_size = np.shape(newmat)[0] * np.shape(newmat)[1]
-        print("XM: {}".format(np.shape(newmat)[0]))
-        print("YM: {}".format(np.shape(newmat)[1]))
+        #print("XM: {}".format(np.shape(newmat)[0]))
+        #print("YM: {}".format(np.shape(newmat)[1]))
 
         flippedmat = np.zeros(np.shape(newmat))
         hi = np.shape(flippedmat)[1]
