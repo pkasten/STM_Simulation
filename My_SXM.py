@@ -48,10 +48,17 @@ class My_SXM():
     def _fill_with_zeros(mat):
         w, h = np.shape(mat)
 
-        newmat = np.zeros((max(w, h), max(w, h)))
+        newmat = -10 * np.ones((max(w, h), max(w, h)))
         for i in range(w):
             for j in range(h):
                 newmat[i, j] = mat[i, j]
+
+        for i in range(np.shape(newmat)[0]):
+            for j in range(np.shape(newmat)[1]):
+                if newmat[i, j] == -10:
+                    #newmat[i, j] = np.nan
+                    newmat[i, j] = 0
+
 
         return newmat
 
@@ -59,11 +66,14 @@ class My_SXM():
     def write_image(filename, image):
 
         ang_per_bright = cfg.get_max_height().ang * 1e-10 / 255
-        newmat = np.zeros(np.shape(image))
+        newmat = -4 * np.ones(np.shape(image))
+
 
         for i in range(np.shape(image)[0]):
             for j in range(np.shape(image)[1]):
                 newmat[i, j] = ang_per_bright * image[i, j]
+
+
 
         #plt.imshow(newmat)
         #plt.show()
@@ -84,8 +94,8 @@ class My_SXM():
 
         newmat = flippedmat
 
-        plt.imshow(newmat)
-        plt.show()
+        #plt.imshow(newmat)
+        #plt.show()
 
         with open(filename, "ab") as file:
             file.write(b'\n')
@@ -102,8 +112,8 @@ class My_SXM():
                 'y': float(header['SCAN_RANGE'][0][1]),
                 'unit': 'm'
             })
-            print("X: {}".format(size['pixels']['x']))
-            print("Y: {}".format(size['pixels']['y']))
+            #print("X: {}".format(size['pixels']['x']))
+            #print("Y: {}".format(size['pixels']['y']))
 
             if header['SCANIT_TYPE'][0][1] == 'MSBFIRST':
                 bitorder = '>'

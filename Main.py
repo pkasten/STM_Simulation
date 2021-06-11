@@ -370,7 +370,7 @@ def act(dat):
     #dat.addObject(m30)
     #dat.addObject(m3)
 
-    dat.add_Ordered(ph_grps=4, style="Complex")
+    dat.add_Ordered(ph_grps=4, style="Simple")
 
     dat.get_Image()
     dat.save()

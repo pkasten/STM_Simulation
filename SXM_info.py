@@ -229,8 +229,14 @@ def set_dimensions(data): #ToDo. Height and width correct?
     #new
     storage[def_Scan_pixels_line[0]][0][0] = str(width)
     storage[def_Scan_lines[0]][0][0] = str(height)
-    storage[def_SCAN_RANGE[0]][0][0] = str(cfg.get_width().ang) + "E-10"
-    storage[def_SCAN_RANGE[0]][0][1] = str(cfg.get_height().ang) + "E-10"
+    # would be right bur yields errors
+    #storage[def_SCAN_RANGE[0]][0][0] = str(cfg.get_width().ang) + "E-10"
+    #storage[def_SCAN_RANGE[0]][0][1] = str(cfg.get_height().ang) + "E-10"
+
+    #Better:
+    rng = max(cfg.get_width().ang, cfg.get_height().ang)
+    storage[def_SCAN_RANGE[0]][0][0] = str(rng) + "E-10"
+    storage[def_SCAN_RANGE[0]][0][1] = str(rng) + "E-10"
 
     rewrite_file()
     update_params()
@@ -243,7 +249,6 @@ def set_filename(filename):
     update_params()
 
 def adjust_to_image(data, filename):
-    pass
     set_filename(filename)
     set_dimensions(data)
     updateTime()

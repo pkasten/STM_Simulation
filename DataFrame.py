@@ -855,9 +855,11 @@ class DataFrame:
         show_line = False
         tendence = True
 
+
         # Calculate Lines
         if updown:
             oldstep = random.randint(-variance, variance)
+            oldstep = int(self.img_height.px / steps) # TODO Rem
             oldx = random.random() * self.img_width.px
             for i in range(0, int(self.img_height.px) + int(self.img_height.px / steps),
                            int(self.img_height.px / steps)):
@@ -881,6 +883,7 @@ class DataFrame:
         else:
             oldy = random.random() * self.img_height.px
             oldstep = random.randint(-variance, variance)
+            oldstep = int(self.img_width.px / steps) # ToDo Rem
             for i in range(0, int(self.img_width.px) + int(self.img_width.px / steps),
                            int(self.img_width.px / steps)):
                 # points.append(np.array([i, random.random() * self.img_height.px]))
@@ -1733,9 +1736,9 @@ class DataFrame:
                             matrix[int(elem[0]), int(elem[1])] = 255
 
                 if show_Toolbar:
-                    iter = tqdm(range(np.shape(matrix)[1]))
+                    iter = tqdm(range(np.shape(matrix)[0]))
                 else:
-                    iter = range(np.shape(matrix)[1])
+                    iter = range(np.shape(matrix)[0])
 
                 for h in iter:
                     grenz = border[h][1]
