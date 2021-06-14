@@ -973,6 +973,88 @@ class DataFrame:
         return min(distances)
 
         # @measureTime
+
+    def angle_between(self, part, lines):
+        loc_lines = lines
+
+
+        x = part.pos[0].px
+        y = part.pos[1].px
+        zero_threshold = 0.005
+        distances = []
+        # print(lines)
+        # print(loc_lines)
+        for line in loc_lines:
+            dy = line[1][1] - line[0][1]
+            dx = line[1][0] - line[0][0]
+            if abs(dx) < zero_threshold:
+                if line[0][1] <= y <= line[1][1]:
+                    distances.append(abs(line[0][0] - x))
+                elif y < line[0][1]:
+                    distances.append(np.sqrt(np.square(line[0][1] - y) + np.square(line[0][0] - x)))
+                elif y > line[1][1]:
+                    distances.append(np.sqrt(np.square(line[1][1] - y) + np.square(line[1][0] - x)))
+                else:
+                    raise NotImplementedError
+                continue
+            else:
+                m = dy / dx
+            b = line[0][1] - m * line[0][0]
+            theta = np.arctan(m)
+            m2 = np.tan(theta + np.pi / 2)
+            dy2 = m2
+            dx2 = 1
+            # assert np.sign(m) != np.sign(m)
+            b2 = y - m2 * x
+            if abs(m - m2) < zero_threshold:
+                x_sp = 10000
+            else:
+                x_sp = - (b - b2) / (m - m2)
+            # print("SP inside: {:.2f} <= {:.2f} <= {:.2f}".format(line[0][0], x_sp, line[1][0]))
+            if not (line[0][0] <= x_sp <= line[1][0] or line[0][0] >= x_sp >= line[1][0]):
+                if x_sp < line[0][0] + (line[1][0] - line[0][0]) / 2:
+                    x_sp = line[1][0]
+                else:
+                    x_sp = line[0][0]
+            y_sp = m * x_sp + b
+            distances.append((line, np.sqrt(np.square(x - x_sp) + np.square(y - y_sp))))
+
+        mindist = np.infty
+        closest_pair = None
+        for dist in distances:
+            if dist[1] < mindist:
+                closest_pair = dist
+                mindist = dist[1]
+
+        assert closest_pair is not None
+        angle_part = part.theta % (2*np.pi)
+
+
+        clst_line = closest_pair[0]
+
+        dy = clst_line[1][1] - clst_line[0][1]
+        dx = clst_line[1][0] - clst_line[0][0]
+        if abs(dx) < zero_threshold:
+            theta = 0
+        else:
+            m = dy / dx
+            theta = np.arctan(m)
+            theta = theta % (2*np.pi)
+
+        if theta > np.pi/2:
+            theta = theta - np.pi
+
+        if angle_part > np.pi/2:
+            angle_part = angle_part - np.pi
+
+        delta = np.abs(theta - angle_part)
+        delta -= np.pi/2
+
+        return abs(delta)
+
+
+
+
     @measureTime
     def atomic_step(self, matrix, f, m, b, lines=None, updown=None, side_A=None):
 
@@ -2072,6 +2154,11 @@ class DataFrame:
             no = self._get_molec_thatnot_overlaps(self.passed_args_Ordered[0], ph=ph_groups, maximumtries=5000)
             if no is None:
                 break
+            #When particles align pacross bordder perpendocular to it
+            if self.dist_to_line(no.pos[0].px, no.pos[1].px, lines) < 0.5 * no.get_dimension().px and self.angle_between(no, lines) > np.pi/4:
+                print("Prevented from crossing ang")
+                continue
+
             i += 1
             self.objects.append(no)
         print("Got {} after {:.2f}ms".format(i, time.perf_counter() - start))
