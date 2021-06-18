@@ -29,7 +29,8 @@ class My_SXM():
 
     @staticmethod
     def write_sxm(filename, data):
-
+        #plt.imshow(data)
+        #plt.show()
         #print(SXM_info.get_time())
         SXM_info.adjust_to_image(data, filename)
         #print(SXM_info.get_time())

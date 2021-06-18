@@ -370,6 +370,8 @@ def act(dat):
     #dat.addObject(m30)
     #dat.addObject(m3)
 
+    dat.addParticle(Particle())
+
     #dat.add_Ordered(ph_grps=4, style="Simple")
 
     dat.get_Image()

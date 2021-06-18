@@ -1,6 +1,7 @@
 from functools import lru_cache
 
 import matplotlib.pyplot as plt
+import numpy.fft
 from PIL import Image
 import numpy as np
 import Configuration as cfg
@@ -231,6 +232,272 @@ class MyImage:
         #    return
         # self.noised = True
         self.colors += np.random.normal(mu, sigma, np.shape(self.colors))
+
+    def noise_function(self):
+        noise_mat = np.zeros(np.shape(self.colors))
+        w, h = np.shape(noise_mat)
+        two_pi = 2 * np.pi
+        gen_amplitude = lambda x:1
+        shift = 90
+        phi = lambda x:two_pi*random.random()
+        step = 1
+
+
+
+        def f_alpha(n_pts, q_d, alpha, idum):
+            xs = []
+            nn = n_pts + n_pts
+            ha = alpha/2
+            q_d = np.sqrt(q_d)
+
+            hfa = [1, nn]
+            wfa = [1, nn]
+            hfa[1] = 1.0
+            wfa[1] = q_d * np.random.normal()
+
+            for i in range(2, n_pts+1):
+                hfa.append(hfa[i-1] * (ha + i-2)/i-1)
+                wfa.append(q_d * random.random())
+
+            for i in range(n_pts + 1, nn):
+                hfa.append(0)
+                wfa.append(0)
+
+     #       print("wfa start")
+    #        plt.plot(wfa)
+   #         plt.show()
+  #          print("hfa start")
+ #           plt.plot(hfa)
+#            plt.show()
+
+            print(len(hfa))
+
+            reth = numpy.fft.rfft(hfa, n_pts) # , 1
+            retw = numpy.fft.rfft(wfa, n_pts)
+
+            for i in range(len(reth)):
+                hfa[i] = reth[i]
+
+            for i in range(len(retw)):
+                wfa[i] = retw[i]
+
+            wfa[1] = wfa[1] * hfa[1]
+            wfa[2] = wfa[2] * hfa[2]
+
+     #       print("premodified wfa")
+    #        plt.plot(wfa)
+   #         plt.show()
+
+
+            for i in range(3, nn-1, 2):
+                wr=wfa[i]
+                wi=wfa[i+1]
+                wfa[i] = wr * hfa[i] - wi * hfa[i+1]
+                wfa[i+1] = wr * hfa[i+1] + wi * hfa[i]
+
+  #          print("Wfa vor iff")
+ #           plt.plot(wfa)
+#            plt.show()
+
+            retw = np.fft.irfft(wfa, n_pts)
+
+     #       print("retw")
+    #        plt.plot(retw)
+   #         plt.show()
+
+
+            for i in range(len(retw)):
+                wfa[i] = retw[i]
+
+
+            for i in range(1, n_pts+1):
+                xs.append( wfa[i]/n_pts)
+
+
+  #          plt.plot(xs)
+ #           plt.show()
+            return xs
+
+
+
+        def f_alpha_2D(n_pts, q_d, alpha):
+            vals = np.zeros((n_pts, n_pts))
+            nn = n_pts + n_pts
+            ha = alpha/2
+            q_d = np.sqrt(q_d)
+
+            hfa = np.zeros((nn, nn))
+            wfa = np.zeros((nn, nn))
+
+            hfa[1, 1] = 1.0
+            wfa[1, 1] = q_d * np.random.normal()
+            hfa[0, 1] = 1.0
+            wfa[0, 1] = q_d * np.random.normal()
+            hfa[1, 0] = 1.0
+            wfa[1, 0] = q_d * np.random.normal()
+            hfa[0, 0] = 1.0
+            wfa[0, 0] = 1
+
+            for i in range(1, n_pts+1):
+                hfa[0, i] = q_d * np.random.normal()
+                hfa[i, 0] = q_d * np.random.normal()
+                wfa[0, i] = 1
+                wfa[i, 0] = 1
+
+            for i in range(1, n_pts+1):
+                for j in range(1, n_pts+1):
+                    #h = hfa[i-1, j] * (ha + i-2)/i-1
+                    #h + hfa[i, j-1] * (ha + j-2)/j-1
+                    #h + hfa[i-1, j-1] * (ha +
+                    h = ha * (2* n_pts - i - j)
+                    hfa[i, j] = h
+                    wfa[i, j] = (q_d * random.random())
+
+            for i in range(n_pts + 1, nn):
+                for j in range(n_pts + 1, nn):
+                    hfa[i, j] = 0
+                    wfa[i, j] = 0
+
+     #       print("wfa start")
+    #        plt.imshow(wfa)
+   #         plt.show()
+  #          print("hfa start")
+ #           plt.imshow(hfa)
+#            plt.show()
+
+
+            reth = numpy.fft.rfft2(hfa, (n_pts, n_pts)) # , 1
+            retw = numpy.fft.rfft2(wfa, (n_pts, n_pts))
+
+            #print("ret fft w")
+            #plt.imshow(retw)
+            #plt.show()
+            #print("ret_fft_h")
+            #plt.imshow(reth)
+            #plt.show()
+
+            for i in range(np.shape(reth)[0]):
+                for j in range(np.shape(reth)[1]):
+                    hfa[i, j] = reth[i, j]
+
+            for i in range(np.shape(retw)[0]):
+                for j in range(np.shape(retw)[1]):
+                    wfa[i, j] = retw[i, j]
+
+            wfa[1, 1] = wfa[1, 1] * hfa[1, 1]
+            wfa[2, 2] = wfa[2, 2] * hfa[2, 2]
+            wfa[2, 1] = wfa[2, 1] * hfa[2, 1]
+            wfa[1, 2] = wfa[1, 2] * hfa[1, 2]
+
+  #          print("premodified wfa")
+ #           plt.imshow(wfa)
+#            plt.show()
+
+
+            for i in range(3, nn-1, 2):
+                for j in range(3, nn-1, 2):
+                    wr=wfa[i, j] * 0
+                    wi=wfa[i+1, j]  *0
+                    wk = wfa[i, j+1] *0
+                    wfa[i] = wr * hfa[i, j] - wi * hfa[i+1, j] - wk * hfa[i, j+1]
+                    wfa[i+1] = wr * hfa[i+1, j] + wi * hfa[i, j] + wk * hfa[i, j+1]
+
+       #     print("Wfa vor iff")
+      #      plt.imshow(wfa)
+     #       plt.show()
+
+            retw = np.fft.irfft2(wfa, (n_pts, n_pts))
+
+    #        print("retw")
+   #         plt.imshow(retw)
+  #          plt.show()
+
+            for i in range(np.shape(retw)[0]):
+                for j in range(np.shape(retw)[1]):
+                    wfa[i, j] = retw[i, j]
+
+
+            for i in range(1, n_pts):
+                for j in range(1, n_pts):
+                    vals[i, j] = ( wfa[i, j]/n_pts)
+
+            print("vals")
+            plt.imshow(vals)
+            plt.show()
+            return vals
+
+
+
+        xs = f_alpha(100, 1, 0, 1)
+        #plt.plot(range(len(xs)), xs)
+        #plt.show()
+
+        print("2d")
+
+        mat = f_alpha_2D(200, 1, 1)
+        #print(mat)
+        sc = 100 / np.amax(mat)
+        shif = 10
+
+        mat *= sc
+        for i in range(np.shape(mat)[0]):
+            for j in range(np.shape(mat)[1]):
+                mat[i, j] += shif
+        noise_mat = mat
+
+
+
+
+
+
+        def gen_single(width, nu):
+            xi = gen_amplitude(nu)
+            p = phi(nu)
+            print("Single Genned: {:.2f} sin(2pi x {} / {} + {:.2f})".format(xi, nu, width, p))
+            return lambda x: xi * np.sin(two_pi * x * nu / width + p)
+
+        def gen_f(width):
+            func = lambda x:shift
+            fs = []
+            for nu in range(1, width, step):
+                fs.append(gen_single(width, nu))
+
+            def f(x):
+                sum = 0
+                for i in range(len(fs)):
+                    sum += fs[i](x)
+
+                return sum
+
+            xs = np.linspace(0, width, 100)
+            ys = []
+            for x in xs:
+                ys.append(f(x))
+            plt.plot(xs, ys)
+            plt.show()
+
+            return f
+
+
+
+
+        #f_x = gen_f(w)
+
+
+
+        #for i in range(w):
+        #    for j in range(h):
+        #        noise_mat[i, j] = f_x(i) + f_x(j) + shift#
+
+        #plt.imshow(noise_mat)
+        #plt.show()
+        print("Max: {:.2f}".format(np.amax(noise_mat)))
+        print("Min: {:.2f}".format(np.amin(noise_mat)))
+        print("Avg: {:.2f}".format(np.average(noise_mat)))
+
+        self.colors += noise_mat
+
+
 
     # @measureTime
     def get_matrix(self):

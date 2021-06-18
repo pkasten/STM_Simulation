@@ -73,7 +73,7 @@ def_Scan_lines = "Scan>lines", [['256']]
 def_Scan_speed_forw_m_s = "Scan>speed forw. (m/s)", [['141.101E-9']]
 def_Scan_speed_backw_m_s = "Scan>speed backw. (m/s)", [['141.101E-9']]
 def_DATA_INFO = "DATA_INFO", [['Channel', 'Name', 'Unit', 'Direction', 'Calibration', 'Offset'],
-                              ['14', 'Z', 'm', 'both', '1.562E-9', '0.000E+0']]
+                              ['14', 'Z', 'm', 'forward', '1.562E-9', '0.000E+0']]
 def_SCANIT_END = "SCANIT_END", []
 
 defaults = [
