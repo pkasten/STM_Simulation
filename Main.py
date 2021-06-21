@@ -323,7 +323,7 @@ def every_angle2():
 Add Code here
 """
 thrds = cfg.get_threads()
-recursions = 1
+recursions = 2
 
 
 def act(dat):
@@ -370,7 +370,7 @@ def act(dat):
     #dat.addObject(m30)
     #dat.addObject(m3)
 
-    dat.addParticle(Particle())
+    dat.addParticles(amount=1)
 
     #dat.add_Ordered(ph_grps=4, style="Simple")
 
