@@ -1,14 +1,3 @@
-import os
-
-import numpy as np
-
-import Configuration as conf
-import SXM_info
-import random
-
-from Distance import Distance
-from DustParticle import DustParticle
-from Images import MyImage
 from Molecule import Molecule
 from Particle import Particle
 from FilenameGenerator import FilenameGenerator
@@ -16,20 +5,27 @@ from DataFrame import DataFrame
 from Functions import *
 import Configuration as cfg
 import math, time
-import matplotlib.pyplot as plt
-from multiprocessing import Process, Lock, Semaphore
+from multiprocessing import Process
 from multiprocessing.managers import BaseManager
-from My_SXM import My_SXM
 import matplotlib.pyplot as plt
-from Molecule import Tests_Gitterpot
-import Functions
 
+"""
+Main class used to interact with the program. Provides basic methods
+Important are act(), GenExec and execNthreads()
+"""
 
 def test_frame(data_frame):
+    """
+    Adds Particles at steadily increasing angles line by line to the frame
+    Useful to test if angles are defined correctly
+
+    :param data_frame: The frame where particles should be added
+    :return: None
+    """
+
     maxn = len(range(50, cfg.get_width(), 100)) * len(range(50, cfg.get_height(), 100))
     th = 0
     dth = 2 * math.pi / maxn
-    # dth = 0.05
     for y in range(50, cfg.get_height(), 100):
         for x in range(50, cfg.get_width(), 100):
             data_frame.addParticle(Particle(x, y, th))
@@ -37,6 +33,14 @@ def test_frame(data_frame):
 
 
 def measure_speed():
+    """
+    Generates and saves images for increasing numbers of particles.
+    Useful to measure correlation between number of particles and computational time
+    Plots time over n
+
+    :return: None
+    """
+
     x = []
     y = []
     for i in range(20):
@@ -53,34 +57,57 @@ def measure_speed():
 
 
 def generate(fn_gen):
+    """
+    Creates an image w/ ordered particles
+
+    :param fn_gen: Filename generator instance
+    :return: None
+    """
     dat_frame = DataFrame(fn_gen)
-    # dat_frame.addParticles()
     dat_frame.add_Ordered()
     dat_frame.get_Image()
     dat_frame.save()
 
 
-def multi_test(t):
+def multi_test():
+    """
+    Creates as many Generator instances as specified in Configuration-threds
+    :return: None
+    """
     BaseManager.register('FilenameGenerator', FilenameGenerator)
     filemanager = BaseManager()
     filemanager.start()
     fn_generator = filemanager.FilenameGenerator()
 
-    # fn_gen = FilenameGenerator(lo)
     gens = []
     for i in range(cfg.get_threads()):
         gens.append(Generator(fn_generator))
     for gen in gens:
         gen.start()
 
-    # time.sleep(t)
-    # for gen in gens:
-    #    gen.kill()
+
+class Generator(Process):
+    """
+    Multiprocessing process to execute generate()
+    """
+    def __init__(self, fn_gen):
+        super().__init__()
+        self.fn_gen = fn_gen
+
+    def run(self):
+        generate(self.fn_gen)
+
+
 
 
 def multi_test_fn(t, fgen):
+    """
+    Runs instances of Generator and kills them after time t
+    :param t: time in seconds to wait
+    :param fgen: Filename Generator instance
+    :return: None
+    """
     fn_generator = fgen
-    # fn_gen = FilenameGenerator(lo)
     gens = []
     for i in range(cfg.get_threads()):
         gens.append(Generator(fn_generator))
@@ -92,8 +119,19 @@ def multi_test_fn(t, fgen):
         gen.kill()
 
 
+
+
+
 class Gen1(Process):
+    """
+    Generator that runs generate multiple times
+    """
     def __init__(self, fn, n):
+        """
+
+        :param fn: Filename Generator istance
+        :param n: number of executions
+        """
         super().__init__()
         self.fn = fn
         self.n = n
@@ -104,6 +142,11 @@ class Gen1(Process):
 
 
 def every_thread_n(n):
+    """
+    Lets every thread generate n Images
+    :param n: Number of images
+    :return: None
+    """
     BaseManager.register('FilenameGenerator', FilenameGenerator)
     filemanager = BaseManager()
     filemanager.start()
@@ -119,20 +162,12 @@ def every_thread_n(n):
     return True
 
 
-class Generator(Process):
-    def __init__(self, fn_gen):
-        super().__init__()
-        self.fn_gen = fn_gen
-
-    def run(self):
-        # i = 0
-        # while True:
-        # i+= 1
-        # print("{} running for {}th time".format(str(self), i))
-        generate(self.fn_gen)
-
-
+@DeprecationWarning
 def test_Length_and_Sigma():
+    """
+    DEPRECATED.  Used to generate images with different parameters for angle correlation
+    :return: None
+    """
     BaseManager.register('FilenameGenerator', FilenameGenerator)
     filemanager = BaseManager()
     filemanager.start()
@@ -153,14 +188,21 @@ def test_Length_and_Sigma():
 
 
 class Gen2(Process):
+    """
+    Generator used for ordered adding at specific angles
+    """
     def __init__(self, fn, a):
+        """
+
+        :param fn: Filename Generator instance
+        :param a: angle ordered lattice is turned by
+        """
         super().__init__()
         self.fn = fn
         self.a = a
 
     def run(self) -> None:
         dat_frame = DataFrame(self.fn)
-        # dat_frame.addParticles()
         dat_frame.add_Ordered(Molecule, theta=self.a)
         dat_frame.get_Image()
         index = dat_frame.save()
@@ -168,6 +210,10 @@ class Gen2(Process):
 
 
 def every_angle():
+    """
+    Runs Gen2-Instances for angles from 0 to 360 degree
+    :return: True to keep parent method alive
+    """
     BaseManager.register('FilenameGenerator', FilenameGenerator)
     filemanager = BaseManager()
     filemanager.start()
@@ -186,7 +232,15 @@ def every_angle():
 
 
 class Gen3(Process):
+    """
+    Generator used to test Double-Tip method
+    """
     def __init__(self, fn, a):
+        """
+
+        :param fn: Filename Generator instance
+        :param a: angle in which direction the double tipping effect should happen
+        """
         super().__init__()
         self.fn = fn
         self.a = a
@@ -194,32 +248,21 @@ class Gen3(Process):
     def run(self) -> None:
         dat_frame = DataFrame(self.fn)
         dat_frame.add_Ordered(theta=0)
-        # dat_frame.addParticles()
-        # dat_frame.addObject(Molecule(pos=np.array([Distance(True, 50), Distance(True, 50)]), theta=0))
         dat_frame.get_Image(ang=self.a)
         index = dat_frame.save()
         print("index {} had angle {:.1f}°".format(index, 180 * self.a / 3.14159))
 
 
-def every_angle1():
-    BaseManager.register('FilenameGenerator', FilenameGenerator)
-    filemanager = BaseManager()
-    filemanager.start()
-    fn_gen = filemanager.FilenameGenerator()
-
-    ts = []
-    for i in range(cfg.get_threads()):
-        a = ((360 / cfg.get_threads()) * i) * np.pi / 180
-        ts.append(Gen3(fn_gen, a))
-    for t in ts:
-        t.start()
-        time.sleep(2)
-    for t in ts:
-        t.join()
-    return True
 
 
+@DeprecationWarning
 def testStdderiv(fn_gen, l):
+    """
+    DEPRECATED. Used to test different standard derivations for angle correlation
+    :param fn_gen: Filename Generator instance
+    :param l: Angle char, length currently used
+    :return: None
+    """
     fn = fn_gen
     s = 0.005
     inc = 0.01
@@ -239,14 +282,15 @@ def testStdderiv(fn_gen, l):
             dinc = 0.02
         inc += dinc
         s += inc
-        # print(s)
 
 
 def test_finv_acc():
-    start = time.perf_counter()
-    # f = lambda x: np.exp(0.02*x) + x
-    # approx_invers(f)
-    # print("Dur: {:.2f}s".format(time.perf_counter() - start))
+    """
+    Testing method to measure computational performance of Function.finv()
+    Plots Time over accuracy
+    :return: None
+    """
+
     times = []
     accs = []
     for i in range(1, 1000, 5):
@@ -265,10 +309,12 @@ def test_finv_acc():
 
 
 def test_finv_len():
-    start = time.perf_counter()
-    # f = lambda x: np.exp(0.02*x) + x
-    # approx_invers(f)
-    # print("Dur: {:.2f}s".format(time.perf_counter() - start))
+    """
+    Testing method to measure computational performance of Function.finv()
+    Plots Time over number of points
+    :return: None
+    """
+
     times = []
     lens = []
     for i in range(1, 100, 5):
@@ -282,12 +328,20 @@ def test_finv_len():
         lens.append(i)
 
     plt.plot(lens, times)
-    plt.title("Computing time over Accuracy")
+    plt.title("Computing time over Points")
     plt.show()
 
 
 class Gen4(Process):
+    """
+    Generator for adding a single particle in the middle of the image rotated by given angle
+    """
     def __init__(self, fn, a):
+        """
+
+        :param fn: Filename Generator Instance
+        :param a: Angle
+        """
         super().__init__()
         self.fn = fn
         self.a = a
@@ -302,6 +356,10 @@ class Gen4(Process):
 
 
 def every_angle2():
+    """
+    Invokes Gen4
+    :return:
+    """
     BaseManager.register('FilenameGenerator', FilenameGenerator)
     filemanager = BaseManager()
     filemanager.start()
@@ -327,6 +385,12 @@ recursions = 2
 
 
 def act(dat):
+    """
+    Core method. This code will be run by each thread on the given DataFrame
+
+    :param dat: Data frame opertaions should be done on
+    :return:
+    """
     #pos1 = np.array([Distance(True, 20), cfg.get_height() / 4])
     #pos2 = np.array([Distance(True, 50), cfg.get_height() / 4])
     #pos3 = np.array([Distance(True, 80), cfg.get_height() / 4])
@@ -379,7 +443,15 @@ def act(dat):
 
 
 class GenExc(Process):
+    """
+    Core Generator. Code inside act() will be called amnt time by every thread
+    """
     def __init__(self, fn, amnt):
+        """
+
+        :param fn: Filename Generator instance
+        :param amnt: Number of time the code should be executed
+        """
         super().__init__()
         self.fn = fn
         self.am = amnt
@@ -391,6 +463,13 @@ class GenExc(Process):
 
 
 def execNthreads(n, amnt=1):
+    """
+    Core method. Generates and runs n GenExcs
+    :param n: Number of processes to start in parallel
+    :param amnt: number of times each process should do the task in act()
+    :return:
+    """
+
     BaseManager.register('FilenameGenerator', FilenameGenerator)
     filemanager = BaseManager()
     filemanager.start()

@@ -27,15 +27,27 @@ from tqdm import tqdm
 
 
 class DataFrame:
+    """
+    Core class of the simulation program. Contains and directs the entire process.
+    Contains Particles that should be displayed, generates images and saves them
+    """
 
     # Constructor. Reads Config into local variables
     @measureTime
     def __init__(self, fn_gen):
+        """
+        Constructor.
+        :param fn_gen: Filename Generator instance
+        """
+
         start = time.perf_counter()
+        # Initialize important variables
         self.objects = []
         self.fn_gen = fn_gen
         self.text = ""
         self.img = None
+
+        # Get parameters from configuration for possible further use
         self.angle_char_len = cfg.get_angle_char_len()
         self.angle_correlation_std = cfg.get_angle_stdderiv()
         self.area = cfg.get_width() * cfg.get_height()
@@ -51,10 +63,13 @@ class DataFrame:
         self.dragging_speed = cfg.get_dragging_speed()
         self.raster_angle = cfg.get_raster_angle()
         self.double_tip_poss = cfg.get_double_tip_possibility()
+
+        # passed_args variables are used to store arguments if a adding-function has to be reevaluated (e.g. Double Tip)
         self.passed_args_particles = None
         self.passed_args_Obj = None
         self.passed_args_Ordered = None
         self.passed_args_One = None
+
         self.img_width = cfg.get_width()
         self.img_height = cfg.get_height()
         self.use_crystal_orientations = cfg.get_crystal_orientation_usage()
@@ -85,18 +100,30 @@ class DataFrame:
 
     @measureTime
     def getIterator(self):
-        return self.objects
+        """
+        Returns iterator over objects
+        :return: iterator over self.objs
+        """
 
-        # gets number of particles
+        return self.objects
 
     @measureTime
     def __len__(self):
-        return len(self.objects)
+        """
+        Returns number of particles inside this frame
+        :return: number of particles
+        """
 
-        # adds a given particle or, if not provided a random one
+        return len(self.objects)
 
     @measureTime
     def addParticle(self, part=None):
+        """
+        Adds a single particle, If part is provided, it will be added. Otherwise a new particle is generated and added.
+        :param part: optional: particle to add
+        :return: None
+        """
+
         self.passed_args_One = Particle()
         if self.passed_args_particles is None:
             self.passed_args_particles = (1, None, True, 1000)
@@ -120,6 +147,11 @@ class DataFrame:
 
     @measureTime
     def _overlaps_any(self, part):
+        """
+        Checks if the provided particle overlaps with any existing particle
+        :param part: particle to be checked
+        :return: True if part overlaps any
+        """
         # start = time.perf_counter()
 
         if len(self.objects) == 0:
@@ -131,15 +163,20 @@ class DataFrame:
                                                                                           p.effect_range):
                     continue
             if part.true_overlap(p):
-                # print("Overlaps any took {}".format(time.perf_counter() - start))
                 return True
-        # print("Overlaps any took {}".format(time.perf_counter() - start))
         return False
 
         # returns random particle, that does not overlap with any other
 
     @measureTime
     def _get_thatnot_overlaps(self, maximumtries=1000, calcangle=False):
+        """
+        Returns a particle that does not overlap with any existing one.
+        :param maximumtries: Tries after which the adding should give up and return None
+        :param calcangle: If angle for particle should be calculated
+        :return: particle that can be added
+        """
+
         if calcangle:
             if len(self.objects) == 0:
                 p = Particle()
@@ -170,9 +207,21 @@ class DataFrame:
         return p
 
     def _get_molec_thatnot_overlaps(self, Obj=Molecule, ph=3, maximumtries=1000):
+        """
+        Same as _get_thatnot_overlaps, now adds Molecules instead of particles
+        :param Obj: Class of which things should be added
+        :param ph: Number of phenyl groups for added parts
+        :param maximumtries: Tries after which the adding should give up and return None
+        :return:
+        """
 
         @measureTime
         def _overlaps_M_any(part):
+            """
+            Assisting function. _overlaps any specified for molecules
+            :param part: partcile/molecula that may overlap
+            :return: True if it overlaps
+            """
             # start = time.perf_counter()
 
             if len(self.objects) == 0:
@@ -201,7 +250,15 @@ class DataFrame:
         return None
 
     @measureTime
-    def get_dragged_that_mot_overlaps(self, maximumtries, angle=None, setangle=False):
+    def get_dragged_that_not_overlaps(self, maximumtries, angle=None, setangle=False):
+        """
+        Same as _get_thatnot_overlaps, just with dragged particles
+        :param maximumtries: Tries after which the adding should give up and return None
+        :param angle: angle of particle
+        :param setangle: if angle should be set/calculated (deprecated)
+        :return:
+        """
+
         @measureTime
         def _set_p():
             p = Particle()
@@ -227,62 +284,17 @@ class DataFrame:
         # calculates a random angle for partilce depending on its surrounding with correlation
 
     @measureTime
-    def _calc_angle_for_particle(self, particle):  # ToDo: Still very sketchy
-
-        if self.use_crystal_orientations:
-            print("Deprecated 132813")
-            if self._orients_along_crystal(particle):
-                # particle.set_height(0.7)
-                # print(self.crystal_directions)
-                return random.choice(self.crystal_directions)
-            else:
-                amount = 0
-                angles = 0
-                distances = 0
-                for part_it in self.objects:
-                    weight = self._calc_angle_weight(particle, part_it)
-                    amount += weight
-                    distances += part_it.get_distance_to(particle)
-                    th = part_it.get_theta()
-                    angles += (th if th < np.pi else -(2 * np.pi - th)) * weight
-                med = angles / amount
-                std = len(self.objects) * self.angle_correlation_std / amount
-                exp_std = np.exp(std) - 1
-                return random.gauss(med, exp_std)
-
-        print("WARNING: Not using Crystal Orientation")
-
-        if len(self.objects) == 0:
-            return np.pi * 2 * random.random()
-        amount = 0
-        angles = 0
-        distances = 0
-        for part_it in self.objects:
-            weight = self._calc_angle_weight(particle, part_it)
-            amount += weight
-            distances += part_it.get_distance_to(particle)
-            th = part_it.get_theta()
-            angles += (th if th < np.pi else -(2 * np.pi - th)) * weight
-        med = angles / amount
-        std = len(self.objects) * self.angle_correlation_std / amount
-        exp_std = np.exp(std) - 1
-        # print("Particle {} has weighted distance of {}, total distance of {} resulting in sigma={}, expSigma of {}".format(len(self.objects) + 1, amount, distances, std, exp_std))
-        return random.gauss(med, exp_std)
-
-        # returns rand
-
-    @measureTime
-    def _random_angle_range(self):
-        if self.min_angle > self.max_angle:
-            shiftl = 2 * np.pi - self.min_angle
-            ret = random.random() * self.max_angle + shiftl
-            ret -= shiftl
-            return ret
-        else:
-            return random.uniform(self.min_angle, self.max_angle)
-
-    @measureTime
     def addParticles(self, optimumEnergy=False, amount=None, coverage=None, overlapping=False, maximum_tries=1000):
+        """
+        Adds particles to the DataFrame
+
+        :param optimumEnergy: Deprecated. Used to add particles at optimum energy position
+        :param amount: Number of particles to add (1st priority)
+        :param coverage: if amount is not specified: coverage percentage that should be reached (2nd priority)
+        :param overlapping: is particle should be allowed to overlap with each other
+        :param maximum_tries: Maximum tries to add not-overlapping particles (see _get_thatnot_overlaps)
+        :return: None
+        """
 
         if optimumEnergy:
             print("Deprecated 8414813")
@@ -309,7 +321,7 @@ class DataFrame:
                     if amount is not None:
                         for i in range(amount):
                             if random.random() < self.dragging_possibility:
-                                p = self.get_dragged_that_mot_overlaps(maximum_tries)
+                                p = self.get_dragged_that_not_overlaps(maximum_tries)
                                 self.objects.append(p)
                             else:
                                 p = self._get_thatnot_overlaps(maximum_tries)
@@ -317,7 +329,7 @@ class DataFrame:
                     elif coverage is not None:
                         while self.coverage() < coverage:
                             if random.random() < self.dragging_possibility:
-                                p = self.get_dragged_that_mot_overlaps(maximum_tries)
+                                p = self.get_dragged_that_not_overlaps(maximum_tries)
                                 self.objects.append(p)
                             else:
                                 p = self._get_thatnot_overlaps(maximum_tries)
@@ -325,7 +337,7 @@ class DataFrame:
                     else:
                         for i in range(cfg.get_particles_per_image()):
                             if random.random() < self.dragging_possibility:
-                                p = self.get_dragged_that_mot_overlaps(maximum_tries)
+                                p = self.get_dragged_that_not_overlaps(maximum_tries)
                                 self.objects.append(p)
                             else:
                                 p = self._get_thatnot_overlaps(maximum_tries)
@@ -356,7 +368,7 @@ class DataFrame:
                     if amount is not None:
                         for i in range(amount):
                             if random.random() < self.dragging_possibility:
-                                p = self.get_dragged_that_mot_overlaps(maximum_tries, setangle=True)
+                                p = self.get_dragged_that_not_overlaps(maximum_tries, setangle=True)
                                 self.objects.append(p)
                             else:
                                 p = self._get_thatnot_overlaps(maximum_tries, calcangle=True)
@@ -365,7 +377,7 @@ class DataFrame:
                     elif coverage is not None:
                         while self.coverage() < coverage:
                             if random.random() < self.dragging_possibility:
-                                p = self.get_dragged_that_mot_overlaps(maximum_tries, setangle=True)
+                                p = self.get_dragged_that_not_overlaps(maximum_tries, setangle=True)
                                 self.objects.append(p)
                             else:
                                 p = self._get_thatnot_overlaps(maximum_tries, calcangle=True)
@@ -375,7 +387,7 @@ class DataFrame:
                         # print("Normal") Normaldurchlauf
                         for i in range(cfg.get_particles_per_image()):
                             if random.random() < self.dragging_possibility:
-                                p = self.get_dragged_that_mot_overlaps(maximum_tries, setangle=True)
+                                p = self.get_dragged_that_not_overlaps(maximum_tries, setangle=True)
                                 self.objects.append(p)
                             else:
                                 p = self._get_thatnot_overlaps(maximum_tries, calcangle=True)
@@ -410,7 +422,7 @@ class DataFrame:
                 if amount is not None:
                     for i in range(amount):
                         if random.random() < self.dragging_possibility:
-                            p = self.get_dragged_that_mot_overlaps(maximum_tries, angle=self._random_angle_range())
+                            p = self.get_dragged_that_not_overlaps(maximum_tries, angle=self._random_angle_range())
                             self.objects.append(p)
                         else:
                             p = self._get_thatnot_overlaps(maximum_tries)
@@ -419,7 +431,7 @@ class DataFrame:
                 elif coverage is not None:
                     while self.coverage() < coverage:
                         if random.random() < self.dragging_possibility:
-                            p = self.get_dragged_that_mot_overlaps(maximum_tries, angle=self._random_angle_range())
+                            p = self.get_dragged_that_not_overlaps(maximum_tries, angle=self._random_angle_range())
                             self.objects.append(p)
                         else:
                             p = self._get_thatnot_overlaps(maximum_tries)
@@ -428,7 +440,7 @@ class DataFrame:
                 else:
                     for i in range(cfg.get_particles_per_image()):
                         if random.random() < self.dragging_possibility:
-                            p = self.get_dragged_that_mot_overlaps(maximum_tries, angle=self._random_angle_range())
+                            p = self.get_dragged_that_not_overlaps(maximum_tries, angle=self._random_angle_range())
                             self.objects.append(p)
                         else:
                             p = self._get_thatnot_overlaps(maximum_tries)
@@ -454,11 +466,25 @@ class DataFrame:
 
     @measureTime
     def addObject(self, ob):
+        """
+        Adds a passed object to self.objs
+        :param ob: passed object to be added
+        :return: None
+        """
         self.passed_args_One = ob
         self.objects.append(ob)
 
     @measureTime
     def addObjects(self, Object=Molecule, amount=None, coverage=None, overlapping=False, maximum_tries=1000):
+        """
+        Same as addParticles, just with Molecules or other specified Object
+        :param Object: class of witch instances should be added
+        :param amount: Number of particles to add (1st priority)
+        :param coverage: if amount is not specified: coverage percentage that should be reached (2nd priority)
+        :param overlapping: is particle should be allowed to overlap with each other
+        :param maximum_tries: Maximum tries to add not-overlapping particles (see _get_thatnot_overlaps)
+        :return:
+        """
         self.passed_args_Obj = Object, amount, coverage, overlapping, maximum_tries
 
         @measureTime
@@ -524,32 +550,17 @@ class DataFrame:
                     self.objects.append(p)
 
     @measureTime
-    def _add_at_pos_dragged(self, Object, pos, theta):
-        @measureTime
-        def _set_p(fak):
-            p = Object(pos, theta)
-            p.drag(fak * self.dragging_speed.px, self.raster_angle)
-            return p
-
-        if len(self.objects) == 0:
-            print(1)
-            return _set_p(1)
-        f = 1.0
-        p = _set_p(f)
-        for i in range(10):
-            if self._overlaps_any(p):
-                # print("Retry_b")
-                f *= 0.8
-                p = _set_p(f)
-            else:
-                print("-> {:.3f}".format(f))
-                return p
-        print("MaxTries Exhausted_b")
-        print("-> {:.3f}".format(f))
-        return p
-
-    @measureTime
     def add_Ordered(self, Object=Molecule, theta=None, factor=1.0, ph_grps=None, style="Simple"):
+        """
+        Add particles at positions observed in real STM Data forming regular patterns
+        :param Object: Particle Class to be added in an ordered way
+        :param theta: Angle by which the resulting lattice is turned. Random if None
+        :param factor: Multiplicative factor for increasing the spacing between molecules
+        :param ph_grps: number of phenyl groups
+        :param style: Specifies the display-style for added particles
+        :return: None
+        """
+
         start = time.perf_counter()
         offset = Distance(False, cfg.get_px_overlap())
         self.passed_args_Ordered = (Object, theta)
@@ -559,17 +570,25 @@ class DataFrame:
 
         @measureTime
         def bog(deg):
+            """
+            Turns degree values into radian
+            :param deg: angle in degrees
+            :return: angle in radians
+            """
+
             return np.pi * deg / 180
 
         @measureTime
         def add_ordered_NCPh3CN(theta=None):
+            """
+            Method that adds Molecules with 3 phenyl groups
+            :param theta: Angle by which the resulting lattice is turned. Random if None
+            :return: None
+            """
             if theta is None:
                 theta_0 = random.random() * np.pi * 2
             else:
                 theta_0 = theta
-            # theta_0 = 0 # ToDo Rem
-            # theta_0 = bog(-4.5636)
-            # print("theta0: {:.1f}°".format(theta_0 / np.pi * 180))
             dist_h = Distance(True, 13.226) * factor
             dist_v = Distance(True, 13.1933) * factor
             gv_a = np.array([dist_h * np.cos(theta_0), dist_h * np.sin(theta_0)])
@@ -587,11 +606,9 @@ class DataFrame:
             j_max = int(np.ceil(max(a_temp, b_temp)))
             c_temp = ((self.img_width + j_max * gv_b[0]) / gv_a[0]) if gv_a[0].px != 0 else j_max
             i_max = int(np.ceil(c_temp))
-            # print(i_max, j_max)
             for i in range(-200, 200):
                 for j in range(-200, 200):
                     current = start + (gv_a * i) + (gv_b * j)
-                    # print(current[0], self.img_width)
                     if self.img_width + offset > current[0] > (-1) * offset and offset + self.img_height > current[
                         1] > (-1) * offset:
                         if vary_params:
@@ -611,6 +628,11 @@ class DataFrame:
 
         @measureTime
         def add_ordered_NCPh4CN(theta=None):
+            """
+            Method that adds Molecules with 4 phenyl groups
+            :param theta: Angle by which the resulting lattice is turned. Random if None
+            :return: None
+            """
 
             if theta is None:
                 theta_0 = random.random() * np.pi * 2
@@ -686,9 +708,22 @@ class DataFrame:
 
         @measureTime
         def add_ordered_NCPh5CN(theta=None):
+            """
+            Method that adds Molecules with 5 phenyl groups
+            :param theta: Angle by which the resulting lattice is turned. Random if None
+            :return: None
+            """
 
             @measureTime
             def add_Hexa(center, start_ang, chirality):
+                """
+                Method that adds a ring of six NCPh5CN molecules
+                :param center: Position of the hexagons center
+                :param start_ang: angle by which wing is turned
+                :param chirality: Which chirality the added ring should have
+                :return:
+                """
+
                 d = Distance(True, 22.457) * factor
 
                 @measureTime
@@ -753,9 +788,6 @@ class DataFrame:
 
             chirality = np.sign(random.random() - 0.5)
 
-            # add_Hexa(np.array([self.img_width/2, self.img_height/2]), theta_0)
-            # return
-
             gv_dist = Distance(True, 55.4938) * factor
             gv_a_w = theta_0 + bog(179.782)
             gv_b_w = theta_0 + bog(119.782)
@@ -763,13 +795,7 @@ class DataFrame:
             gv_a = np.array([gv_dist * np.sin(gv_a_w), -gv_dist * np.cos(gv_a_w)])
             gv_b = np.array([gv_dist * np.sin(gv_b_w), -gv_dist * np.cos(gv_b_w)])
 
-            # print(gv_a, gv_b)
-
             offset_loc = offset + gv_dist
-            # print("-----")
-            # print(offset_loc)
-            # print(offset)
-            # print(gv_dist)
 
             start = np.array([Distance(True, 0), Distance(True, 0)])
             current = np.array([0, 0])
@@ -780,12 +806,11 @@ class DataFrame:
             i_max = int(np.ceil(c_temp))
             for i in range(-100, max(100, i_max)):
                 for j in range(-100, max(100, i_max)):
-                    current = start + (gv_a * i) + (gv_b * j)  # Sketcy mit 3x Offset
+                    current = start + (gv_a * i) + (gv_b * j)
                     if self.img_width + offset_loc > current[0] > (-1) * offset_loc and offset_loc + self.img_height > \
                             current[
                                 1] > (-1) * offset_loc:
                         add_Hexa(current, theta_0, chirality)
-                        # print("Add at current = {}".format(current))
 
         if ph_grps is None:
             random_ph_grps = random.randint(3, 5)
@@ -820,19 +845,14 @@ class DataFrame:
 
         print("Add Ordered: {:.2f}s".format(time.perf_counter() - start))
 
-        # @measureTime
-
-    @measureTime
-    def is_overlapping(self, part):
-        for p in self.objects:
-            if p.true_overlap(part):
-                return self.overlapping_energy
-        return 0
-
-    # @measureTime
-    # Not used at all...
     @measureTime
     def atomic_step_init(self):
+        """
+        Initiates atomic step calculation by creating special parameters.
+        A lot is not used anymore...
+        :return: function (unused), slope(unused), y-intercept(unused), lines[],
+                    if line is up to down or not, which side is higher
+        """
         # for obj in self.objects:
         #    obj.set_maxHeight(cfg.get_max_height() + cfg.get_atomic_step_height())
         # Create Stepborder
@@ -853,23 +873,35 @@ class DataFrame:
 
     @measureTime
     def calc_lines(self):
+        """
+        Creates a line array containing the points along which the atomic step is aligned
+
+        :return: lines-array, if line direction is up-down, which side to use
+        """
         points = []
+
+        # No of points at which define the line
         steps = 40
+
+        # If line should be from top to bottom or from left to right
         updown = random.random() < 0.5
+
+        # Variance in direction
         variance = int(160 / steps)
+
+        # Which side of both should be higher
         sideA = random.random() < 0.5
-        show_line = False
+
+        # If next point should depend on last slope. Makes borders smoother
         tendence = True
 
         # Calculate Lines
         if updown:
             oldstep = random.randint(-variance, variance)
-            oldstep = int(self.img_height.px / steps)  # TODO Rem
             oldx = random.random() * self.img_width.px
             for i in range(0, int(self.img_height.px) + int(self.img_height.px / steps),
                            int(self.img_height.px / steps)):
-                # points.append(np.array([i, random.random() * self.img_height.px]))
-                # points.append(np.array([i, self.img_height.px/2]))
+
                 if tendence:
                     newstep = random.randint(-variance, variance) + oldstep
                     new_x = newstep + oldx
@@ -888,11 +920,8 @@ class DataFrame:
         else:
             oldy = random.random() * self.img_height.px
             oldstep = random.randint(-variance, variance)
-            oldstep = int(self.img_width.px / steps)  # ToDo Rem
             for i in range(0, int(self.img_width.px) + int(self.img_width.px / steps),
                            int(self.img_width.px / steps)):
-                # points.append(np.array([i, random.random() * self.img_height.px]))
-                # points.append(np.array([i, self.img_height.px/2]))
 
                 if tendence:
                     newstep = random.randint(-variance, variance) + oldstep
@@ -911,12 +940,25 @@ class DataFrame:
 
     @measureTime
     def dist_to_line(self, x, y, lines):
+        """
+        calculates the distance from a point (x,y) to the lines specified in lines
+        :param x: x-coordinate
+        :param y: y-coordinate
+        :param lines: line array
+        :return: the distance between point and line
+        """
 
         already_interpolated = False
         maxlen = 50
 
         @measureTime
         def interpolate_lines(givnlines):
+            """
+            Interpolates the existing lines to make the tranisitions betwee lines less sharp. Needed to have
+            a perpendicular connection between the lines and each point
+            :param givnlines: not-interpolated previous lines
+            :return: None, appends the new lines directly to the passed array
+            """
             nonlocal already_interpolated
             if already_interpolated:
                 return
@@ -934,14 +976,16 @@ class DataFrame:
 
         loc_lines = lines
 
-        interpolate = True
+
+        # Interpolate if maximum number of lines is not reached yet
         if len(lines) < maxlen:
             interpolate_lines(lines)
 
+        # Threashold from which on a Dx should be treated as 0. Needed to prevent from very high slopes
         zero_threshold = 0.005
         distances = []
-        # print(lines)
-        # print(loc_lines)
+
+        # Calculate the distance to every line segment
         for line in loc_lines:
             dy = line[1][1] - line[0][1]
             dx = line[1][0] - line[0][0]
@@ -976,11 +1020,19 @@ class DataFrame:
                     x_sp = line[0][0]
             y_sp = m * x_sp + b
             distances.append(np.sqrt(np.square(x - x_sp) + np.square(y - y_sp)))
+
+        # return the minimal distance of all distances to line segments
         return min(distances)
 
         # @measureTime
 
     def angle_between(self, part, lines):
+        """
+        Calculates the angle between the particle orientation and the line segment closest to the particle
+        :param part: particle
+        :param lines: line segments
+        :return: The angle in range from 0 to 90 degree
+        """
         loc_lines = lines
 
         x = part.pos[0].px
@@ -1058,10 +1110,23 @@ class DataFrame:
 
     @measureTime
     def atomic_step(self, matrix, f, m, b, lines=None, updown=None, side_A=None):
+        """
+        Creates a atomic step inside the data
+        :param matrix: The previous visualization
+        :param f: function, not used anymore
+        :param m: slope, not used anymore
+        :param b: y-intercept, not used anymore
+        :param lines: line segments forming the step
+        :param updown: if the step is oriented vertically
+        :param side_A: which side should be higher
+        :return:
+        """
 
         fpoints = []
 
+        # if mt is True additional timed information wil be provided
         mt = False
+
         if mt:
             start = time.perf_counter()
 
@@ -1069,6 +1134,12 @@ class DataFrame:
 
         @measureTime
         def nearest_ag(gitter, pos):
+            """
+            Returns the nearest Atom from the sample surface from gitter
+            :param gitter: array of substrate atoms
+            :param pos: position which should be evaluated for nearest atom
+            :return: the nearest atom from gitter
+            """
             mindist = np.inf
             minat = None
             for ag in gitter:
@@ -1080,6 +1151,14 @@ class DataFrame:
 
         @measureTime
         def in_range_of_nst(x, y, atoms, radius):
+            """
+            Returns True if position (x, y) is closer to the nearest lattice atom than radius
+            :param x: position x
+            :param y: position y
+            :param atoms: lattice atoms
+            :param radius: radius
+            :return: True if position (x, y) is closer to the nearest lattice atom than radius
+            """
             # return False #ToDo: REm
             for atom in atoms:
                 if np.linalg.norm(atom.pos - np.array([x, y])) < radius:
@@ -1088,6 +1167,13 @@ class DataFrame:
 
         @measureTime
         def fermi(d, mu):
+            """
+            calculates fermi distribution at position d with expectation value mu
+            Uses standard values for exponent factor gamma and range
+            :param d: position
+            :param mu: expectation
+            :return:
+            """
             if d < self.fermi_range:
                 return 1 / (np.exp(self.fermi_exp * (d - mu)) + 1)
             else:
@@ -1095,6 +1181,14 @@ class DataFrame:
 
         @measureTime
         def fermi2(d, mu, fex, range):
+            """
+            calculates fermi distribution with different gamma fex and different range
+            :param d: pos
+            :param mu: exp
+            :param fex: gamma
+            :param range: range
+            :return: fermi distr
+            """
             if d <= range:
                 return 1 / (np.exp(fex * (d - mu)) + 1)
             else:
@@ -1102,11 +1196,25 @@ class DataFrame:
 
         @measureTime
         def fermi_ohne_range(d, mu, fex):
+            """
+            Fermi dirtribution with infinite fermi range
+            :param d: pos
+            :param mu: exp
+            :param fex: gamma
+            :return: fermi distr
+            """
             return fermi2(d, mu, fex, np.infty)
 
         @measureTime
         def dist_to_nst(x, y, atoms, radius):
-
+            """
+            Returns distance to nearest lattice atom
+            :param x: pos x
+            :param y: pos y
+            :param atoms: lattice atoms
+            :param radius: radius of these atoms
+            :return:
+            """
             max = 0
             # return 0 #ToDo: REm
             for atom in atoms:
@@ -1114,21 +1222,13 @@ class DataFrame:
                     max = fermi(np.linalg.norm(np.array([x, y]) - atom.pos), radius)
             return max
 
-        # @measureTime
-        # def dist_to_f(x, y, f):
-        #    mind = 1000
-        #    for xs in range(0, int(np.ceil(self.img_width.px))):
-        #        ys = f(xs)
-        #        if not -50 < ys < self.img_height.px + 50:
-        #            continue
-        #        dist = np.sqrt(np.square(x - xs) + np.square(y - ys))
-        #        if dist < mind:
-        #            mind = dist#
-
-        #            return mind
-
         @measureTime
         def _calc_fpoints(f):
+            """
+            DEPRECATED. Used to calculate line-points from function f
+            :param f: function
+            :return: None
+            """
             lastpt = np.array([0, f(0)])
             inc = 1
             h = 0  # -50
@@ -1160,6 +1260,14 @@ class DataFrame:
 
         @measureTime
         def dist_to_f(x, y, f):
+            """
+            DEPRECATED. Calculates distance from point (x, y) to function f
+            :param x: x
+            :param y: y
+            :param f: function
+            :return: distance
+            """
+
             if len(fpoints) == 0:
                 _calc_fpoints(f)
 
@@ -1173,11 +1281,20 @@ class DataFrame:
 
         @measureTime
         def find_fermi_range(dh, fex):
+            """
+            Calculates the fermi range from which on the height is smaller than dh
+            :param dh: min height
+            :param fex: gamma
+            :return: range
+            """
             for zetta in range(0, 1000):
                 # zetta = 1000 - d
                 if dh * fermi_ohne_range(zetta, rad, fex) < 1:
                     return zetta
 
+
+
+        # Constants what to do
         show_gitter = False
         use_gitter = True
         show_f = False
@@ -1228,9 +1345,9 @@ class DataFrame:
             print("STEP2 (Checking Pairs): {}".format(time.perf_counter() - start))
             start = time.perf_counter()
 
+        # Array of atoms laying near the step
         atoms_near_step = []
         gitter = Tests_Gitterpot.create_larger_gitter()  # Ag-Atom[]
-        # print("Positions: {}".format(checking_pairs))
 
         for pos in checking_pairs:
             nat = nearest_ag(gitter, pos)
@@ -1241,7 +1358,6 @@ class DataFrame:
             print("STEP3 (Atoms Near Step): {}".format(time.perf_counter() - start))
             start = time.perf_counter()
 
-        # print("No of Atoms near step: {} - {}".format(len(atoms_near_step), atoms_near_step))
 
         rad = cfg.get_nn_dist().px
 
@@ -1273,6 +1389,12 @@ class DataFrame:
 
         @measureTime
         def interpolate_lines(givnlines):
+            """
+                       Interpolates the existing lines to make the tranisitions betwee lines less sharp. Needed to have
+                       a perpendicular connection between the lines and each point
+                       :param givnlines: not-interpolated previous lines
+                       :return: None, appends the new lines directly to the passed array
+            """
             nonlocal already_interpolated
             if already_interpolated:
                 return
@@ -1290,7 +1412,13 @@ class DataFrame:
 
         @measureTime
         def dist_to_line(x, y, lines):
-
+            """
+                    calculates the distance from a point (x,y) to the lines specified in lines
+                    :param x: x-coordinate
+                    :param y: y-coordinate
+                    :param lines: line array
+                    :return: the distance between point and line
+            """
             loc_lines = lines
             # print("DistToLineM len() {}".format(len(lines)))
             interpolate = True
@@ -1345,17 +1473,10 @@ class DataFrame:
 
         sign = 1
 
-        # test DistToLine ToDo: rem
-        if False:
-            nm = np.zeros(np.shape(matrix))
-            for i in range(np.shape(matrix)[0]):
-                for j in range(np.shape(matrix)[1]):
-                    nm[i, j] = dist_to_line(i, j, lines)
-
-            plt.imshow(nm)
-            plt.show()
-
+        # Mode which implemenetation should be used. Best: G
         mode = "G"  # A
+
+        # Shift of Fermi
         schieb = 0  # 0
 
         if mode == "A":
@@ -1758,6 +1879,7 @@ class DataFrame:
                             else:
                                 raise NotImplementedError
 
+        # Best
         if mode == "G":
             # Längere Computational dauer
             assert lines is not None
@@ -1842,55 +1964,13 @@ class DataFrame:
             print("STEP5 (Matrix): {}".format(time.perf_counter() - start))
             start = time.perf_counter()
 
-        # for h in range(np.shape(matrix)[0]):
-        #   for r in range(np.shape(matrix)[1]):
-        #       for p in fpoints:
-        #          if np.linalg.norm(np.array([h, r]) - p) < 2:
-        #             matrix[h, r] = 300
-
-        # Test ToDo: Rem
-        if False:
-            plt.imshow(matrix)
-            plt.show()
-
-        if False:
-            delta = 1
-            for h in range(np.shape(matrix)[0]):
-                for r in range(np.shape(matrix)[1]):
-                    if dist_to_f(h, r, f) < delta:
-                        matrix[h, r] = 200
-
-            zrs = np.zeros(np.shape(matrix))
-            for d in range(int(self.img_width.px)):
-                for e in range(int(self.img_height.px)):
-                    zrs[d, e] = dist_to_f(d, e, f)
-            plt.imshow(zrs)
-            plt.show()
-
-        if False:
-            mid = int(self.img_height.px / 2)
-            xs = []
-            ys = []
-            for h in range(np.shape(matrix)[0]):
-                xs.append(h)
-                ys.append(matrix[h, mid])
-
-            plt.plot(xs, ys)
-            plt.title("Helligkeitsprofil entlang y = {}".format(mid))
-            plt.show()
-
-        # plt.imshow(matrix.transpose())
-        # plt.show()
-
-        # for i in range(0, 400, 40):
-        #    print("Dist to f: {}-200 : {:.3f}".format(i, dist_to_f(i, 200, f)))#
-
-        # print("Fermi(0, rad) = {}".format(fermi(0, rad)))
-
-        # @measureTime
-
     @measureTime
     def add_Dust_Part(self, part=None):
+        """
+        Adds a dust particle to the frame
+        :param part: particle to be added. New will be created if None
+        :return: None
+        """
         if part is None:
             self.dust_particles.append(DustParticle(size=random.random() * 40))
         else:
@@ -1900,21 +1980,31 @@ class DataFrame:
 
     @measureTime
     def add_Dust(self):
-
+        """
+        adds specified amount of dust particles
+        :return: None
+        """
         amnt = int(np.round(np.random.normal(self.dust_amount)))
         for i in range(amnt):
             self.add_Dust_Part()
 
-        # @measureTime
-
     @measureTime
     def create_Image_Visualization(self):
+        """
+        Creates the visualization for the entire situation
+        Invoked by get_image
+        :return:
+        """
 
+        # New image istance for this frame
         self.img = MyImage()
+
+        # create new matrix with specified parameters
         width = self.img_width
         height = self.img_height
         matrix = np.zeros((int(np.ceil(width.px)), int(np.ceil(height.px))))
 
+        # Decides if atomic step should be present
         use_atomstep = random.random() < cfg.get_atomic_step_poss()
 
         # Set Max Height for parts
@@ -1930,10 +2020,13 @@ class DataFrame:
             updown = None
             sideA = None
 
+
+        #Deprecated parameters
         rem_Upper = False
         rem_Lower = False
         rem_Border = True
 
+        # Recalculate positions due to presence of atomic step
         if use_atomstep:
             # self.rem_parts_along_border(lines, matrix, rem_Border, rem_Lower, rem_Upper, sideA, updown)
             self.realign_along_border(lines, matrix, sideA, updown)
@@ -1962,9 +2055,13 @@ class DataFrame:
                         if not (0 <= new_x < width.px and 0 <= new_y < height.px):
                             continue
                         matrix[new_x, new_y] += eff_mat[i, j]
+
+        # add dust
         if self.usedust:
             self.add_Dust()
 
+
+        # modify visu_matrix if atomic step is present
         if use_atomstep:
             self.atomic_step(matrix, *fargs, lines, updown, sideA)
 
@@ -1972,6 +2069,17 @@ class DataFrame:
 
     @measureTime
     def rem_parts_along_border(self, lines, matrix, rem_Border, rem_Lower, rem_Upper, sideA, updown):
+        """
+        DEPRECATED. Used to remove particles because of the atomic step
+        :param lines: lines defining the step
+        :param matrix: visualization matrix
+        :param rem_Border: if particles near the step should be removed
+        :param rem_Lower: if particles on lower plane should be removed
+        :param rem_Upper: if particles on upper plane should be removed
+        :param sideA: which side is the upper one
+        :param updown: if step is vertically or horizonatlly
+        :return: None
+        """
         if updown:
             border = []
             for line in lines:
@@ -2052,11 +2160,23 @@ class DataFrame:
 
     @measureTime
     def realign_along_border(self, lines, matrix, sideA, updown):
+        """
+        New method used instead of just removing the particles at the border
+        :param lines: line segments specifying the atomic step
+        :param matrix: visu_matrix
+        :param sideA: which side is higher
+        :param updown: is step is vertical or horizontal
+        :return:
+        """
 
         if self.passed_args_Ordered is None:
             return
 
         def _create_Border():
+            """
+            calculate particular pixels defining the border
+            :return:
+            """
             if updown:
                 border = []
                 for line in lines:
@@ -2083,6 +2203,12 @@ class DataFrame:
         print("Border creation: {:.2f}ms".format(time.perf_counter() - start))
 
         def _upper_and_dist(x, y):
+            """
+            returns if position (x, y) is on the upper side and which distance to the step it has
+            :param x: x
+            :param y: y
+            :return: if its on the upper side, distance
+            """
 
             posy = max(0, y)
             posy = int(np.round(min(np.shape(matrix)[1] - 1, posy)))
@@ -2105,23 +2231,31 @@ class DataFrame:
                     return not posy < border[posx][1], dist
 
         def rempos(part, dist):  # 1 at 3pd, 0 at 7pd
+            """
+            Definition of possibility to remove a particle depending on its distance to the line
+            :param part: particle which might be removed
+            :param dist: distance to the line
+            :return: possibility to remove the particle
+            """
             return (1 + (3 / 16)) - (dist / (16 * part.get_dimension().px))
 
+        # Removes all existing objects
         old_objs = self.objects.copy()
         self.objects = []
         assert len(old_objs) > 0
         ph_groups = old_objs[0].molecule_ph_groups
 
-        # Upper
+        # add particles on the upper plane
         self.add_Ordered(*self.passed_args_Ordered, ph_grps=ph_groups)
         upper_obs = self.objects.copy()
         self.objects = []
 
-        # Lower
+        # add particles on the lower plane
         self.add_Ordered(*self.passed_args_Ordered, ph_grps=ph_groups)
         lower_obs = self.objects.copy()
         self.objects = []
 
+        # array indices of particles that should be removed on the upper plane
         rem_ind_upper = []
         for i in range(len(upper_obs)):
             part = upper_obs[i]
@@ -2129,6 +2263,7 @@ class DataFrame:
             if not rightside or rempos(part, dist) > random.random():
                 rem_ind_upper.append(i)
 
+        # array indices of particles that should be removed on the lower plane
         rem_ind_lower = []
         for i in range(len(lower_obs)):
             part = lower_obs[i]
@@ -2136,6 +2271,8 @@ class DataFrame:
             if wrongside or rempos(part, dist) > random.random():
                 rem_ind_lower.append(i)
 
+
+        # remove the particles with specified indices
         for i in range(len(upper_obs)):
             if i not in rem_ind_upper:
                 self.objects.append(upper_obs[i])
@@ -2144,13 +2281,15 @@ class DataFrame:
             if i not in rem_ind_lower:
                 self.objects.append(lower_obs[i])
 
+
+        # Add particles at random positions around the steps if they dont overlap
         start = time.perf_counter()
         i = 0
         while i < 100:
             no = self._get_molec_thatnot_overlaps(self.passed_args_Ordered[0], ph=ph_groups, maximumtries=5000)
             if no is None:
                 break
-            # When particles align pacross bordder perpendocular to it
+            # When particles align across border perpendicular to it
             if self.dist_to_line(no.pos[0].px, no.pos[1].px,
                                  lines) < 0.5 * no.get_dimension().px and self.angle_between(no, lines) > np.pi / 4:
                 print("Prevented from crossing ang")
@@ -2235,7 +2374,7 @@ class DataFrame:
 
         if self.use_noise:
             self.img.noise_function()
-            #self.img.noise(self.image_noise_mu, self.image_noise_sigma)
+            # self.img.noise(self.image_noise_mu, self.image_noise_sigma)
 
         if self.use_img_shift:
             self.img.shift_image()
@@ -2323,6 +2462,119 @@ class DataFrame:
         return str(self.objects)
 
     # Deprecated Stuff....
+
+    @measureTime
+    def is_overlapping(self, part):
+        """
+        DEPRECATED. Returns overlapping energy if it overlaps, 0 otherwise
+        :param part: Particle which should be checked for overlapping
+        :return:
+        """
+        for p in self.objects:
+            if p.true_overlap(part):
+                return self.overlapping_energy
+        return 0
+
+    @measureTime
+    def _add_at_pos_dragged(self, Object, pos, theta):
+        """
+
+        DEPRECATED. Adds the specified Object at a given position dragged at an angle theta
+        :param Object: obj to add
+        :param pos: position vector where obj should be added
+        :param theta: angle at which obj is dragged
+        :return:
+        """
+
+        @measureTime
+        def _set_p(fak):
+            p = Object(pos, theta)
+            p.drag(fak * self.dragging_speed.px, self.raster_angle)
+            return p
+
+        if len(self.objects) == 0:
+            print(1)
+            return _set_p(1)
+        f = 1.0
+        p = _set_p(f)
+        for i in range(10):
+            if self._overlaps_any(p):
+                # print("Retry_b")
+                f *= 0.8
+                p = _set_p(f)
+            else:
+                print("-> {:.3f}".format(f))
+                return p
+        print("MaxTries Exhausted_b")
+        print("-> {:.3f}".format(f))
+        return p
+
+    @measureTime
+    def _calc_angle_for_particle(self, particle):
+        """
+        DEPREACTED. Calculated the angle for a given particle based on its orientation to the crystal.
+        Not used Deprecation Tag because it is used inside some if statement
+        :param particle: particle whose angle should be set
+        :return:
+        """
+        if self.use_crystal_orientations:
+            print("Deprecated 132813")
+            if self._orients_along_crystal(particle):
+                # particle.set_height(0.7)
+                # print(self.crystal_directions)
+                return random.choice(self.crystal_directions)
+            else:
+                amount = 0
+                angles = 0
+                distances = 0
+                for part_it in self.objects:
+                    weight = self._calc_angle_weight(particle, part_it)
+                    amount += weight
+                    distances += part_it.get_distance_to(particle)
+                    th = part_it.get_theta()
+                    angles += (th if th < np.pi else -(2 * np.pi - th)) * weight
+                med = angles / amount
+                std = len(self.objects) * self.angle_correlation_std / amount
+                exp_std = np.exp(std) - 1
+                return random.gauss(med, exp_std)
+
+        print("WARNING: Not using Crystal Orientation")
+
+        if len(self.objects) == 0:
+            return np.pi * 2 * random.random()
+        amount = 0
+        angles = 0
+        distances = 0
+        for part_it in self.objects:
+            weight = self._calc_angle_weight(particle, part_it)
+            amount += weight
+            distances += part_it.get_distance_to(particle)
+            th = part_it.get_theta()
+            angles += (th if th < np.pi else -(2 * np.pi - th)) * weight
+        med = angles / amount
+        std = len(self.objects) * self.angle_correlation_std / amount
+        exp_std = np.exp(std) - 1
+        # print("Particle {} has weighted distance of {}, total distance of {} resulting in sigma={}, expSigma of {}".format(len(self.objects) + 1, amount, distances, std, exp_std))
+        return random.gauss(med, exp_std)
+
+        # returns rand
+
+    @measureTime
+    def _random_angle_range(self):
+        """
+        DEPRECATED. Returns a random angle inside the range specified in Configuration
+        Not used Deprecation Tag because it is used inside some if statement
+
+        :return: The angle
+        """
+        if self.min_angle > self.max_angle:
+            shiftl = 2 * np.pi - self.min_angle
+            ret = random.random() * self.max_angle + shiftl
+            ret -= shiftl
+            return ret
+        else:
+            return random.uniform(self.min_angle, self.max_angle)
+
     # calculates particles weight for importance in surrounding particles
     @DeprecationWarning
     @measureTime
@@ -3098,7 +3350,7 @@ class Double_Frame(DataFrame):
             self.objects.append(part)
 
     @measureTime
-    def get_dragged_that_mot_overlaps(self, maximumtries, angle=None, setangle=False):
+    def get_dragged_that_not_overlaps(self, maximumtries, angle=None, setangle=False):
         # print("DTNO @len {}".format(len(self.objects)))
         @measureTime
         def _set_p():
@@ -3145,7 +3397,7 @@ class Double_Frame(DataFrame):
                     if amount is not None:
                         for i in range(4 * amount):
                             if random.random() < self.dragging_possibility:
-                                p = self.get_dragged_that_mot_overlaps(maximum_tries)
+                                p = self.get_dragged_that_not_overlaps(maximum_tries)
                                 self.objects.append(p)
                             else:
                                 p = self._get_thatnot_overlaps(maximum_tries)
@@ -3153,7 +3405,7 @@ class Double_Frame(DataFrame):
                     elif coverage is not None:
                         while self.coverage() < coverage:
                             if random.random() < self.dragging_possibility:
-                                p = self.get_dragged_that_mot_overlaps(maximum_tries)
+                                p = self.get_dragged_that_not_overlaps(maximum_tries)
                                 self.objects.append(p)
                             else:
                                 p = self._get_thatnot_overlaps(maximum_tries)
@@ -3161,7 +3413,7 @@ class Double_Frame(DataFrame):
                     else:
                         for i in range(4 * cfg.get_particles_per_image()):
                             if random.random() < self.dragging_possibility:
-                                p = self.get_dragged_that_mot_overlaps(maximum_tries)
+                                p = self.get_dragged_that_not_overlaps(maximum_tries)
                                 self.objects.append(p)
                             else:
                                 p = self._get_thatnot_overlaps(maximum_tries)
@@ -3192,7 +3444,7 @@ class Double_Frame(DataFrame):
                     if amount is not None:
                         for i in range(4 * amount):
                             if random.random() < self.dragging_possibility:
-                                p = self.get_dragged_that_mot_overlaps(maximum_tries, setangle=True)
+                                p = self.get_dragged_that_not_overlaps(maximum_tries, setangle=True)
                                 self.objects.append(p)
                             else:
                                 p = self._get_thatnot_overlaps(maximum_tries)
@@ -3201,7 +3453,7 @@ class Double_Frame(DataFrame):
                     elif coverage is not None:
                         while self.coverage() < coverage:
                             if random.random() < self.dragging_possibility:
-                                p = self.get_dragged_that_mot_overlaps(maximum_tries, setangle=True)
+                                p = self.get_dragged_that_not_overlaps(maximum_tries, setangle=True)
                                 self.objects.append(p)
                             else:
                                 p = self._get_thatnot_overlaps(maximum_tries)
@@ -3210,7 +3462,7 @@ class Double_Frame(DataFrame):
                     else:
                         for i in range(4 * cfg.get_particles_per_image()):
                             if random.random() < self.dragging_possibility:
-                                p = self.get_dragged_that_mot_overlaps(maximum_tries, setangle=True)
+                                p = self.get_dragged_that_not_overlaps(maximum_tries, setangle=True)
                                 self.objects.append(p)
                             else:
                                 p = self._get_thatnot_overlaps(maximum_tries)
@@ -3245,7 +3497,7 @@ class Double_Frame(DataFrame):
                 if amount is not None:
                     for i in range(4 * amount):
                         if random.random() < self.dragging_possibility:
-                            p = self.get_dragged_that_mot_overlaps(maximum_tries, angle=self._random_angle_range())
+                            p = self.get_dragged_that_not_overlaps(maximum_tries, angle=self._random_angle_range())
                             self.objects.append(p)
                         else:
                             p = self._get_thatnot_overlaps(maximum_tries)
@@ -3254,7 +3506,7 @@ class Double_Frame(DataFrame):
                 elif coverage is not None:
                     while self.coverage() < coverage:
                         if random.random() < self.dragging_possibility:
-                            p = self.get_dragged_that_mot_overlaps(maximum_tries, angle=self._random_angle_range())
+                            p = self.get_dragged_that_not_overlaps(maximum_tries, angle=self._random_angle_range())
                             self.objects.append(p)
                         else:
                             p = self._get_thatnot_overlaps(maximum_tries)
@@ -3263,7 +3515,7 @@ class Double_Frame(DataFrame):
                 else:
                     for i in range(4 * cfg.get_particles_per_image()):
                         if random.random() < self.dragging_possibility:
-                            p = self.get_dragged_that_mot_overlaps(maximum_tries, angle=self._random_angle_range())
+                            p = self.get_dragged_that_not_overlaps(maximum_tries, angle=self._random_angle_range())
                             self.objects.append(p)
                         else:
                             p = self._get_thatnot_overlaps(maximum_tries)
