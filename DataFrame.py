@@ -562,7 +562,8 @@ class DataFrame:
         """
 
         start = time.perf_counter()
-        offset = Distance(False, cfg.get_px_overlap())
+        #offset = Distance(False, cfg.get_px_overlap())
+        offset = 1.5*Molecule(molecule_ph_groups=5).get_simple_length()
         self.passed_args_Ordered = (Object, theta)
         var_pos = cfg.get_order_pos_var() * Molecule().get_simple_length()
         var_ang = cfg.get_order_ang_var() * 2 * 3.141592653589793238462643
@@ -2375,8 +2376,8 @@ class DataFrame:
 
         # Noise image
         if self.use_noise:
-            self.img.noise_function()
-            # self.img.noise(self.image_noise_mu, self.image_noise_sigma)
+            #self.img.noise_function()
+            self.img.noise(self.image_noise_mu, self.image_noise_sigma)
 
         # add piezo shift
         if self.use_img_shift:

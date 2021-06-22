@@ -1,3 +1,4 @@
+import time
 from functools import lru_cache
 
 import matplotlib.pyplot as plt
@@ -231,7 +232,112 @@ class MyImage:
         # if self.noised:
         #    return
         # self.noised = True
-        self.colors += np.random.normal(mu, sigma, np.shape(self.colors))
+        #self.colors += np.random.normal(mu, sigma, np.shape(self.colors))
+        self.colors += self.f1_line_noise(mu, sigma) # ToDo: CFG here
+
+    def f1_line_noise(self, mu, sigma):
+        w, h = np.shape(self.colors)
+        noisemat = 0 * np.ones((w, h))
+
+        modify_each_line = True
+
+        def f_alpha(n_pts, q_d, alpha):
+            xs = []
+            nn = n_pts + n_pts
+            ha = alpha / 2
+            q_d = np.sqrt(q_d)
+
+            hfa = [1, nn]
+            wfa = [1, nn]
+            hfa[1] = 1.0
+            wfa[1] = q_d * np.random.normal()
+
+            for i in range(2, n_pts + 1):
+                hfa.append(hfa[i - 1] * (ha + i - 2) / i - 1)
+                wfa.append(q_d * random.random())
+
+            for i in range(n_pts + 1, nn):
+                hfa.append(0)
+                wfa.append(0)
+
+
+
+            reth = numpy.fft.rfft(hfa, n_pts)  # , 1
+            retw = numpy.fft.rfft(wfa, n_pts)
+
+            for i in range(len(reth)):
+                hfa[i] = reth[i]
+
+            for i in range(len(retw)):
+                wfa[i] = retw[i]
+
+            wfa[1] = wfa[1] * hfa[1]
+            wfa[2] = wfa[2] * hfa[2]
+
+            #       print("premodified wfa")
+            #        plt.plot(wfa)
+            #         plt.show()
+
+            for i in range(3, nn - 1, 2):
+                wr = wfa[i]
+                wi = wfa[i + 1]
+                wfa[i] = wr * hfa[i] - wi * hfa[i + 1]
+                wfa[i + 1] = wr * hfa[i + 1] + wi * hfa[i]
+
+            #          print("Wfa vor iff")
+            #           plt.plot(wfa)
+            #            plt.show()
+
+            retw = np.fft.irfft(wfa, n_pts)
+
+            #       print("retw")
+            #        plt.plot(retw)
+            #         plt.show()
+
+            for i in range(len(retw)):
+                wfa[i] = retw[i]
+
+            for i in range(1, n_pts + 1):
+                xs.append(wfa[i] / n_pts)
+
+            #          plt.plot(xs)
+            #           plt.show()
+            return xs
+
+        alph = 2
+        xs = f_alpha(h, sigma**2, alph)
+
+        ys = []
+        for i in range(h):
+            ys.append(f_alpha(w, sigma**2, 10))
+
+       # print("YS after {:.2f}".format(time.perf_counter() - start))
+
+
+        for i in range(w):
+            for j in range(h):
+                if not modify_each_line:
+                    noisemat[i, j] += xs[j]
+                else:
+                    noisemat[i, j] += xs[j] * ys[j][int(round(i/2))]
+
+       # print("Max: {}".format(np.amax(noisemat)))
+       # print("Min: {}".format(np.amin(noisemat)))
+       # print("Med: {}".format(np.average(noisemat)))
+
+        scale = 8 * sigma / (np.amax(noisemat) - np.amin(noisemat))
+        #ToDo: Scale von scanline aus cfg
+        noisemat *= scale
+        shift = mu + np.average(noisemat)
+        noisemat += shift * np.ones(np.shape(noisemat))
+
+       # print("Max_New: {}".format(np.amax(noisemat)))
+       # print("Min_New: {}".format(np.amin(noisemat)))
+       # print("Med_New: {}".format(np.average(noisemat)))
+
+        return noisemat
+
+
 
     def noise_function(self):
         noise_mat = np.zeros(np.shape(self.colors))
