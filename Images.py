@@ -25,6 +25,9 @@ class MyImage:
     filename_generator = ""
 
     def __init__(self, matrix=None):
+
+        self.use_white_noise = cfg.use_white_noise()
+        self.use_line_noise = cfg.use_line_noise()
         if matrix is None:
             self.img = self.newImage()
             self.noised = False
@@ -34,6 +37,8 @@ class MyImage:
             self.img = self.newImage()
             self.colors = matrix
             self.updateImage()
+
+
 
     # @measureTime
     def getWidth(self):

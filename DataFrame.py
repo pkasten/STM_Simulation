@@ -84,6 +84,7 @@ class DataFrame:
         self.overlapping_threshold = cfg.get_overlap_threshold()
         self.part_laenge = cfg.get_part_length()
         self.atomic_step_height = cfg.get_atomic_step_height()
+
         # AtomStepFermi
         self.fermi_exp = cfg.get_fermi_exp() * cfg.get_nn_dist().px / Distance(True, 0.07).px
         self.fermi_exp = 0.05
@@ -94,6 +95,7 @@ class DataFrame:
         self.dust_particles = []
         self.max_height = cfg.get_max_height()
         self.use_img_shift = cfg.get_use_img_shift()
+        self.use_scanline = cfg.use_scanlines()
         print("__init__: {:.2f}s".format(time.perf_counter() - start))
 
         # returns iterator over Particles
@@ -550,7 +552,7 @@ class DataFrame:
                     self.objects.append(p)
 
     @measureTime
-    def add_Ordered(self, Object=Molecule, theta=None, factor=1.0, ph_grps=None, style="Simple"):
+    def add_Ordered(self, Object=Molecule, theta=None, factor=1.0, ph_grps=None, style=None):
         """
         Add particles at positions observed in real STM Data forming regular patterns
         :param Object: Particle Class to be added in an ordered way
@@ -568,6 +570,7 @@ class DataFrame:
         var_pos = cfg.get_order_pos_var() * Molecule().get_simple_length()
         var_ang = cfg.get_order_ang_var() * 2 * 3.141592653589793238462643
         vary_params = cfg.get_use_ordered_variation()
+
 
         @measureTime
         def bog(deg):
@@ -2384,7 +2387,6 @@ class DataFrame:
             self.img.shift_image()
 
         # add scanlines
-        self.use_scanlines = False  # Too CFG
         if self.use_scanlines:
             self.img.scan_lines()
 

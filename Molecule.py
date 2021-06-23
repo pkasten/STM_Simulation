@@ -13,21 +13,25 @@ import matplotlib.pyplot as plt
 
 class Molecule(Particle):
     molecule_class = "NCPhCN"
-    #molecule_ph_groups = 3
+
+    # molecule_ph_groups = 3
     # molecule_style = "Complex"
 
-    def __init__(self, pos=None, theta=None, lookup_table=None, gitter=None, molecule_class=None, molecule_ph_groups=0, style="Simple"):
+    def __init__(self, pos=None, theta=None, lookup_table=None, gitter=None, molecule_class=None, molecule_ph_groups=0,
+                 style=None):
         if molecule_ph_groups > 0:
             self.molecule_ph_groups = molecule_ph_groups
         else:
             self.molecule_ph_groups = random.randint(1, 5)
-        self.molecule_style = style # "Complex" "Simple"
+        if style is not None:
+            self.molecule_style = style  # "Complex" "Simple"
+        else:
+            self.molecule_style = cfg.get_molecule_style()
 
         if molecule_class is not None:
             self.molecule_class = molecule_class
 
-
-        #self.molecule_ph_groups = random.randint(1, 5)
+        # self.molecule_ph_groups = random.randint(1, 5)
         if pos is None:
             x = Distance(False, random.randint(0 - cfg.get_px_overlap(), cfg.get_width().px + cfg.get_px_overlap()))
             y = Distance(False, random.randint(0 - cfg.get_px_overlap(), cfg.get_height().px + cfg.get_px_overlap()))
@@ -46,9 +50,9 @@ class Molecule(Particle):
         self.img_h = cfg.get_height()
         self.lookup_table = lookup_table
 
-        #self.ch_len_def = Distance(True, 1.06)
-        #self.cn_len_def = Distance(True, 1.47) # Min
-        #self.cc_len_def = Distance(True, 1.20)
+        # self.ch_len_def = Distance(True, 1.06)
+        # self.cn_len_def = Distance(True, 1.47) # Min
+        # self.cc_len_def = Distance(True, 1.20)
 
         # self.ch_len_def = Distance(True, 1.08)
         # self.cn_len_def = Distance(True, 1.78) # Mid
@@ -83,17 +87,17 @@ class Molecule(Particle):
             self.atoms.append(Atom(np.array([0, co_len.px])))
             self.atoms.append(Atom(np.array([0, -co_len.px])))
         elif self.molecule_class == "NCPhCN":
-            #ch_len = Distance(True, 1.08)
+            # ch_len = Distance(True, 1.08)
             ch_len = self.ch_len_def
             cn_len = self.cn_len_def
             cc_len = self.cn_len_def
-            #cn_len = Distance(True, 1.80)
-            #cc_len = Distance(True, 1.37)
+            # cn_len = Distance(True, 1.80)
+            # cc_len = Distance(True, 1.37)
             self.create_NC_PhX_CN(self.molecule_ph_groups, cc_len, ch_len, cn_len)
         else:
             self.atoms.append(Atom(np.array([0, 0])))
 
-        #n of Atoms: {}".format(len(self.atoms)))
+        # n of Atoms: {}".format(len(self.atoms)))
 
         distant_at = 0
         max_rad = 0
@@ -109,18 +113,18 @@ class Molecule(Particle):
         for atom in self.atoms:
             atom.calc_abs_pos(Distance.px_vec(self.pos), self.theta)
 
-        if self.molecule_style == "Simple":
+        self.molecule_style.lower()
+
+        if self.molecule_style == "simple":
             self.simple_length = self.get_simple_length(self.cc_len_def, self.cn_len_def)
             self.simple_width = (2 * self.ch_len_def + 2 * self.cc_len_def) * np.cos(np.pi / 12)
             if self.add_outer_atomradii:
                 self.simple_width += 2 * Distance(True, 1.06)
-            #print("Simple Length = {}, Simple Width = {}".format(self.simple_length.ang, self.simple_width.ang))
+            # print("Simple Length = {}, Simple Width = {}".format(self.simple_length.ang, self.simple_width.ang))
             super().set_width(self.simple_width)
             super().set_length(self.simple_length)
 
-
-
-            #print("Molecule x={} has l={:.4f} and w={:.4f}".format(self.molecule_ph_groups, self.simple_length.ang, self.simple_width.ang))
+            # print("Molecule x={} has l={:.4f} and w={:.4f}".format(self.molecule_ph_groups, self.simple_length.ang, self.simple_width.ang))
 
     def __str__(self):
         if self.molecule_class == "NCPhCN":
@@ -138,17 +142,17 @@ class Molecule(Particle):
         if n % 2 == 0:
             amnt = int(n / 2)
             ringdist = self.get_C6_Ringdist(cc_dist)
-            c_dist = ringdist / 2 + (amnt-1) * ringdist + cc_dist + cc_dist
+            c_dist = ringdist / 2 + (amnt - 1) * ringdist + cc_dist + cc_dist
             n_dist = c_dist + cn_dist
             if self.add_outer_atomradii:
                 n_dist += Distance(True, 1.06)
-            return 2*n_dist
+            return 2 * n_dist
         else:
             amnt = int((n - 1) / 2)
             ringdist = self.get_C6_Ringdist(cc_dist)
             c_dist = amnt * ringdist + cc_dist + cc_dist
             n_dist = c_dist + cn_dist
-            return 2*n_dist
+            return 2 * n_dist
 
     def add_C6_Ring(self, center, cc_dist, ch_dist):
         # print(type(center))
@@ -162,7 +166,7 @@ class Molecule(Particle):
         ch_dist_px = ch_dist.px
 
         posis = []
-        #print("Center: {}".format(center_px))
+        # print("Center: {}".format(center_px))
         posis.append(center_px - np.array([cc_dist_px, 0]))
         posis.append(center_px + cc_dist_px * np.array([-np.cos(deg60), np.sin(deg60)]))
         posis.append(center_px + cc_dist_px * np.array([-np.cos(deg120), np.sin(deg120)]))
@@ -187,14 +191,14 @@ class Molecule(Particle):
     def create_NC_PhX_CN(self, n, cc_dist, ch_dist, cn_dist):
         if n % 2 == 0:
             amnt = int(n / 2)
-            #print("Amount: {}".format(amnt))
+            # print("Amount: {}".format(amnt))
             ringdist = self.get_C6_Ringdist(cc_dist).px
             dist = ringdist / 2
             for i in range(amnt):
                 self.add_C6_Ring(np.array([-dist, 0]), cc_dist, ch_dist)
                 self.add_C6_Ring(np.array([dist, 0]), cc_dist, ch_dist)
                 dist += ringdist
-            c_dist = ringdist / 2 + (amnt-1) * ringdist + cc_dist.px + cc_dist.px
+            c_dist = ringdist / 2 + (amnt - 1) * ringdist + cc_dist.px + cc_dist.px
             n_dist = c_dist + cn_dist.px
             self.atoms.append(Atom(np.array([-c_dist, 0]), "C"))
             self.atoms.append(Atom(np.array([c_dist, 0]), "C"))
@@ -217,8 +221,8 @@ class Molecule(Particle):
             self.atoms.append(Atom(np.array([-n_dist, 0]), "N"))
             self.atoms.append(Atom(np.array([n_dist, 0]), "N"))
 
-    #@staticmethod
-    #def str():
+    # @staticmethod
+    # def str():
     #    return Molecule.molecule_class
 
     def str(self):
@@ -227,7 +231,6 @@ class Molecule(Particle):
     def color(self, h):
         assert len(self.atoms) > 0
         return self.atoms[0].color(h)
-
 
     def set_maxHeight(self, max_h):
         self.max_height = max_h
@@ -271,7 +274,9 @@ class Molecule(Particle):
         return self.lookup_table.get_nearest_Energy(self.pos, self.theta, self.gitter)[0]
 
     def efficient_Matrix(self):
-        path = os.path.join(os.getcwd(), "Pickle_Data", "Molec{}Vis{:.2f}_{:.2f}".format(self.molecule_ph_groups, cfg.get_px_per_angstrom(), cfg.get_fermi_exp()))
+        path = os.path.join(os.getcwd(), "Pickle_Data",
+                            "Molec{}Vis{:.2f}_{:.2f}".format(self.molecule_ph_groups, cfg.get_px_per_angstrom(),
+                                                             cfg.get_fermi_exp()))
         if os.path.isfile(path):
             with open(path, "rb") as pth:
                 return pickle.load(pth), self.x, self.y
@@ -295,9 +300,9 @@ class Molecule(Particle):
 
         return self.efficient_Matrix()
 
-    #ToDo Select mode
+    # ToDo Select mode
     def visualize_pixel(self, x, y):
-        if self.molecule_style == "Simple":
+        if self.molecule_style == "simple":
             return super().visualize_pixel(x, y)
 
         mode = "MAX"
@@ -317,10 +322,7 @@ class Molecule(Particle):
             return ret
 
 
-
-
 class Lookup_Table:
-
 
     def __str__(self):
         s = "Lookup_Table: \n"
@@ -345,7 +347,6 @@ class Lookup_Table:
         self.nn_dist = cfg.get_nn_dist()
         self.img_w = cfg.get_width()
         self.img_h = cfg.get_height()
-
 
     def get_nearest_Energy(self, pos, angle, gitter=None):
 
@@ -511,7 +512,7 @@ class Tests_Gitterpot:
             print("Molecule:")
             plt.imshow(tsm)
             plt.show()
-            #tsm = test.efficient_Matrix_turned()[0]
+            # tsm = test.efficient_Matrix_turned()[0]
 
         nearestats = []
         for atom in test.atoms:
@@ -541,18 +542,17 @@ class Tests_Gitterpot:
         for arr in nearestats:
             mdp.append(Atom.find_mid_of_nearest(arr))
 
-        #midpoint = mdp[0].show_mat()
-        #for i in range(1, len(mdp)):
+        # midpoint = mdp[0].show_mat()
+        # for i in range(1, len(mdp)):
         #    midpoint += mdp[i].show_mat()
 
-        #midpoint = Tests_Gitterpot.normalize_matrix(midpoint)
+        # midpoint = Tests_Gitterpot.normalize_matrix(midpoint)
 
         mat = tsm + showmat + nearestshow
 
         print("Sum of all")
         plt.imshow(mat)
         plt.show()
-
 
     @staticmethod
     def normalize_matrix(mat):
@@ -590,7 +590,7 @@ class Tests_Gitterpot:
         gv_a = np.array([1, 0]) * nn_dist.px
         gv_b = np.array([np.cos(np.pi / 1.5), np.sin(np.pi / 1.5)]) * nn_dist.px
 
-        start = np.array([0, 0]) - 2*gv_a - 2*gv_b
+        start = np.array([0, 0]) - 2 * gv_a - 2 * gv_b
         current = np.array([0, 0])
         j_max = int(np.ceil(max(img_w.px / gv_b[0], img_h.px / gv_b[1]))) + 4
         i_max = int(np.ceil((img_w.px / gv_a[0]) - j_max * gv_b[0])) + 4

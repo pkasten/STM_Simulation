@@ -49,11 +49,14 @@ def_height = 'Image height (Ang)', 100
 def_particles = 'Default number of particles per Image', 20
 def_px_overlap = 'Pixel overlap where Particles can be (in px)', 40
 def_anti_aliasing = 'Use Anti Aliasing (1 True, 0 False)', 1
+def_use_white_noise = "Use white noise", 0
+def_use_line_noise = 'Use line noise/ 1/f noise', 1
 def_noise_mu = 'Grayscale value of mean noise', 40
 def_noise_std_deriv = 'Image noise standard derivation', 0.7 * def_noise_mu[1]
 image_basics_settings = [def_prefix_image, def_suffix_image, def_prefix_data, def_suffix_data, def_prefix_sxm,
                          def_suffix_sxm, def_color_scheme, def_px_per_angstrom, def_width, def_height,
-                         def_particles, def_px_overlap, def_anti_aliasing, def_noise_mu, def_noise_std_deriv]
+                         def_particles, def_px_overlap, def_anti_aliasing,def_use_white_noise,
+                         def_use_line_noise, def_noise_mu, def_noise_std_deriv]
 
 
 val_prefix_image = None
@@ -69,6 +72,8 @@ val_height = None
 val_particles = None
 val_px_overlap = None
 val_anti_aliasing = None
+val_use_white_noise = None
+val_use_line_noise = None
 val_noise_mu = None
 val_noise_std_deriv = None
 
@@ -78,6 +83,7 @@ def_width_part = 'Particle width (Ang)', 0.4
 def_length_part = 'Particle length (Ang)', 20
 def_height_part = 'Particle height (Ang)', 5
 def_image_path = 'Picture how particles should look like, leave empty for generated image', ""
+def_molecule_style = 'Visualization style for molecules (simple, complex)', "simple"
 def_part_max_height = 'Maximum Height (Ang)', 7.3
 def_std_deriv = 'Standard Derivation of Grain Border (Deprecated)', def_length_part[1] / 5
 def_fermi_exp = 'Exponent 1/kbT in fermi distribution', 0.4
@@ -96,7 +102,7 @@ def_use_ordered_variation = 'Use Variation in ordered position?', 1
 def_order_pos_var = 'Variation in Particle Position when ordered (percent of length)', 0.05
 def_order_ang_var = 'Variation in Particle Angle when ordered (percent of 2pi)', 0.05
 
-particle_properties_settings = [def_width_part, def_image_path, def_length_part, def_height_part, def_fermi_exp,
+particle_properties_settings = [def_width_part, def_image_path, def_molecule_style, def_length_part, def_height_part, def_fermi_exp,
                                 def_part_max_height, def_angle_range_usage, def_angle_range_min, def_angle_range_max,
                                 def_angle_stdderiv, def_angle_characteristic_length, def_use_crystal_orientation,
                                 def_no_of_orientations, def_crystal_orientation_1, def_crystal_orientation_2,
@@ -106,6 +112,7 @@ val_width_part = None
 val_length_part = None
 val_height_part = None
 val_image_path = None
+val_molecule_style = None
 val_part_max_height = None
 val_std_deriv = None
 val_fermi_exp = None
@@ -139,7 +146,8 @@ def_use_imgshift = 'Use Image shift', 0
 def_shift_amount_x = 'Stretching factor of image Shift (x-Direction)', 1.05
 def_shift_amount_y = 'Stretching factor of image Shift (y-Direction)', 1.05
 def_shift_style = 'Image Shifting style (Lin/Exp)', "Exp"
-special_settings = [def_overlap_threshold, def_dragging_error, def_dragging_speed, def_dragging_possibility, def_raster_angle, def_doubletip_possibility, def_atomic_step_height, def_atomic_step_poss, def_dust_amount, def_use_imgshift, def_shift_style, def_shift_amount_x, def_shift_amount_y]
+def_use_scanlines = 'Use scanlines', 1
+special_settings = [def_overlap_threshold, def_dragging_error, def_dragging_speed, def_dragging_possibility, def_raster_angle, def_doubletip_possibility, def_atomic_step_height, def_atomic_step_poss, def_dust_amount, def_use_imgshift, def_shift_style, def_shift_amount_x, def_shift_amount_y, def_use_scanlines]
 
 val_overlap_threshold = None
 val_dragging_error = None
@@ -154,6 +162,7 @@ val_use_img_shift = None
 val_shift_style = None
 val_shift_amount_x = None
 val_shift_amount_y = None
+val_use_scanlines = None
 
 cat_lattice = 'lattice'
 def_nn_dist = 'Distance between nearest neighbours (Ang)', 2.88
@@ -210,7 +219,7 @@ def update_params():
     global val_dragging_error, val_raster_angle, val_dragging_speed, val_dragging_possibility, val_doubletip_possibility
     global val_prefix_sxm, val_suffix_sxm, val_sxm_folder, val_px_per_angstrom, val_nn_dist, val_atomc_step_height, val_atomic_step_poss
     global val_dust_amount, val_use_img_shift, val_color_scheme, val_order_ang_var, val_order_pos_var, val_shift_amount_x, val_shift_amount_y, val_shift_style
-    global val_use_ordered_variation
+    global val_use_ordered_variation, val_use_white_noise, val_use_line_noise, val_use_scanlines, val_molecule_style
     val_threads = int(conf[cat_pc][def_threads[0]])
     val_images_per_thread = int(conf[cat_pc][def_images_per_thread[0]])
     val_image_folder = conf[cat_pc][def_image_folder[0]]
@@ -227,8 +236,11 @@ def update_params():
     val_suffix_data = conf[cat_image_basics][def_suffix_data[0]]
     val_suffix_sxm = conf[cat_image_basics][def_suffix_sxm[0]]
     val_color_scheme = conf[cat_image_basics][def_color_scheme[0]]
+    val_molecule_style = conf[cat_particle_properties][def_molecule_style[0]]
     val_px_overlap = int(conf[cat_image_basics][def_px_overlap[0]])
     val_anti_aliasing = bool(int(conf[cat_image_basics][def_anti_aliasing[0]]))
+    val_use_white_noise = bool(int(conf[cat_image_basics][def_use_white_noise[0]]))
+    val_use_line_noise = bool(int(conf[cat_image_basics][def_use_line_noise[0]]))
     val_noise_mu = float(conf[cat_image_basics][def_noise_mu[0]])
     val_noise_std_deriv = float(conf[cat_image_basics][def_noise_std_deriv[0]])
     val_height_part = Distance(True, float(conf[cat_particle_properties][def_height_part[0]]))
@@ -257,6 +269,7 @@ def update_params():
     val_atomic_step_poss = float(conf[cat_special][def_atomic_step_poss[0]])
     val_doubletip_possibility = float(conf[cat_special][def_doubletip_possibility[0]])
     val_use_img_shift = bool(int(conf[cat_special][def_use_imgshift[0]]))
+    val_use_scanlines = bool(int(conf[cat_special][def_use_scanlines[0]]))
     val_shift_amount_x = float(conf[cat_special][def_shift_amount_x[0]])
     val_shift_amount_y = float(conf[cat_special][def_shift_amount_y[0]])
     val_shift_style = conf[cat_special][def_shift_style[0]]
@@ -450,6 +463,16 @@ def get_anti_aliasing():
     global settings_file
     if not initialized: setupConfigurationManager()
     return val_anti_aliasing
+
+def use_white_noise():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    return val_use_white_noise
+
+def use_line_noise():
+    global settings_file
+    if not initialized: setupConfigurationManager()
+    return val_use_line_noise
 
 
 def get_image_noise_mu():
@@ -652,6 +675,10 @@ def get_color_scheme():
     if not initialized: setupConfigurationManager()
     return val_color_scheme
 
+def get_molecule_style():
+    if not initialized: setupConfigurationManager()
+    return val_molecule_style
+
 def get_order_ang_var():
     if not initialized: setupConfigurationManager()
     return val_order_ang_var
@@ -675,3 +702,7 @@ def get_shift_style():
 def get_use_ordered_variation():
     if not initialized: setupConfigurationManager()
     return val_use_ordered_variation
+
+def use_scanlines():
+    if not initialized: setupConfigurationManager()
+    return val_use_scanlines
