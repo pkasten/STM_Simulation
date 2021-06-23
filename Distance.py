@@ -3,8 +3,16 @@ import numpy as np
 
 
 class Distance:
+    """
+    class Distance is used to save every measured length in the unit pixels and Angstrom
+    """
 
     def __init__(self, useAng, arg):
+        """
+        Initializes new Distance
+        :param useAng: True: arg has the unit Angstrom, False: arg has the unit pixels
+        :param arg: length in angstrom or pixel
+        """
         px_durch_ang = cfg.get_px_per_angstrom()
         if (useAng):
             self.px = px_durch_ang * arg
@@ -86,6 +94,11 @@ class Distance:
 
     @staticmethod
     def px_vec(vec):
+        """
+        translates a np.array from Angstrom to pixel
+        :param vec:
+        :return:
+        """
         ret = []
         for elem in vec:
             if isinstance(elem, Distance):
