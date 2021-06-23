@@ -6,13 +6,23 @@ from Distance import Distance
 
 
 class Atom:
+    """
+    Class representing any atom inside Molecules.
+    Implements basic methods of Particle. Should possibly extend Particle
+    """
 
     def __init__(self, relpos, type=None):
+        """
+        Initilaizes a new Atom
+        :param relpos: relative position vector from center of the molecule
+        :param type: Physical element of this Atom. Implemented are "C" (carbon), "H" (hydrogen) and "N" (nitrogen)
+        """
 
-        radiusmlt = 1 # ToDo_ Realistisch, besser 1?
+        # save image properties
         self.img_w = cfg.get_width()
         self.img_h = cfg.get_height()
-        #print("Relpos: {}".format(relpos))
+
+        # Set position values
         if isinstance(relpos[0], Distance):
             #print("Changed")
             self.relpos = Distance.px_vec(relpos)
@@ -22,7 +32,7 @@ class Atom:
             self.relpos = relpos
             self.abspos = relpos
 
-        #print("Relpos: {} mit {}, {}".format(self.relpos, self.relpos[0], self.relpos[1]))
+        # Set radius according to type
         self.radius = Distance(True, 1)
         if type == "H":
             self.radius = Distance(True, 1.06) # Lit
@@ -34,6 +44,7 @@ class Atom:
             self.radius = Distance(True, 1.06) # Lit
             #self.radius = Distance(True, 0.070) * radiusmlt #
 
+        # Some more visualization parameters
         self.height = cfg.get_part_height()
         self.maxheight = cfg.get_max_height()
         self.fermi_exp = cfg.get_fermi_exp()
@@ -43,23 +54,48 @@ class Atom:
         self.type = type
 
     def __repr__(self):
+        """
+        String representation of this atom
+        :return:
+        """
+        return "{}-Atom bei x={:.1f}, y={:.1f}".format(self.type, self.abspos[0], self.abspos[1])
+
+    def __str__(self):
+        """
+        String representation of this atom
+        :return:
+        """
         return "{}-Atom bei x={:.1f}, y={:.1f}".format(self.type, self.abspos[0], self.abspos[1])
 
     def set_maxHeight(self, maxh):
+        """
+        Setter method for maximum height parameter
+        :param maxh: new max height
+        :return:
+        """
         self.maxheight = maxh
 
     def calc_abs_pos(self, moleculepos, moleculetheta):
-        # As px
-        # Um 90° versetzt damit oben
+        """
+        Calculate own absolute position depending on relative position to molecule center self.relpos
+        and the molecules position and orientation this atom belongs to
+        :param moleculepos: Position of molecule this atom belongs to
+        :param moleculetheta: Orientation of molecule this atom belongs to
+        :return: None
+        """
+
         turnmat = np.array([[np.sin(moleculetheta), -np.cos(moleculetheta)],
                             [np.cos(moleculetheta), np.sin(moleculetheta)]])
-        #turnmat = np.array([[0,0],[0,0]])
         self.abspos = moleculepos + np.matmul(self.relpos, turnmat)
-        #x = self.relpos*np.sin(moleculetheta)
-
-        #self.abspos = moleculepos + self.relpos
 
     def show_dot(self, x, y):
+        """
+        Method that can be used as visualize pixel to represent the Atom as a dot
+        Only used for debug purposes, has fixed radius of 5 px
+        :param x: x-position of pixel that should be visualized, (0, 0) represents the atoms position
+        :param y: y-position
+        :return: 255 if inside the dot, 0 otherwise
+        """
         if np.power(x - self.abspos[0], 2) < 25:
             if np.power(y - self.abspos[1], 2) < 25:
                 if np.sqrt(np.power(x - self.abspos[0], 2) + np.power(y - self.abspos[1], 2)) < 5:
@@ -68,6 +104,12 @@ class Atom:
         return 0
 
     def show(self, x, y):
+        """
+        Visualizion methods with absolute positions x, y
+        :param x: absolute x-position
+        :param y: absolute y-position
+        :return: height
+        """
         d = np.sqrt(np.power(x - self.abspos[0], 2) + np.power(y - self.abspos[1], 2))
         if d > self.fermi_range:
             return 0
@@ -77,26 +119,46 @@ class Atom:
         #    return self.color(self.height)
         #else:
         #    return 0
+
     @lru_cache()
     def get_effect_range(self):
+        """
+        Returns the effect range of visualization, the border after which the height is neglectable
+        :return:
+        """
         c = 0
         while True:
             c += 1
             if self.color(self.height * self._fermi1D(c, self.radius)) < 1:
                 return c
 
-
     def color(self, dis):
+        """
+        transforms specific height dis from 0 to maxheight onto a scale from 0 to 255
+        :param dis: height
+        :return:
+        """
         return 255 * dis.px/self.maxheight.px
 
     def _fermi1D(self, x, mu):
+        """
+        Implementation of fermis distribution function
+        :param x: position x
+        :param mu: expectation value where f(mu) = 0.5
+        :return:
+        """
         fermi_ret = 1 / (np.exp(self.fermi_exp * (x - mu.px)) + 1)
         #print("Fermi(x={:.2f}m mu={:.2f}) = {:.2f}".format(x, mu.px, fermi_ret))
         return fermi_ret
 
     @lru_cache
     def show_rel(self, x, y):
-
+        """
+        Visualizion methods with relative positions x, y
+        :param x: relative x-position
+        :param y: relative y-position
+        :return: height
+        """
         d = np.sqrt(np.power(x, 2) + np.power(y, 2))
         if d > self.fermi_range:
             return 0
@@ -109,6 +171,11 @@ class Atom:
         #    return 0
 
     def show_mat(self):
+        """
+        Visualizes this Atom as a matrix
+        :return: the visu-matrix
+        """
+
         mat = np.zeros((int(np.ceil(self.img_w.px)), int(np.ceil(self.img_h.px))))
         for i in range(int(np.ceil(self.img_w.px))):
             for j in range(int(np.ceil(self.img_h.px))):
@@ -117,6 +184,11 @@ class Atom:
         return mat
 
     def find_nearest_atoms(self, gitter):
+        """
+        DEPRECATED. Used to find the 3 nearest lattice atoms from the array gitter
+        :param gitter: lattice atoms
+        :return:
+        """
         threshold = 10000
         nearest = {}
         for atom in gitter:
@@ -135,6 +207,11 @@ class Atom:
         return nearest.keys()
 
     def find_nearest_atoms_dict(self, gitter):
+        """
+        DEPRECATED. same as find_nearest_atoms, just with using a dictionary for saving
+        :param gitter:
+        :return:
+        """
         threshold = 10000
         nearest = {}
         for atom in gitter:
@@ -153,6 +230,11 @@ class Atom:
         return nearest
 
     def find_nearest_atom(self, gitter):
+        """
+        DEPRECATED> same as find_nearest_atoms, just returns only the very nearest
+        :param gitter: lattice atoms
+        :return:
+        """
         threshold = 10000
         nearest = None
         for atom in gitter:
@@ -164,6 +246,11 @@ class Atom:
 
     @staticmethod
     def find_mid_of_nearest(nearest):
+        """
+        calculates the midpoint of three provided atoms
+        :param nearest: three atoms
+        :return: A new Atom at the center of this three
+        """
         assert len(nearest) == 3
 
         widths = [atom.pos[0] for atom in nearest]
@@ -176,6 +263,12 @@ class Atom:
 
     @staticmethod
     def angle_between(vec1, vec2):
+        """
+        Static method to calculate the angle betweeen two vectors
+        :param vec1:
+        :param vec2:
+        :return:
+        """
         assert len(vec1) == 2
         assert len(vec2) == 2
 
@@ -185,6 +278,11 @@ class Atom:
         return phi
 
     def find_pot_coords(self, gitter):
+        """
+        DEPRECATED. Used to parametrize this atoms position inside the lattice gitter
+        :param gitter: lattice
+        :return: two parameters defining this's position
+        """
         nearest = self.find_nearest_atoms_dict(gitter)
         assert len(nearest) == 3
         distances = nearest.values()
@@ -207,19 +305,34 @@ class Atom:
         return dis, min(angles)
 
     def find_pot(self, gitter):
+        """
+        calculates potential energy inside the lattice
+        :param gitter:
+        :return:
+        """
         d, a = self.find_pot_coords(gitter)
         return Ag_Atom.potential_fromCoords(d, a)
 
 
 class Ag_Atom:
-
+    """
+    DEPRECATED. Atom representation for atoms inside the lattice structure.
+    """
     def __init__(self, pos):
+        """
+        Initializes new lattice atom at postion vector pos
+        :param pos: position vector
+        """
         self.pos = pos
         self.img_w = cfg.get_width()
         self.img_h = cfg.get_height()
         self.nn_dist = cfg.get_nn_dist()
 
     def show_mat(self):
+        """
+        Visualizes the lattice atom as a matrix
+        :return:
+        """
         radius = 3
         height = 1
         mat = np.zeros((int(np.ceil(self.img_w.px)), int(np.ceil(self.img_h.px))))
@@ -233,6 +346,9 @@ class Ag_Atom:
         return mat
 
     def show_dot(self, x, y):
+        """
+        see Atom.show_dot()
+        """
         if np.power(x - self.pos[0], 2) < 25:
             if np.power(y - self.pos[1], 2) < 25:
                 if np.sqrt(np.power(x - self.pos[0], 2) + np.power(y - self.pos[1], 2)) < 5:
@@ -241,6 +357,9 @@ class Ag_Atom:
         return 0
 
     def show(self, x, y):
+        """
+        see Atom.show()
+        """
         radius = 3
         height = 1
 
@@ -251,11 +370,22 @@ class Ag_Atom:
 
     @staticmethod
     def potential(dist):
+        """
+        Reurns the potential for an Atom in distance dist to this Ag Atom
+        :param dist: distance between crystal and adsorbed atom
+        :return:
+        """
         nn_dist = cfg.get_nn_dist()
         return np.exp(-5 * dist / nn_dist.px)
 
     @staticmethod
     def potential_fromCoords(dist, angle):
+        """
+        Returns the lattice potential form parameters dist and angle
+        :param dist:
+        :param angle:
+        :return:
+        """
 
         sixty_deg = np.pi / 1.5
         distances_to_Atoms = [dist]
