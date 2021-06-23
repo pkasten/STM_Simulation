@@ -116,6 +116,7 @@ class Molecule(Particle):
         self.molecule_style.lower()
 
         if self.molecule_style == "simple":
+
             self.simple_length = self.get_simple_length(self.cc_len_def, self.cn_len_def)
             self.simple_width = (2 * self.ch_len_def + 2 * self.cc_len_def) * np.cos(np.pi / 12)
             if self.add_outer_atomradii:
@@ -295,7 +296,7 @@ class Molecule(Particle):
         return eff_matrix, self.x, self.y
 
     def efficient_Matrix_turned(self):
-        if self.molecule_style == "Simple":
+        if self.molecule_style == "simple":
             return super().efficient_Matrix_turned()
 
         return self.efficient_Matrix()

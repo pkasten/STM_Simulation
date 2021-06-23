@@ -95,7 +95,7 @@ class DataFrame:
         self.dust_particles = []
         self.max_height = cfg.get_max_height()
         self.use_img_shift = cfg.get_use_img_shift()
-        self.use_scanline = cfg.use_scanlines()
+        self.use_scanlines = cfg.use_scanlines()
         print("__init__: {:.2f}s".format(time.perf_counter() - start))
 
         # returns iterator over Particles

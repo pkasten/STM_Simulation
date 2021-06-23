@@ -167,8 +167,13 @@ class Particle:
         self.subp1 = lmat, x, y
        #print("X: {}".format(y))
        # print("DD: {}".format(self.dragged_dist))
-        self.subp2 = rmat, Distance(False, x.px + self.dragged_dist * np.cos(self.dragged_angle)), Distance(False, y.px + self.dragged_dist * np.sin(
-            self.dragged_angle))
+        try:
+            self.subp2 = rmat, Distance(False, x.px + self.dragged_dist.px * np.cos(self.dragged_angle)), Distance(False, y.px + self.dragged_dist.px * np.sin(
+                self.dragged_angle))
+        except AttributeError:
+            self.subp2 = rmat, Distance(False, x.px + self.dragged_dist * np.cos(self.dragged_angle)), Distance(
+                False, y.px + self.dragged_dist * np.sin(
+                    self.dragged_angle))
 
     def visualize_pixel(self, x, y):
         """

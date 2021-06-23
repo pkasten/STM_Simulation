@@ -237,8 +237,10 @@ class MyImage:
         # if self.noised:
         #    return
         # self.noised = True
-        #self.colors += np.random.normal(mu, sigma, np.shape(self.colors))
-        self.colors += self.f1_line_noise(mu, sigma) # ToDo: CFG here
+        if self.use_white_noise:
+            self.colors += np.random.normal(mu, sigma, np.shape(self.colors))
+        if self.use_line_noise:
+            self.colors += self.f1_line_noise(mu, sigma)
 
     def f1_line_noise(self, mu, sigma):
         w, h = np.shape(self.colors)
