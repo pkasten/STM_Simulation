@@ -3,6 +3,12 @@ import os, numpy as np
 from TestsApril.Maths.Functions import measureTime
 from Distance import Distance
 
+
+"""
+Configuration manager. Loads setting from file settings_file into the program
+using a configparser and provides getter methods for each setting
+"""
+
 conf = cp.ConfigParser()
 # settings_folder = os.path.join(os.getcwd(), "Configuration")
 settings_folder = os.getcwd()
