@@ -300,7 +300,7 @@ class Molecule(Particle):
 
         return self.efficient_Matrix()
 
-    # ToDo Select mode
+
     def visualize_pixel(self, x, y):
         if self.molecule_style == "simple":
             return super().visualize_pixel(x, y)
