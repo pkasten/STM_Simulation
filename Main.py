@@ -381,7 +381,7 @@ def every_angle2():
 Add Code here
 """
 thrds = cfg.get_threads()
-recursions = 5
+recursions = 1
 
 
 def act(dat):

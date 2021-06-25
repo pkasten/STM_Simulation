@@ -8,6 +8,7 @@ import numpy as np
 import Configuration as cfg
 import os, random
 from Functions import get_invers_function, measureTime
+import csv
 
 
 # import Particle
@@ -237,10 +238,72 @@ class MyImage:
         # if self.noised:
         #    return
         # self.noised = True
+        self.noise_spektrum()
         if self.use_white_noise:
             self.colors += np.random.normal(mu, sigma, np.shape(self.colors))
         if self.use_line_noise:
             self.colors += self.f1_line_noise(mu, sigma)
+
+
+    def noise_spektrum(self, filename="NoiseSTM.csv", delimiter=";"):
+
+        scanspeed = 1411 # in Ansgtrom/s
+
+        frequency = []
+        intensity = []
+        # Read in
+        with open(filename, 'r') as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=delimiter)
+            for row in csv_reader:
+                if not row[0][0].isdigit():
+                    continue
+                frequency.append(float(row[0]))
+                intensity.append(float(row[1]))
+
+        # Normalize
+        scale = 1/np.max(intensity)
+        temp = []
+        for elem in intensity:
+            temp.append(scale * elem)
+        intensity = temp
+        del temp
+
+        # Test: Plot
+        plt.plot(frequency, intensity)
+        plt.title("Noise Spectrum")
+        plt.show()
+
+        # Prepare ifft, add negative frequencies
+        num = len(intensity)
+        for i in range(num):
+            intensity.append(0)
+
+        #Perform Ifft
+        spectrum = np.fft.ifft(intensity,)
+
+        # cast complex to real
+        #temp = []
+        #for elem in spectrum:
+        #    temp.append(np.absolute(elem))
+        #spectrum = temp
+        #del temp
+
+        # Test: Plot
+        plt.title("IFFT Results")
+        #plt.plot(spectrum.imag, label="Imag")
+        plt.plot(spectrum.real, label="Real")
+        plt.legend()
+        plt.show()
+
+
+        #ToDo: Hier position aus zeit herausrechnen etc.
+
+
+
+
+
+
+
 
     def f1_line_noise(self, mu, sigma):
         w, h = np.shape(self.colors)
