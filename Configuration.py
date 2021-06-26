@@ -289,6 +289,10 @@ def update_params():
 
 @measureTime
 def get_threads():
+    """
+    Getter method for threads parameter. Initializes ConfigManager if not done yet.
+    :return: Number of threads
+    """
     if not initialized: setupConfigurationManager()
     return val_threads
 

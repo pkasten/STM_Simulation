@@ -5,9 +5,17 @@ import struct, os, SXM_info
 import Configuration as cfg
 
 class My_SXM():
+    """
+    Class to deal with SZM files
+    """
 
     @staticmethod
     def write_header(filename):
+        """
+        Write Header for SXM File
+        :param filename: file to write header tp
+        :return:
+        """
         with open(filename, "w") as file:
             settings = SXM_info.get_header_arr()
             for elem in settings:
@@ -29,6 +37,12 @@ class My_SXM():
 
     @staticmethod
     def write_sxm(filename, data):
+        """
+        write SXM data
+        :param filename: file
+        :param data: data to write
+        :return:
+        """
         #plt.imshow(data)
         #plt.show()
         #print(SXM_info.get_time())
@@ -47,6 +61,11 @@ class My_SXM():
 
     @staticmethod
     def _fill_with_zeros(mat):
+        """
+        Pads a matrix with zeros to make it square
+        :param mat:
+        :return:
+        """
         w, h = np.shape(mat)
 
         newmat = -10 * np.ones((max(w, h), max(w, h)))
@@ -65,6 +84,12 @@ class My_SXM():
 
     @staticmethod
     def write_image(filename, image):
+        """
+        Write the image as an SXM File
+        :param filename: filename to write to
+        :param image: image
+        :return:
+        """
 
         ang_per_bright = cfg.get_max_height().ang * 1e-10 / 255
         newmat = -4 * np.ones(np.shape(image))
@@ -143,15 +168,13 @@ class My_SXM():
                 file.write(struct.pack(format, elem))
 
 
-
-
-
-
-
-
-
     @staticmethod
     def get_data_test(filename):
+        """
+        Test method to get data from existing SXM file
+        :param filename: existing SXM file
+        :return:
+        """
         assert os.path.exists(filename)
         f = open(filename, 'rb')
         l = ''
@@ -195,6 +218,11 @@ class My_SXM():
 
     @staticmethod
     def get_informations(filename):
+        """
+        Testing method to get Header information from SXM file
+        :param filename: path to SXM file
+        :return:
+        """
         assert os.path.exists(filename)
         f = open(filename, 'rb')
         l = ''
@@ -243,6 +271,12 @@ class My_SXM():
 
     @staticmethod
     def get_data(filename, dontflip=False):
+        """
+        Gets data from existing SXM file
+        :param filename: file
+        :param dontflip: flips the matrix as default to match image file
+        :return:
+        """
         assert os.path.exists(filename)
         f = open(filename, 'rb')
         l = ''
@@ -285,6 +319,11 @@ class My_SXM():
 
     @staticmethod
     def show_data(filename):
+        """
+        Shows data from sxm file using matplotlib.imshow
+        :param filename: sxm file
+        :return:
+        """
         #print(My_SXM.get_informations(filename))
         plt.imshow(My_SXM.get_data(filename))
         plt.show()

@@ -15,9 +15,14 @@ import csv
 
 
 class MyImage:
+    """
+    Class to do all the work on Image creation and manipulation
+    """
+
+    # Import configuration parameters
     width = cfg.get_width().px
     height = cfg.get_height().px
-    # noise = True
+    # Matrix to store grayscale values of visualization
     colors = np.zeros((int(np.ceil(width)), int(np.ceil(height))))
     sigma = 5.5
     color_scheme = cfg.get_color_scheme()
@@ -26,7 +31,10 @@ class MyImage:
     filename_generator = ""
 
     def __init__(self, matrix=None):
-
+        """
+        Initializes new Image. Uses matrix as color matrix, Zeros otherwise
+        :param matrix: image matrix
+        """
         self.use_white_noise = cfg.use_white_noise()
         self.use_line_noise = cfg.use_line_noise()
         if matrix is None:
@@ -43,33 +51,69 @@ class MyImage:
 
     # @measureTime
     def getWidth(self):
+        """
+        Returns image width
+        :return:
+        """
         return self.width
 
     # @measureTime
     def getHeight(self):
+        """
+        Returns image height
+        :return:
+        """
         return self.height
 
     # @measureTime
     def setWidth(self, w):
+        """
+        Sets image width
+        :param w:
+        :return:
+        """
         self.width = w
         self.colors = np.zeros((int(np.ceil(self.width)), int(np.ceil(self.height))))
 
     # @measureTime
     def setHeight(self, h):
+        """
+        Sets image height
+        :param h:
+        :return:
+        """
         self.height = h
         self.colors = np.zeros((int(np.ceil(self.width)), int(np.ceil(self.height))))
 
     # @measureTime
+    @DeprecationWarning
     def addParticle(self, particle):
+        """
+        DEPRECATED. Was used to add single particle to visu_matrix
+        :param particle:
+        :return:
+        """
         self.colors = self.colors + particle.toMatrix()
 
     # @measureTime
     def addMatrix(self, matrix):
+        """
+        Adds an entire matrix to colors.
+        Used for example to add noise to the image
+        :param matrix: matrix to be added to colors
+        :return:
+        """
         self.colors = self.colors + matrix
 
-    #@DeprecationWarning
-    def double_tip(self, strength, rel_dist, angle):  # ToDo: neues Bild damit auch links oben etc was ist
-        # ToDo: Use surrounding Pictures
+
+    def double_tip(self, strength, rel_dist, angle):
+        """
+        Duplicates the image, shifts it by rel_dist at angle, scale it with strength and add it to colors
+        :param strength: Strength of duplicated image
+        :param rel_dist: relative shift distance
+        :param angle: angle by which shift is done
+        :return: None
+        """
         vec_x = np.floor(np.sqrt(np.square(self.width) + np.square(self.height)) * rel_dist * np.sin(angle))
         vec_y = np.floor(np.sqrt(np.square(self.width) + np.square(self.height)) * rel_dist * np.cos(angle))
         vec_x = int(vec_x)
@@ -103,7 +147,12 @@ class MyImage:
 
     # @measureTime
     def shift_image(self, f_horiz=None, f_vert=None):
-
+        """
+        Used for piezo shift. Shift defined in stettings to the image
+        :param f_horiz: Optional, Function for pixel position horizontal
+        :param f_vert: Optional, Function for pixel position vertical
+        :return:
+        """
         # testmat = np.ones(np.shape(self.colors))
         # testmat *= 200
         # self.colors = testmat
@@ -183,6 +232,10 @@ class MyImage:
         self.colors = newmat
 
     def scan_lines(self):
+        """
+        Add scanlines to the image. can be done horizontally or vertically
+        :return:
+        """
         style = "horizontal"
         if style == "horizontal":
             med_strength = 0.1 * cfg.get_width().px
@@ -213,6 +266,10 @@ class MyImage:
 
     # @measureTime
     def updateImage(self):
+        """
+        Updates the managed PIL.Image instance with color matrix
+        :return:
+        """
         pixels = self.img.load()
         for i in range(self.img.size[0]):
             for j in range(self.img.size[1]):
@@ -220,6 +277,12 @@ class MyImage:
 
     # @measureTime
     def newImage(self, w=None, h=None):
+        """
+        Creates new PIL.Image instance for this image
+        :param w: width
+        :param h: height
+        :return: Image instance
+        """
         if w is not None:
             wid = w
         else:
@@ -231,13 +294,14 @@ class MyImage:
         img = Image.new('RGB', (int(np.ceil(wid)), int(np.ceil(hei))), 0)
         return img
 
-    # Add Noise to image
-    # currently random dirstibuted, possibly change to normal?
-    # @measureTime
+
     def noise(self, mu, sigma):
-        # if self.noised:
-        #    return
-        # self.noised = True
+        """
+        Adds noise to the image
+        :param mu: expectation value (grayscale)
+        :param sigma: Standard derivation of white noise
+        :return:
+        """
         self.noise_spektrum()
         if self.use_white_noise:
             self.colors += np.random.normal(mu, sigma, np.shape(self.colors))
@@ -246,7 +310,13 @@ class MyImage:
 
 
     def noise_spektrum(self, filename="NoiseSTM.csv", delimiter=";"):
-
+        """
+        Returns noise matrix according to provided measurement.
+        Still under construction
+        :param filename: path to csv file containing intensity over frequency
+        :param delimiter: delimiter for CSV file
+        :return: noise matrix
+        """
         scanspeed = 1411 # in Ansgtrom/s
 
         frequency = []
@@ -299,19 +369,27 @@ class MyImage:
         #ToDo: Hier position aus zeit herausrechnen etc.
 
 
-
-
-
-
-
-
     def f1_line_noise(self, mu, sigma):
+        """
+        Adds 1/f noise to the image
+        :param mu: Medium grayscale
+        :param sigma: standard derivation
+        :return: None
+        """
         w, h = np.shape(self.colors)
         noisemat = 0 * np.ones((w, h))
 
         modify_each_line = True
 
         def f_alpha(n_pts, q_d, alpha):
+            """
+            Implementation of 1/f^alpha noise.
+            Translated tompython from Kasdin, DOI: 10.1109/5.381848
+            :param n_pts: Number of points
+            :param q_d: variance
+            :param alpha: exponent alpha
+            :return: array of noise values
+            """
             xs = []
             nn = n_pts + n_pts
             ha = alpha / 2
@@ -408,8 +486,13 @@ class MyImage:
         return noisemat
 
 
-
+    @DeprecationWarning
     def noise_function(self):
+        """
+        Deprecated, unsuccessful implemetation of 2D Noise
+        :return:
+        """
+
         noise_mat = np.zeros(np.shape(self.colors))
         w, h = np.shape(noise_mat)
         two_pi = 2 * np.pi
@@ -674,17 +757,31 @@ class MyImage:
         self.colors += noise_mat
 
 
-
     # @measureTime
     def get_matrix(self):
+        """
+        Getter method for color matrix
+        :return:
+        """
+
         return self.colors
 
     # @measureTime
     def showImage(self):
+        """
+        Show the image using PIL.Image.show()
+        :return:
+        """
         self.img.show()
 
     # @measureTime
     def saveImage(self, filename):
+        """
+        Save the image under generated filename
+        Important: updateImage needs to be called first in order to pass information on to PIL.image instance
+        :param filename: filename
+        :return:
+        """
         try:
             self.img.save(filename)
         except FileNotFoundError:
@@ -695,6 +792,13 @@ class MyImage:
     # @measureTime
     @lru_cache
     def rgb_map(self, h):
+        """
+        Maps height values onto rgb values,
+        Either as grayscale values or using the WSXM colorscheme with
+        WSXM default.lut data
+        :param h: height value
+        :return: r, g, b values
+        """
         mode = self.color_scheme
         mode = mode.lower()
         if mode == "gray":
@@ -762,6 +866,10 @@ class MyImage:
 
     # @measureTime
     def rgb_map_test(self):
+        """
+        Method to test the rgb_map
+        :return:
+        """
         x = []
         r = []
         g = []

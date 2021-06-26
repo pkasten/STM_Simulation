@@ -12,6 +12,12 @@ import matplotlib.pyplot as plt
 
 
 class Molecule(Particle):
+    """
+    Molecule is an alternative to Particle, as it models real molecules more accurately
+    Especially Implementations for NCPhCN molecules are important
+    """
+
+    # Sort of the molecule
     molecule_class = "NCPhCN"
 
     # molecule_ph_groups = 3
@@ -19,6 +25,18 @@ class Molecule(Particle):
 
     def __init__(self, pos=None, theta=None, lookup_table=None, gitter=None, molecule_class=None, molecule_ph_groups=0,
                  style=None):
+        """
+        Initializes new Molecule
+        :param pos: Position vector inside DataFrame
+        :param theta: Angle by which it is turned
+        :param lookup_table: DEPRECATED. Used for energy stuff
+        :param gitter: DEPRECATED. used for energy stuff
+        :param molecule_class: Type of the molecule
+        :param molecule_ph_groups: If NCPhCN molecule indicates number of Ph groups
+        :param style: Visualization style, simple or complex
+        """
+
+        # Set molecule type parameters
         if molecule_ph_groups > 0:
             self.molecule_ph_groups = molecule_ph_groups
         else:
@@ -31,7 +49,7 @@ class Molecule(Particle):
         if molecule_class is not None:
             self.molecule_class = molecule_class
 
-        # self.molecule_ph_groups = random.randint(1, 5)
+        # set positioning parameters
         if pos is None:
             x = Distance(False, random.randint(0 - cfg.get_px_overlap(), cfg.get_width().px + cfg.get_px_overlap()))
             y = Distance(False, random.randint(0 - cfg.get_px_overlap(), cfg.get_height().px + cfg.get_px_overlap()))
@@ -59,19 +77,23 @@ class Molecule(Particle):
         # self.cc_len_def = Distance(True, 1.37)
 
         # Add outer molecules Radius to Molecule width and height
+
         self.add_outer_atomradii = False
 
         self.ch_len_def = Distance(True, 1.07)
         self.cn_len_def = Distance(True, 1.155)  # Lit
         self.cc_len_def = Distance(True, 1.40)
 
-        self.gitter = gitter
-        if gitter is not None and lookup_table is None:
-            self.crate_lookup(gitter)
+        use_gitter_stuff = False
+        if use_gitter_stuff:
+            self.gitter = gitter
+            if gitter is not None and lookup_table is None:
+                self.crate_lookup(gitter)
 
         # if gitter is None and lookup_table is None:
         # print("WARNING: No Potential lookup")
 
+        # Add atoms
         if self.molecule_class == "Single":
             self.atoms.append(Atom(np.array([0, 0])))
         elif self.molecule_class == "CO2":
@@ -97,8 +119,8 @@ class Molecule(Particle):
         else:
             self.atoms.append(Atom(np.array([0, 0])))
 
-        # n of Atoms: {}".format(len(self.atoms)))
 
+        # Calculate width and length
         distant_at = 0
         max_rad = 0
         for atom in self.atoms:
@@ -107,7 +129,6 @@ class Molecule(Particle):
             x = atom.get_effect_range()
             if x > max_rad:
                 max_rad = x
-        # print("Distant Atom: {} and MaxRad = {}".format(distant_at, max_rad))
         self.effect_range = int(np.ceil(distant_at + max_rad))
 
         for atom in self.atoms:
@@ -125,9 +146,12 @@ class Molecule(Particle):
             super().set_width(self.simple_width)
             super().set_length(self.simple_length)
 
-            # print("Molecule x={} has l={:.4f} and w={:.4f}".format(self.molecule_ph_groups, self.simple_length.ang, self.simple_width.ang))
 
     def __str__(self):
+        """
+        String representation
+        :return:
+        """
         if self.molecule_class == "NCPhCN":
             return "NCPh{}CN".format(self.molecule_ph_groups)
         return self.molecule_class
@@ -136,9 +160,20 @@ class Molecule(Particle):
         return "Molecule {} (x={})".format(self.molecule_class, self.molecule_ph_groups)
 
     def get_C6_Ringdist(self, cc_dist):
+        """
+        calculates distance between centers of two c6 rings
+        :param cc_dist: distance between Carbon atoms
+        :return:
+        """
         return 2 * cc_dist + Distance(True, 1.52)
 
     def get_simple_length(self, cc_dist=Distance(True, 1.20), cn_dist=Distance(True, 1.47)):
+        """
+        Return length in simple visualization mode
+        :param cc_dist: Carbon-Carbon distance
+        :param cn_dist: Carbon-Nitrogen distance
+        :return:
+        """
         n = self.molecule_ph_groups
         if n % 2 == 0:
             amnt = int(n / 2)
@@ -156,6 +191,13 @@ class Molecule(Particle):
             return 2 * n_dist
 
     def add_C6_Ring(self, center, cc_dist, ch_dist):
+        """
+        Add a C6 ring
+        :param center: Center position
+        :param cc_dist: Carbon-carbon distance
+        :param ch_dist: Carbon-Hydrogen distance
+        :return:
+        """
         # print(type(center))
         # assert center is type(np.array([0, 0]))
         assert len(center) == 2
@@ -190,6 +232,14 @@ class Molecule(Particle):
             self.atoms.append(Atom(pos, "H"))
 
     def create_NC_PhX_CN(self, n, cc_dist, ch_dist, cn_dist):
+        """
+        Build an NCPhxCN molecule with n Ph groups
+        :param n: Number of Ph groups
+        :param cc_dist: Atomic disnace CC
+        :param ch_dist: Atomic disnace CH
+        :param cn_dist: Atomic disnace CN
+        :return:
+        """
         if n % 2 == 0:
             amnt = int(n / 2)
             # print("Amount: {}".format(amnt))
@@ -230,21 +280,40 @@ class Molecule(Particle):
         return self.__str__()
 
     def color(self, h):
+        """
+        Return color for height h
+        :param h:
+        :return:
+        """
         assert len(self.atoms) > 0
         return self.atoms[0].color(h)
 
     def set_maxHeight(self, max_h):
+        """
+        Set maximum height parameter
+        :param max_h: new max height
+        :return:
+        """
         self.max_height = max_h
         for x in self.atoms:
             x.set_maxHeight(max_h)
 
     def get_dimension(self):
+        """
+        see Particle.get_dimension
+        """
         if (len(self.atoms) == 0):
             return 0
         return Distance(False, np.sqrt(len(self.atoms) * self.atoms[0].radius.px))
 
     # @DeprecationWarning
     def show(self, x, y):
+        """
+        DEPRECATED
+        :param x:
+        :param y:
+        :return:
+        """
         ret = 0
         for atom in self.atoms:
             ret += atom.show(x, y)
@@ -252,6 +321,10 @@ class Molecule(Particle):
 
     # @DeprecationWarning
     def show_mat(self):
+        """
+        DEPRECATED
+        :return:
+        """
         print("Deprecated 73289474329")
         mat = np.zeros((int(np.ceil(self.img_w.px)), int(np.ceil(self.img_h.px))))
         for i in range(int(np.ceil(self.img_w.px))):
@@ -261,6 +334,12 @@ class Molecule(Particle):
         return mat
 
     def get_pot(self, gitter):
+        """
+        DEPRECATED. usde to return molecule potential energy
+        :param gitter: lattice
+        :return:
+        """
+
         pot = 0
         for atom in self.atoms:
             pot += atom.find_pot(gitter)
@@ -270,11 +349,19 @@ class Molecule(Particle):
         self.lookup_table = create_Molecule_lookup_table(gitter, Molecule)
 
     def gitter_pot(self):
+        """
+        DEPRECATED. get energy from lookup table
+        :return:
+        """
         assert self.lookup_table is not None
 
         return self.lookup_table.get_nearest_Energy(self.pos, self.theta, self.gitter)[0]
 
     def efficient_Matrix(self):
+        """
+        Visualize molecule as matrix. Uses pickle for faster matrix creation
+        :return: Visu_Matrix, center x, center y
+        """
         path = os.path.join(os.getcwd(), "Pickle_Data",
                             "Molec{}Vis{:.2f}_{:.2f}".format(self.molecule_ph_groups, cfg.get_px_per_angstrom(),
                                                              cfg.get_fermi_exp()))
@@ -296,6 +383,10 @@ class Molecule(Particle):
         return eff_matrix, self.x, self.y
 
     def efficient_Matrix_turned(self):
+        """
+        See Particle.efficient_Matrix_turned
+        :return:
+        """
         if self.molecule_style == "simple":
             return super().efficient_Matrix_turned()
 
@@ -303,9 +394,13 @@ class Molecule(Particle):
 
 
     def visualize_pixel(self, x, y):
+        """
+        See Particle.visualize_pixel
+        """
         if self.molecule_style == "simple":
             return super().visualize_pixel(x, y)
 
+        # Add atom intensities or only return max
         mode = "MAX"
         if mode == "ADD":
             ret = 0
@@ -324,6 +419,9 @@ class Molecule(Particle):
 
 
 class Lookup_Table:
+    """
+    Deprecated. Used to calulate and store potential energy of molecule depending on orientation relative to lattice
+    """
 
     def __str__(self):
         s = "Lookup_Table: \n"
@@ -333,6 +431,12 @@ class Lookup_Table:
 
     @staticmethod
     def equalVec(a, b):
+        """
+        True if a and b are equal
+        :param a: vector
+        :param b: vector
+        :return:
+        """
         if len(a) != len(b):
             return False
         for i in range(len(a)):
@@ -341,6 +445,12 @@ class Lookup_Table:
         return True
 
     def __init__(self, table, dist_step, angle_step):
+        """
+        Initializes new lookup table
+        :param table: table
+        :param dist_step: distance between distances
+        :param angle_step: distance between adjacent angles
+        """
         self.dist_step = dist_step
         self.angle_step = angle_step
         self.pairs = []
@@ -350,6 +460,13 @@ class Lookup_Table:
         self.img_h = cfg.get_height()
 
     def get_nearest_Energy(self, pos, angle, gitter=None):
+        """
+        return Energy fpr position pos and angle angle
+        :param pos:
+        :param angle:
+        :param gitter:
+        :return:
+        """
 
         if np.linalg.norm(pos) > self.nn_dist.px:  # ToDo: Add Lattice Options in settings
             pos = pos - Atom(pos).find_nearest_atom(gitter).pos
@@ -384,6 +501,9 @@ class Lookup_Table:
 
 
 class X_Container:
+    """
+    Data structure used in Lookup Table
+    """
     def __init__(self, x):
         self.x = x
         self.y_container = []
@@ -400,6 +520,9 @@ class X_Container:
 
 
 class Y_Container:
+    """
+    Data structure used in Lookup Table
+    """
     def __init__(self, y):
         self.y = y
         self.ang_Contaienr = []
@@ -416,6 +539,9 @@ class Y_Container:
 
 
 class Angle:
+    """
+    Data structure used in Lookup Table
+    """
     def __init__(self, ang, en):
         self.ang = ang
         self.en = en
@@ -426,6 +552,13 @@ class Angle:
 
 
 def create_Molecule_lookup_table(gitter, Testclass, name=None):
+    """
+    Creates a new Lookup table for molecule Testclass in lattice gitter
+    :param gitter: lattice
+    :param Testclass: Molecule
+    :param name: name to save pickle
+    :return:
+    """
     nn_dist = cfg.get_nn_dist()
     diststeps = int(np.ceil(nn_dist.px / 2))
     anglesteps = 180
@@ -488,7 +621,9 @@ def create_Molecule_lookup_table(gitter, Testclass, name=None):
 
 
 class Tests_Gitterpot:
-
+    """
+    Testing purposes
+    """
     @staticmethod
     def test():
 

@@ -2,6 +2,10 @@ import configparser as cp
 import os, numpy as np, datetime
 import Configuration as cfg
 
+"""
+Similar ConfigParser for SXM file settings
+"""
+
 
 conf = cp.ConfigParser()
 settings_folder = os.getcwd()
@@ -97,6 +101,10 @@ defaults = [
 
 
 def _create_header_dict():
+    """
+    Create dictionary for default header values
+    :return:
+    """
     return {elem[0]: elem[1] for elem in defaults}
 
 
@@ -107,6 +115,10 @@ def get_header_dict():
     return storage
 
 def _writeDefaults():
+    """
+    Write default values to .ini file
+    :return:
+    """
     global defaults, settings_file
     conf[cat] = {x[0]: x[1] for x in defaults}
     try:
@@ -123,6 +135,10 @@ def _writeDefaults():
 
 
 def rewrite_file():
+    """
+    Write file again with local variables
+    :return:
+    """
     global settings_file
     conf[cat] = {key: storage[key] for key in storage.keys()}
     try:
@@ -139,12 +155,22 @@ def rewrite_file():
 
 
 def update_params():
+    """
+    Load parameters from file
+    :return:
+    """
+
     conf.read(settings_file)
     global storage
     for key in storage.keys():
         storage[key] = parse_arg(conf[cat][key])
 
 def parse_arg(string):
+    """
+    Convert String representation of 2D array to an actual 2D array
+    :param string: string representation
+    :return: array
+    """
     if string == '[]':
         return []
     assert string[0] == '[' and string[1] == '['
@@ -192,13 +218,20 @@ def parse_arg(string):
 
 
 
-
 def get_header_arr():
+    """
+    get hader information as an array
+    :return:
+    """
     header = get_header_dict()
     return [(key, header[key]) for key in header.keys()]
 
 
 def updateTime():
+    """
+    Updates Time in settings with current time
+    :return:
+    """
     global def_REC_TIME, storage
     global def_REC_DATE
     storage[def_REC_DATE[0]] = [[str(datetime.date.today().strftime("%d.%m.%y"))]]
@@ -209,11 +242,20 @@ def updateTime():
     # Wirting costs too much performacne i think
 
 def get_time():
+    """
+    get time from configparser
+    :return:
+    """
     global storage, def_REC_TIME
     return storage[def_REC_TIME[0]]
 
 
 def set_dimensions(data): #ToDo. Height and width correct?
+    """
+    Set dimension (width and height of data matrix to the SXM file
+    :param data: image numpy array
+    :return:
+    """
     global def_SCAN_PIXELS, storage
 
     #ToDo Hier evtl verbessern
@@ -242,6 +284,11 @@ def set_dimensions(data): #ToDo. Height and width correct?
     update_params()
 
 def set_filename(filename):
+    """
+    Sets filename parameter
+    :param filename:
+    :return:
+    """
     storage[def_SCAN_FILE[0]][0][0] = os.getcwd()
     storage[def_SCAN_FILE[0]][0][1] = filename[len(str(os.getcwd())):]
 
@@ -249,6 +296,10 @@ def set_filename(filename):
     update_params()
 
 def adjust_to_image(data, filename):
+    """
+    Sets filename, size and time
+    :return:
+    """
     set_filename(filename)
     set_dimensions(data)
     updateTime()

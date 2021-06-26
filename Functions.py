@@ -7,6 +7,8 @@ import Configuration as cfg
 
 # logfile = os.getcwd() + "/log.txt"
 logfile = str(os.path.join(os.getcwd(), "log.txt"))
+
+#If measureTime should be active
 MEASURE = False
 
 # statisticsfile = os.getcwd() + "/statistics.txt"
@@ -14,6 +16,11 @@ statisticsfile = str(os.path.join(os.getcwd(), "statistics.txt"))
 
 
 def log(string):
+    """
+    Logs a provided string to the logfile
+    :param string: String to log
+    :return: None
+    """
     with open(logfile, "a") as file:
         file.write(string)
 
@@ -22,11 +29,19 @@ list_of_known = []
 
 
 def clearLog():
+    """
+    Clears the log
+    :return: None
+    """
     with open(logfile, "w") as f:
         f.write("")
 
 
 def evaluateLog():
+    """
+    Evaluates the logfile, genreates new Statsticsfile with total computational times
+    :return: None
+    """
     known = []
     stat_dict_app = dict()
     stat_dict_totalTime = dict()
@@ -47,6 +62,12 @@ def evaluateLog():
             file.write(str(key) + ": {:.3f} ms total\n\n".format(stat_dict_totalTime[key]))
 
 def turnMatrix(mat, theta):
+    """
+    Turns a visualization matrix around an angle theta
+    :param mat: matrix to turn
+    :param theta: angle by which matrix should be turned
+    :return: new matrix, new center x, new center y
+    """
     w, h = np.shape(mat)
     b = abs(np.sqrt(np.square(h) / (1 + np.square(np.tan(theta)))))
     a = abs(b * np.tan(theta))
@@ -149,6 +170,13 @@ def turnMatrix(mat, theta):
 
 
 def approx_invers(f, min=0, max=400):
+    """
+    DEPRECATED. Approximates the inverse function for provided function f in a given range
+    :param f: function to be inverted
+    :param min: minimum x of range where f should be inverted
+    :param max: maximum x of range where f should be inverted
+    :return:
+    """
     genauigkeit = 5
     y_steps = 500
     xs_n = []
@@ -192,6 +220,14 @@ maxInv = max(int(np.ceil(cfg.get_height().px)), int(np.ceil(cfg.get_width().px))
 
 
 def get_invers_function(f, min=0, max=maxInv, acc=20):
+    """
+    Returns the aproximated inverted function of f as a callable expression
+    :param f: function to be inverted
+    :param min: minimum x of range where f should be inverted
+    :param max: maximum x of range where f should be inverted
+    :param acc: accuracy of inversion
+    :return: inverted function
+    """
     genauigkeit = acc
     xs = []
     ys = []
@@ -241,6 +277,12 @@ def get_invers_function(f, min=0, max=maxInv, acc=20):
 
 
 def measureTime(func):
+    """
+    Measures and logs the time the provided function takes to compute.
+    Does nothing if parameter MEASURE is set to False
+    :param func: function which should be measured
+    :return: None
+    """
     if not MEASURE:
         return func
 
@@ -262,6 +304,13 @@ def measureTime(func):
 
 @DeprecationWarning
 def turnMatrix_old(mat, theta):  # ToDo: Improve Anti-Aliasing
+    """
+    DEPRECATED. old method to turn a matrix.
+    New version: turnMatrix
+    :param mat: matrix to be turned
+    :param theta: angle by which matrix should be turned
+    :return:
+    """
     return turnMatrix(mat, theta)
 
     shp = np.shape(mat)  # ToDo: Turn Correctly
@@ -352,6 +401,11 @@ def turnMatrix_old(mat, theta):  # ToDo: Improve Anti-Aliasing
     return new_mat, (w_new / w) * cx, (h_new / h) * cy
 
 def turn_matplotlib(mat):
+    """
+    Turns a matrix in a way that matplotlibs pyplot.imshow has the same orientation as the exported image
+    :param mat: matrix to be turned
+    :return: matrix turned to be visualized by matplotlib
+    """
     w, h = np.shape(mat)
 
     newmat = np.zeros(np.shape(mat))
@@ -366,6 +420,12 @@ def turn_matplotlib(mat):
 
 @DeprecationWarning
 def _prepare_matrix(mat, theta):
+    """
+    DEPRECATED. Needed to be used before turnMatrix_Old
+    :param mat: Matrix
+    :param theta: Angle
+    :return:
+    """
     matrix = mat
     while True:
         if 0 <= theta < np.pi / 2:
@@ -414,13 +474,30 @@ def _prepare_matrix(mat, theta):
 
 
 class Functions:
+    """
+    DEPRECATED
+    """
+
     @staticmethod
     def dist2D(a, b):
+        """
+        Caluclate Distance in 2D
+        :param a: 2D vector
+        :param b: 2D vector
+        :return: distacce
+        """
         return np.sqrt(np.square(a[0] - b[0]) + np.square(a[1] - b[1]))
 
     @staticmethod
     @measureTime
     def normalDistribution(center, point, sigma):
+        """
+        Was used to calculate the 2D normal distribution
+        :param center: Expectation value
+        :param point: Point to be measured
+        :param sigma: Standard Derivation
+        :return:
+        """
         d = Functions.dist2D(center, point)
         # return np.power(2 * np.pi * np.square(sigma), -0.5) * np.exp(-(np.square(d)) / (2 * np.square(sigma)))
         return np.exp(-(np.square(d)) / (2 * np.square(sigma)))
