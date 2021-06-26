@@ -5,6 +5,7 @@ import numpy as np
 class Distance:
     """
     class Distance is used to save every measured length in the unit pixels and Angstrom
+    Helps to use same parameters for calculations in Angstrom and Visualitation in pixeln
     """
 
     def __init__(self, useAng, arg):
