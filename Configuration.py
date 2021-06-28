@@ -1,6 +1,6 @@
 import configparser as cp
 import os, numpy as np
-from TestsApril.Maths.Functions import measureTime
+#from TestsApril.Maths.Functions import measureTime
 from Distance import Distance
 
 
@@ -178,7 +178,7 @@ val_nn_dist = None
 
 # Reset parameters to default values
 
-@measureTime
+#@measureTime
 def _writeDefaults():
     conf[cat_pc] = {x[0]: x[1] for x in pc_settings}
     conf[cat_image_basics] = {x[0]: x[1] for x in image_basics_settings}
@@ -202,7 +202,7 @@ def _writeDefaults():
 
 # Create a new settings-file if not yet existent
 
-@measureTime
+#@measureTime
 def setupConfigurationManager():
     global initialized
     initialized = True
@@ -287,7 +287,7 @@ def update_params():
 
 # return THREADS parameter
 
-@measureTime
+#@measureTime
 def get_threads():
     """
     Getter method for threads parameter. Initializes ConfigManager if not done yet.
@@ -299,7 +299,7 @@ def get_threads():
 
 # get Images Per Thread
 
-@measureTime
+#@measureTime
 def get_images_pt():
     if not initialized: setupConfigurationManager()
     return val_images_per_thread
@@ -309,7 +309,7 @@ def get_images_pt():
     # set Images Per Thread
 
 
-@measureTime
+#@measureTime
 def set_images_pt(num):
     if not initialized: setupConfigurationManager()
     conf[cat_pc][def_images_per_thread[0]] = str(num)
@@ -320,7 +320,7 @@ def set_images_pt(num):
     # set THREADS parameter
 
 
-@measureTime
+#@measureTime
 def set_threads(num):
     if not initialized: setupConfigurationManager()
     conf[cat_pc][def_threads[0]] = str(num)
@@ -331,7 +331,7 @@ def set_threads(num):
     # get FILE_LOCATION parameter
 
 
-@measureTime
+#@measureTime
 def set_image_folder(path):
     global settings_file
     if not initialized: setupConfigurationManager()
@@ -343,7 +343,7 @@ def set_image_folder(path):
     update_params()
 
 
-@measureTime
+#@measureTime
 def get_image_folder():
     if not initialized: setupConfigurationManager()
     return val_image_folder
@@ -351,7 +351,7 @@ def get_image_folder():
     #return conf[cat_pc][def_image_folder[0]]
 
 
-@measureTime
+#@measureTime
 def set_data_folder(path):
     global settings_file
     if not initialized: setupConfigurationManager()
@@ -363,13 +363,13 @@ def set_data_folder(path):
     update_params()
 
 
-@measureTime
+#@measureTime
 def get_data_folder():
     global settings_file
     if not initialized: setupConfigurationManager()
     return val_data_folder
 
-@measureTime
+#@measureTime
 def get_sxm_folder():
     global settings_file
     if not initialized: setupConfigurationManager()
@@ -377,7 +377,7 @@ def get_sxm_folder():
 
 
 
-@measureTime
+#@measureTime
 def print_file():
     global settings_file
     if not initialized: setupConfigurationManager()
@@ -386,21 +386,21 @@ def print_file():
             print(line, end="")
 
 
-@measureTime
+#@measureTime
 def get_width():
     global settings_file
     if not initialized: setupConfigurationManager()
     return val_width
 
 
-@measureTime
+#@measureTime
 def get_height():
     global settings_file
     if not initialized: setupConfigurationManager()
     return val_height
 
 
-@measureTime
+#@measureTime
 def set_width(w):
     if not initialized: setupConfigurationManager()
     conf[cat_image_basics][def_width[0]] = str(w)
@@ -409,7 +409,7 @@ def set_width(w):
     update_params()
 
 
-@measureTime
+#@measureTime
 def set_heigth(h):
     global settings_file
     if not initialized: setupConfigurationManager()
