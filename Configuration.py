@@ -703,7 +703,7 @@ def get_shift_amount_x():
 
 def get_shift_amount_y():
     if not initialized: setupConfigurationManager()
-    return val_shift_amount_x
+    return val_shift_amount_y
 
 def get_shift_style():
     if not initialized: setupConfigurationManager()

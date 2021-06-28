@@ -156,7 +156,6 @@ class MyImage:
         # testmat = np.ones(np.shape(self.colors))
         # testmat *= 200
         # self.colors = testmat
-
         style = cfg.get_shift_style()
         factor_x = cfg.get_shift_amount_x()
         factor_y = cfg.get_shift_amount_y()
@@ -181,15 +180,24 @@ class MyImage:
             wid, heigth = np.shape(self.colors)
             # gamma_x = np.log(wid * factor_x) / wid
             # gamma_y = np.log(heigth * factor_y) / heigth
-            gamma_x = np.log((factor_x - 1) * wid) / wid
-            gamma_y = np.log((factor_y - 1) * heigth) / heigth
+            if factor_x != 1:
+                gamma_x = np.log((factor_x - 1) * wid) / wid
+            if factor_y != 1:
+                gamma_y = np.log((factor_y - 1) * heigth) / heigth
+
 
             if f_horiz is None:
-                f_h = lambda x: x + np.exp(gamma_x * x)
+                if factor_x == 1:
+                    f_h = lambda x:x
+                else:
+                    f_h = lambda x: x + np.exp(gamma_x * x)
             else:
                 f_h = f_horiz
             if f_vert is None:
-                f_v = lambda y: y + np.exp(gamma_y * y)
+                if factor_y == 1:
+                    f_v = lambda y:y
+                else:
+                    f_v = lambda y: y + np.exp(gamma_y * y)
             else:
                 f_v = f_vert
 
@@ -302,7 +310,7 @@ class MyImage:
         :param sigma: Standard derivation of white noise
         :return:
         """
-        self.noise_spektrum()
+        #self.noise_spektrum()
         if self.use_white_noise:
             self.colors += np.random.normal(mu, sigma, np.shape(self.colors))
         if self.use_line_noise:

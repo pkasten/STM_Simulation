@@ -9,6 +9,7 @@ import Configuration as cfg
 import pickle
 import random, math
 import matplotlib.pyplot as plt
+from Functions import turnMatrix
 
 
 class Molecule(Particle):
@@ -357,17 +358,44 @@ class Molecule(Particle):
 
         return self.lookup_table.get_nearest_Energy(self.pos, self.theta, self.gitter)[0]
 
+    def efficient_Matrix_wo_pickle(self):
+        eff_matrix = np.zeros((2 * self.effect_range, 2 * self.effect_range))
+        for i in range(-1 * self.effect_range, 1 * self.effect_range):
+            for j in range(-1 * self.effect_range, 1 * self.effect_range):
+                eff_matrix[i + 1 * self.effect_range, j + 1 * self.effect_range] = \
+                    self.visualize_pixel(i, j)
+
+        return eff_matrix, self.x, self.y
+
     def efficient_Matrix(self):
         """
         Visualize molecule as matrix. Uses pickle for faster matrix creation
         :return: Visu_Matrix, center x, center y
         """
         path = os.path.join(os.getcwd(), "Pickle_Data",
-                            "Molec{}Vis{:.2f}_{:.2f}".format(self.molecule_ph_groups, cfg.get_px_per_angstrom(),
-                                                             cfg.get_fermi_exp()))
+                            "Molec{}Vis{:.2f}_{:.2f}_{}".format(self.molecule_ph_groups, cfg.get_px_per_angstrom(),
+                                                             cfg.get_fermi_exp(), self.molecule_style))
+
+        if self.molecule_style == "complex" and not os.path.isfile(path):
+            m = Molecule(self.pos, 0, self.lookup_table, None, self.molecule_class, self.molecule_ph_groups, self.molecule_style)
+            em, x, y = m.efficient_Matrix_wo_pickle()
+            if not os.path.isfile(path):
+                with open(path, "wb") as pth:
+                    pickle.dump(em, pth)
+
+
         if os.path.isfile(path):
-            with open(path, "rb") as pth:
-                return pickle.load(pth), self.x, self.y
+            if self.molecule_style == "simple":
+                with open(path, "rb") as pth:
+                    return pickle.load(pth), self.x, self.y
+            elif self.molecule_style == "complex":
+                with open(path, "rb") as pth:
+                    mat = pickle.load(pth)
+                    return turnMatrix(mat, self.theta)[0], self.x, self.y
+            else:
+                with open(path, "rb") as pth:
+                    return pickle.load(pth), self.x, self.y
+
         eff_matrix = np.zeros((2 * self.effect_range, 2 * self.effect_range))
         for i in range(-1 * self.effect_range, 1 * self.effect_range):
             for j in range(-1 * self.effect_range, 1 * self.effect_range):

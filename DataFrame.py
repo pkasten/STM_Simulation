@@ -2,6 +2,7 @@ import multiprocessing as mp
 import copy, os
 import math, random
 import time
+#import numbers
 
 import scipy.optimize
 
@@ -1049,11 +1050,17 @@ class DataFrame:
             dx = line[1][0] - line[0][0]
             if abs(dx) < zero_threshold:
                 if line[0][1] <= y <= line[1][1]:
-                    distances.append(abs(line[0][0] - x))
+                    app = (line, abs(line[0][0] - x))
+                   # assert isinstance(app[1], numbers.Number)
+                    distances.append(app)
                 elif y < line[0][1]:
-                    distances.append(np.sqrt(np.square(line[0][1] - y) + np.square(line[0][0] - x)))
+                    app = (line, np.sqrt(np.square(line[0][1] - y) + np.square(line[0][0])))
+                   # assert isinstance(app[1], numbers.Number)
+                    distances.append(app)
                 elif y > line[1][1]:
-                    distances.append(np.sqrt(np.square(line[1][1] - y) + np.square(line[1][0] - x)))
+                    app = (line, np.sqrt(np.square(line[1][1] - y) + np.square(line[1][0] - x)))
+                    #assert isinstance(app[1], numbers.Number)
+                    distances.append(app)
                 else:
                     raise NotImplementedError
                 continue
@@ -1077,14 +1084,22 @@ class DataFrame:
                 else:
                     x_sp = line[0][0]
             y_sp = m * x_sp + b
-            distances.append((line, np.sqrt(np.square(x - x_sp) + np.square(y - y_sp))))
+            app = (line, np.sqrt(np.square(x - x_sp) + np.square(y - y_sp)))
+            #assert isinstance(app[1], numbers.Number)
+            distances.append(app)
 
         mindist = np.infty
         closest_pair = None
         for dist in distances:
-            if dist[1] < mindist:
-                closest_pair = dist
-                mindist = dist[1]
+            try:
+                if dist[1] < mindist:
+                    closest_pair = dist
+                    mindist = dist[1]
+            except ValueError:
+                print("Error:")
+                print("Dist, compl: : {}".format(dist))
+                print("Dist: {}".format(dist[1]))
+                print("mindist: {}".format(mindist))
 
         assert closest_pair is not None
         angle_part = part.theta % (2 * np.pi)
@@ -2288,12 +2303,12 @@ class DataFrame:
             # When particles align across border perpendicular to it
             if self.dist_to_line(no.pos[0].px, no.pos[1].px,
                                  lines) < 0.5 * no.get_dimension().px and self.angle_between(no, lines) > np.pi / 4:
-                print("Prevented from crossing ang")
+                #print("Prevented from crossing ang")
                 continue
 
             i += 1
             self.objects.append(no)
-        print("Got {} after {:.2f}ms".format(i, time.perf_counter() - start))
+        #print("Got {} after {:.2f}ms".format(i, time.perf_counter() - start))
 
     @measureTime
     def get_Image_Dust(self):
