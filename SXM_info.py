@@ -59,7 +59,7 @@ def_Piezo_Configuration_Drift_correction_status_on_off = "Piezo Configuration>Dr
     ['FALSE']]
 def_Z_Controller_Z_m = "Z-Controller>Z (m)", [['-14.8895E-9']]
 def_Z_Controller_Controller_name = "Z-Controller>Controller name", [['log', 'Current']]
-def_Z_Controller_Controller_status = "Z-Controller>Controller status:", [['ON']]
+def_Z_Controller_Controller_status = "Z-Controller>Controller status", [['ON']]
 def_Z_Controller_Setpoint = "Z-Controller>Setpoint", [['880.956E-12']]
 def_Z_Controller_Setpoint_unit = "Z-Controller>Setpoint unit", [['A']]
 def_Z_Controller_P_gain = "Z-Controller>P gain", [['139.658E-21']]
@@ -159,7 +159,8 @@ def update_params():
     Load parameters from file
     :return:
     """
-
+    global initialized
+    initialized = True
     conf.read(settings_file)
     global storage
     for key in storage.keys():
@@ -303,6 +304,11 @@ def adjust_to_image(data, filename):
     set_filename(filename)
     set_dimensions(data)
     updateTime()
+
+def get_scanspeed():
+    if not initialized: update_params()
+    global storage, def_Scan_speed_forw_m_s
+    return float(storage[def_Scan_speed_forw_m_s[0]][0][0])
 
 
 

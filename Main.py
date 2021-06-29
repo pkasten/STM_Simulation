@@ -381,7 +381,7 @@ def every_angle2():
 Add Code here
 """
 thrds = cfg.get_threads()
-recursions = 5
+recursions = 2
 
 
 def act(dat):
@@ -441,8 +441,8 @@ def act(dat):
     #dat.get_Image()
     #dat.save()
     #dat.addParticles(amount=20)
-    dat.add_Ordered()
     #dat.add_Ordered()
+    dat.add_Ordered()
     dat.get_Image()
     dat.save()
 

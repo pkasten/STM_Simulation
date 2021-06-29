@@ -5,8 +5,14 @@ import matplotlib.pyplot as plt
 import numpy.fft
 from PIL import Image
 import numpy as np
+from tqdm import tqdm
+
 import Configuration as cfg
 import os, random
+
+import Functions
+import SXM_info
+from Distance import Distance
 from Functions import get_invers_function, measureTime
 import csv
 
@@ -310,14 +316,95 @@ class MyImage:
         :param sigma: Standard derivation of white noise
         :return:
         """
-        #self.noise_spektrum()
+        self.colors += self.noise_spektrum(sigma)
+        self.colors += mu * np.ones(np.shape(self.colors))
         if self.use_white_noise:
-            self.colors += np.random.normal(mu, sigma, np.shape(self.colors))
+            self.colors += np.random.normal(0, sigma, np.shape(self.colors))
         if self.use_line_noise:
-            self.colors += self.f1_line_noise(mu, sigma)
+            self.colors += self.f1_line_noise(0, sigma)
 
 
-    def noise_spektrum(self, filename="NoiseSTM.csv", delimiter=";"):
+    def _noise_over_time(self, freq, intens):
+        # Normalize
+        scale = 1 / np.max(intens)
+        temp = []
+        for elem in intens:
+            temp.append(scale * elem)
+        intens = temp
+        del temp
+
+        # Test: Plot
+        # plt.plot(frequency, intensity)
+        # plt.title("Noise Spectrum")
+        # plt.show()
+
+        def _to_wave(freq, ampl, phase=0.0):
+            # 1 Index = 1ms
+            f = lambda t: ampl * np.sin(2 * np.pi * freq * t + phase)
+
+            return f
+
+        # Prepare ifft, add negative frequencies
+        num = len(intens)
+        for i in range(num):
+            intens.append(0)
+
+        # Perform Ifft
+        spectrum = np.fft.ifft(intens, )
+
+        waves = []
+        times = range(10000)
+        funcs = []
+        for i in range(len(freq)):
+            funcs.append(_to_wave(freq[i], intens[i], 2 * np.pi * random.random()))
+
+        def noise_ot(t):
+            sum = -funcs[0](0)
+            for f in funcs:
+                sum += f(t)
+            return sum
+
+
+
+        testing = False
+        if testing:
+            print(intens[0])
+            ampl = []
+            for i in tqdm(times):
+                ampl.append(noise_ot(i/10000))
+
+            plt.plot(times, ampl)
+            plt.title("Sum")
+            plt.show()
+
+            # Shift to 0
+            shift = np.average(ampl)
+            temp = []
+            for x in ampl:
+                temp.append(x - shift)
+            ampl = temp
+            del temp
+
+            plt.plot(times, ampl)
+            plt.title("Ampl")
+            plt.show()
+
+            _to_wave(500, 1)
+
+            # Test: Plot
+            plt.title("IFFT Results")
+            # plt.plot(spectrum.imag, label="Imag")
+            plt.plot(spectrum.real, label="Real")
+            plt.legend()
+            plt.show()
+
+        return noise_ot
+
+
+
+
+
+    def noise_spektrum(self, sigma,  filename="NoiseSTM.csv", delimiter=";"):
         """
         Returns noise matrix according to provided measurement.
         Still under construction
@@ -325,7 +412,15 @@ class MyImage:
         :param delimiter: delimiter for CSV file
         :return: noise matrix
         """
-        scanspeed = 1411 # in Ansgtrom/s
+
+        scanspeed = Distance(True, SXM_info.get_scanspeed() * 1e10)  # in Angstr/s
+        width = cfg.get_width()
+        height = cfg.get_height()
+        t_line = width / scanspeed  # in s
+
+        def _time_for_pos(x, y):
+            return 2 * y * t_line + (x/width.px) * t_line # 2 Due to repositioning
+
 
         frequency = []
         intensity = []
@@ -338,43 +433,43 @@ class MyImage:
                 frequency.append(float(row[0]))
                 intensity.append(float(row[1]))
 
-        # Normalize
-        scale = 1/np.max(intensity)
-        temp = []
-        for elem in intensity:
-            temp.append(scale * elem)
-        intensity = temp
+        nse = self._noise_over_time(frequency, intensity)
+
+        print("Start: {}s".format(_time_for_pos(0, 0)))
+        print("End: {}s".format(_time_for_pos(width.px, height.px)))
+
+        w = int(width.px)
+        h = int(height.px)
+        noisemat = np.zeros((w, h))
+        for i in tqdm(range(w)):
+            for j in range(h):
+                noisemat[i, j] = nse(_time_for_pos(i, j))
+
+
+        maxi = np.amax(noisemat)
+        mini = np.amin(noisemat)
+        diff = maxi - mini
+        scale = min(0.5, np.random.normal(1)) * sigma/diff
+        start = time.perf_counter()
+        temp = np.zeros(np.shape(noisemat))
+        for i in range(np.shape(noisemat)[0]):
+            for j in range(np.shape(noisemat)[1]):
+                temp[i, j] = scale * noisemat[i, j]
+        noisemat = temp
         del temp
+        print("Dur: {}ms".format(time.perf_counter() - start))
 
-        # Test: Plot
-        plt.plot(frequency, intensity)
-        plt.title("Noise Spectrum")
-        plt.show()
+       # plt.imshow(Functions.turn_matplotlib(noisemat))
+       # plt.title("Image Noise")
+       # plt.show()
 
-        # Prepare ifft, add negative frequencies
-        num = len(intensity)
-        for i in range(num):
-            intensity.append(0)
+        maxi = np.amax(noisemat)
+        mini = np.amin(noisemat)
+        diff = maxi - mini
 
-        #Perform Ifft
-        spectrum = np.fft.ifft(intensity,)
+        print("Diff: {}".format(diff))
 
-        # cast complex to real
-        #temp = []
-        #for elem in spectrum:
-        #    temp.append(np.absolute(elem))
-        #spectrum = temp
-        #del temp
-
-        # Test: Plot
-        plt.title("IFFT Results")
-        #plt.plot(spectrum.imag, label="Imag")
-        plt.plot(spectrum.real, label="Real")
-        plt.legend()
-        plt.show()
-
-
-        #ToDo: Hier position aus zeit herausrechnen etc.
+        return noisemat
 
 
     def f1_line_noise(self, mu, sigma):
