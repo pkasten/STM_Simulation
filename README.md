@@ -6,6 +6,10 @@ This library was developed by J. Tim Seifert the course of a Bachelors thesis at
 
 Mail: johannes.seifert@tu-braunschweig.de
 
+![Example Image](/ExampleFiles/Ph3AS400.png)
+![Example Image](/ExampleFiles/Ph4Exakt400.png)
+![Example Image](/ExampleFiles/Ph5Noise400.png)
+
 # Required Packages
 
  - numpy 
@@ -69,7 +73,9 @@ The most imprtant settings are explained in the follwing table:
 | Shift style | Exp | Switches between linear (Lin) and exponential (Exp) image shift.|
 
 *1: Uses CPU count of current system
+
 *2: Uses path to program and subfolder *bildordner*, *sxm* and *data*
+
 *3: Used namescheme: *ImageX.png*, *ImageX.sxm*, *DataX.txt*
 
 # Particles
@@ -96,7 +102,7 @@ Molecules can be displayed in two modes: "single" abstracts the molecule as a  r
 
 ## Defining own particles
 Own particles can be created by extending the `Particle` class. For correct behavior, the length and width parameters have to be overridden.
-Most important is the `visualize_pixel(x, y)` method. It controls, how the particle will look like. It should return the grayscale height for this particle (0 to 255) at position (x, y). The center of the molecule has coordinates (0, 0). For example: A circular particle with radius 5px without smeared out borders can be displayed by using `return 255 if ` $\sqrt{x^2 + y^2} \leq 5$ `else 0`. 
+Most important is the `visualize_pixel(x, y)` method. It controls, how the particle will look like. It should return the grayscale height for this particle (0 to 255) at position (x, y). The center of the molecule has coordinates (0, 0). For example: A circular particle with radius 5px without smeared out borders can be displayed by using `return 255 if ` <img src="https://render.githubusercontent.com/render/math?math=\sqrt{x^2 + y^2} \leq 5"> `else 0`. 
 
 
 # Arrangement
@@ -113,7 +119,7 @@ print(d1.ang)
 d2 = Distance(False, 6) # Distance of 6 pixel (=3 Ang)
 d3 = d1 + d2
 print(d3)
--> "Distance(10px, 5Ang)
+-> "Distance(10px, 5Ang)"
 print(d3 >= d1)
 -> True
 print(d1/d3)
@@ -148,7 +154,7 @@ m = Molecule(pos=pos, theta=theta, molecule_class=molecule_class, molecule_ph_gr
 dat = DataFrame(fn_gen)
 dat.addObject(m)
 ```
-This adds a $\text{NCPh}_3\text{CN}$ molecule to the frame at specified angle and position. Due to the variety of parameters, there is no default `addObject()` method and the parameters passed to `Molecule` are keyword based.
+This adds a <img src="https://render.githubusercontent.com/render/math?math=\text{NCPh}_3\text{CN}"> molecule to the frame at specified angle and position. Due to the variety of parameters, there is no default `addObject()` method and the parameters passed to `Molecule` are keyword based.
 
 ## Adding particles randomly
 Particles can also be added at random positions.  `DataFrame` provides the method `addParticles(amount=None, coverage=None, overlapping=False)`.  
@@ -156,7 +162,7 @@ If `amount` is specified, the provided number of Particles are randomly distribu
 The `overlapping` parameter controls, if the added particles can overlap. If `False`, before adding a particle, it is checked whether this would overlap with any existing one. If so, it would be discarded and another would be created.
 ## Adding ordered molecules
 The `add_Ordered(theta=None, factor=1.0, ph_grps=None)`
-method adds $\text{NCPh}_x\text{CN}$ molecules in a way that is observed in experimental data. For the number of phenyl groups, numbers 3 to 5 are supported. 
+method adds <img src="https://render.githubusercontent.com/render/math?math=\text{NCPh}_x\text{CN}"> molecules in a way that is observed in experimental data. For the number of phenyl groups, numbers 3 to 5 are supported. 
 The `theta` parameter cotrols the orientation of the structure. If it is `None`, the orientation will be random.
 The parameter `factor` allows to stretch the spacing between molecules. For physically correct ordering, it should be kept at 1.
 The`ph_grps` parameter controls which molecules are used for the ordered structure. If `None`, a random number of 3, 4 and 5 is used.
