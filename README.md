@@ -57,7 +57,7 @@ The most imprtant settings are explained in the follwing table:
 
 |Setting| Default | Description  
 |--|--|--|
-| threads | *1  | Thr andeads used for multithreaded execution |
+| threads | *1  | Threads used for multithreaded execution |
 | ...Folder | *2 | Path to folder where Image/SXM/Data files will be stored |
 | Pixel per Angström | 2 | Image resolution |
 | Image width | 100 | Determines width of created image in Angström |

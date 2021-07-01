@@ -1,3 +1,6 @@
+import numpy as np
+import random
+
 from Molecule import Molecule
 from Particle import Particle
 from FilenameGenerator import FilenameGenerator
@@ -8,7 +11,7 @@ import math, time
 from multiprocessing import Process
 from multiprocessing.managers import BaseManager
 import matplotlib.pyplot as plt
-
+import csv
 """
 Main class used to interact with the program. Provides basic methods
 Important are act(), GenExec and execNthreads()
@@ -376,12 +379,185 @@ def every_angle2():
         t.join()
     return True
 
+def test_fft():
+
+    def _not_funcs(freq, intens):
+        print("noise over Time")
+        # Normalize
+        scale = 1 / np.max(intens)
+        temp = []
+        for elem in intens:
+            temp.append(scale * elem)
+        intens = temp
+        del temp
+
+        # Test: Plot
+        # plt.plot(frequency, intensity)
+        # plt.title("Noise Spectrum")
+        # plt.show()
+
+        def get_phase_func(freq):
+            #return lambda x:0
+            if freq == 0:
+                return lambda x: 0
+            max_time = 600
+            slotlength = 1 / freq
+            steps = 10
+            startphase = lambda: 2 * np.pi * random.random()
+
+
+            nextstep = lambda: 2 * np.pi * random.random() - np.pi
+
+            steady_len = steps * slotlength
+            slope_len = slotlength
+
+            t = 0
+            pairs = [] # (time bis, valueLeft, Slope)
+            oldphase = 0
+            while t < max_time:
+                t += steady_len
+                oldphase += nextstep()
+                pairs.append((t, oldphase, False))
+                t += slope_len
+                pairs.append((t, oldphase, True))
+
+            t += steady_len
+            pairs.append((t, oldphase, True))
+            assert t > max_time
+
+            def func(t):
+                t %= max_time
+                for i in range(len(pairs)):
+                    if t < pairs[i][0]:
+                        if pairs[i][2]:
+                            dec = slope_len + t - pairs[i][0]
+                            m = (pairs[i+1][1] - pairs[i][1])/slope_len
+                            return pairs[i][1] + m * dec
+                        else:
+                            return pairs[i][1]
+
+            return func
+
+
+
+        def _to_wave(freq, ampl):
+            phasefkt = get_phase_func(freq)
+            def f(t):
+                return ampl * np.cos(2*np.pi * freq * t + phasefkt(t))
+
+            return f
+
+
+        times = range(10000)
+        funcs = []
+        for i in range(len(freq)):
+            if intens[i] == 0:
+                continue
+            funcs.append(_to_wave(freq[i], intens[i]))
+
+        def f(t):
+            summe = intens[0]
+            for f in funcs:
+                summe += f(t)
+            return summe
+
+
+        return f
+
+
+
+    frequency = []
+    intensity = []
+    # Read in
+    with open("NoiseSTM.csv", 'r') as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=";")
+        for row in csv_reader:
+            if not row[0][0].isdigit():
+                continue
+            frequency.append(float(row[0]))
+            intensity.append(float(row[1]))
+
+    plt.plot(frequency[1:], intensity[1:])
+    plt.title("Intens over Freq")
+    plt.show()
+
+    l = len(intensity)
+    for i in range(l):
+        intensity.append(0)
+
+    spectrum = np.real(np.fft.ifft(intensity))[:1000]
+    plt.plot(spectrum)
+    plt.title("IFFT")
+    plt.show()
+
+    ff = np.real(np.fft.fft(intensity))[:1000]
+    plt.plot(ff)
+    plt.title("FFT")
+    plt.show()
+
+    no_t = _not_funcs(frequency, intensity[:l])
+    times = range(1000)
+    vals = [no_t(t/1000) for t in times]
+
+    plt.plot(times, vals)
+    plt.title("Alle Wellen mit Phase zufällig")
+    plt.show()
+
+    no_of_inerest = 30
+    interesting = []
+
+    second = lambda elem: elem[1]
+
+    for i in range(no_of_inerest):
+        interesting.append((0, 0))
+
+    mini = interesting[0][1]
+    for i in range(1, len(frequency)):
+        curr_int = intensity[i]
+        if curr_int > mini:
+            interesting.append((frequency[i], intensity[i]))
+            interesting.sort(key=second)
+            interesting.pop(0)
+            mini = interesting[0][1]
+
+    newfreqs = []
+    new_intenses = []
+    for j in frequency:
+        if j == 0:
+            continue
+        newfreqs.append(j)
+        new_intenses.append(0)
+
+    keys = [elem[0] for elem in interesting]
+    dictionary = {elem[0]: elem[1] for elem in interesting}
+
+    for i in range(len(newfreqs)):
+        if newfreqs[i] in keys:
+            new_intenses[i] = dictionary[newfreqs[i]]
+
+    plt.plot(newfreqs, new_intenses)
+    plt.title("New Spectrum")
+    plt.show()
+
+    no_t = _not_funcs(newfreqs, new_intenses)
+    times = range(1000)
+    vals = [no_t(t / 1000) for t in times]
+
+    plt.plot(times, vals)
+    plt.title("Wenige Wellen Phase zufällig")
+    plt.show()
+
+
+
+
+
+
 
 """
 Add Code here
 """
 thrds = cfg.get_threads()
-recursions = 2
+recursions = 1
 
 
 def act(dat):
@@ -442,6 +618,7 @@ def act(dat):
     #dat.save()
     #dat.addParticles(amount=20)
     #dat.add_Ordered()
+
     dat.add_Ordered()
     dat.get_Image()
     dat.save()
@@ -493,7 +670,7 @@ def execNthreads(n, amnt=1):
 
 if __name__ == "__main__":
     clearLog()
-
+    #test_fft()
     execNthreads(thrds, recursions)
 
     # lo = Lock()

@@ -53,8 +53,6 @@ class MyImage:
             self.colors = matrix
             self.updateImage()
 
-
-
     # @measureTime
     def getWidth(self):
         """
@@ -111,7 +109,6 @@ class MyImage:
         """
         self.colors = self.colors + matrix
 
-
     def double_tip(self, strength, rel_dist, angle):
         """
         Duplicates the image, shifts it by rel_dist at angle, scale it with strength and add it to colors
@@ -125,9 +122,9 @@ class MyImage:
         vec_x = int(vec_x)
         vec_y = int(vec_y)
 
-        #print("Images.double_tip start: ")
-        #plt.imshow(self.colors)
-        #plt.show()
+        # print("Images.double_tip start: ")
+        # plt.imshow(self.colors)
+        # plt.show()
 
         newmat = self.colors
 
@@ -146,9 +143,9 @@ class MyImage:
                     pass
 
         self.colors = newmat
-        #print("Double tip end")
-        #plt.imshow(newmat)
-        #plt.show()
+        # print("Double tip end")
+        # plt.imshow(newmat)
+        # plt.show()
         self.updateImage()
 
     # @measureTime
@@ -191,17 +188,16 @@ class MyImage:
             if factor_y != 1:
                 gamma_y = np.log((factor_y - 1) * heigth) / heigth
 
-
             if f_horiz is None:
                 if factor_x == 1:
-                    f_h = lambda x:x
+                    f_h = lambda x: x
                 else:
                     f_h = lambda x: x + np.exp(gamma_x * x)
             else:
                 f_h = f_horiz
             if f_vert is None:
                 if factor_y == 1:
-                    f_v = lambda y:y
+                    f_v = lambda y: y
                 else:
                     f_v = lambda y: y + np.exp(gamma_y * y)
             else:
@@ -220,7 +216,7 @@ class MyImage:
         newmat = np.zeros((w, h))
         i_max = np.shape(newmat)[0]
         for i in range(0, np.shape(newmat)[0]):
-            #print("Shift progress: {:.1f}%".format(100 * i / i_max))
+            # print("Shift progress: {:.1f}%".format(100 * i / i_max))
             for j in range(0, np.shape(newmat)[1]):
                 x_w = f_h_inv(i)
                 # y_w = f_v(j)
@@ -262,18 +258,17 @@ class MyImage:
                     x_len = int(np.random.normal(med_strength, variation) / 2)
                     x_start = max(0, x_med - x_len)
                     x_end = min(x_med + x_len, np.shape(self.colors)[0])
-                    #print("xmed = {}, xlen = {}, xstart = {}, xend = {}".format(x_med, x_len, x_start, x_end))
+                    # print("xmed = {}, xlen = {}, xstart = {}, xend = {}".format(x_med, x_len, x_start, x_end))
                     if x_start >= x_end:
-                     #   print("Start >= End")
+                        #   print("Start >= End")
                         y += 1
                         continue
                     cols = self.colors[x_start:x_end, y]
                     color = random.choice(cols)
                     for x in range(x_start, x_end):
-                        self.colors[x,y] = color
+                        self.colors[x, y] = color
                 else:
                     y += 1
-
 
     def __str__(self):
         return str(self.colors)
@@ -308,7 +303,6 @@ class MyImage:
         img = Image.new('RGB', (int(np.ceil(wid)), int(np.ceil(hei))), 0)
         return img
 
-
     def noise(self, mu, sigma):
         """
         Adds noise to the image
@@ -323,8 +317,8 @@ class MyImage:
         if self.use_line_noise:
             self.colors += self.f1_line_noise(0, sigma)
 
-
     def _noise_over_time(self, freq, intens):
+        print("noise over Time")
         # Normalize
         scale = 1 / np.max(intens)
         temp = []
@@ -338,25 +332,138 @@ class MyImage:
         # plt.title("Noise Spectrum")
         # plt.show()
 
-        def _to_wave(freq, ampl, phase=0.0):
+        def get_phase_func(freq):
+            if freq == 0:
+                return lambda x: 0
+            max_time = 600
+            slotlength = 1 / freq
+            slotnumber = int(np.ceil(max_time / slotlength))
+            steps = 10
+            startphase = lambda: 2 * np.pi * random.random()
+
+           # def _gen_slope(left, right, ber):
+           #     m = (right - left) / ber
+           #     b = left
+
+           #     def f(x):
+            #        return m * x + b
+
+            #    return f
+
+            nextstep = lambda: 2 * np.pi * random.random() - np.pi
+            sp = startphase()
+
+            steady_len = steps * slotlength
+            slope_len = slotlength
+
+            t = 0
+            pairs = [] # (time bis, valueLeft, Slope)
+            oldphase = 0
+            while t < max_time:
+                t += steady_len
+                oldphase += nextstep()
+                pairs.append((t, oldphase, False))
+                t += slope_len
+                pairs.append((t, oldphase, True))
+
+            t += steady_len
+            pairs.append((t, oldphase, True))
+            assert t > max_time
+
+            def func(t):
+                t %= max_time
+                for i in range(len(pairs)):
+                    if t < pairs[i][0]:
+                        if pairs[i][2]:
+                            dec = slope_len + t - pairs[i][0]
+                            m = (pairs[i+1][1] - pairs[i][1])/slope_len
+                            return pairs[i][1] + m * dec
+                        else:
+                            return pairs[i][1]
+
+
+          #  print("Test Func:")
+          #  fac = 100
+          #  xs = [x/fac for x in range(2*fac*max_time)]
+          #  ys = [func(t) for t in xs]
+
+          #  plt.plot(xs, ys)
+          #  plt.title(" Func, maxtime: {}".format(fac * max_time))
+           # plt.show()
+
+            return func
+
+
+
+
+
+
+
+
+            #phases = [lambda x: sp, lambda x: sp]
+
+            #steady = [True, True]
+            #for i in range(slotnumber - 1):
+            #    steady.append((i % (steps + 1)) != 0)
+
+            #steady.append(True)
+            #steady.append(True)
+
+            #phases_appended = [sp, sp]
+
+            #for i in range(2, len(steady)):
+
+                # if i > 5:
+                #    print("i={} -> phase[0](0) = {}".format(i, phases[0](0)))
+                #    print("i={} -> phase[1](0) = {}".format(i, phases[1](0)))
+                #    #print("i={} -> phase[2](0) = {}".format(i, phases[2](0)))
+                #    print("i={} -> phase[3](0) = {}".format(i, phases[3](0)))
+                #    print("i={} -> phase[4](0) = {}".format(i, phases[4](0)))
+                #    print(phases_appended)
+
+                #if steady[i] and steady[i - 1]:
+                #    print("A")
+                #    phases_appended.append(phases_appended[-1])#
+
+               #     def f(x):
+               #         return phases_appended[i]
+
+               #     phases.append(f)
+               # elif steady[i] and not steady[i - 1]:
+                #    print("B")
+                #    old = phases_appended[-1]
+                #    new = old + nextstep()
+                #    phases_appended.append(new)
+
+                #    def f(x):
+                #        return phases_appended[i]
+
+               #     phases.append(f)
+               # elif not steady[i] and steady[i - 1]:
+               #     print("C")
+               #     phases_appended.append(phases_appended[-1])
+               #     phases.append("SLOPE")
+               #     print("Sloping")
+               # else:
+               #     print("i = {}, steady[i]={}, steady[i-1]={}".format(i, steady[i], steady[i - 1]))
+               #     raise ValueError
+
+
+        def _to_wave(freq, ampl):
             # 1 Index = 1ms
-            f = lambda t: ampl * np.sin(2 * np.pi * freq * t + phase)
+            phasefkt = get_phase_func(freq)
+            #f = lambda t: ampl * np.cos(2 * np.pi * freq * t + phasefkt(t))
+            def f(t):
+                return ampl * np.cos(2*np.pi * freq * t + phasefkt(t))
 
             return f
 
-        # Prepare ifft, add negative frequencies
-        num = len(intens)
-        for i in range(num):
-            intens.append(0)
-
-        # Perform Ifft
-        spectrum = np.fft.ifft(intens, )
 
         waves = []
         times = range(10000)
         funcs = []
         for i in range(len(freq)):
-            funcs.append(_to_wave(freq[i], intens[i], 2 * np.pi * random.random()))
+            funcs.append(_to_wave(freq[i], intens[i]))
 
         def noise_ot(t):
             sum = -funcs[0](0)
@@ -364,14 +471,13 @@ class MyImage:
                 sum += f(t)
             return sum
 
-
-
         testing = False
         if testing:
+            print("Testing")
             print(intens[0])
             ampl = []
             for i in tqdm(times):
-                ampl.append(noise_ot(i/10000))
+                ampl.append(noise_ot(i / 10000))
 
             plt.plot(times, ampl)
             plt.title("Sum")
@@ -389,22 +495,177 @@ class MyImage:
             plt.title("Ampl")
             plt.show()
 
-            _to_wave(500, 1)
-
-            # Test: Plot
-            plt.title("IFFT Results")
-            # plt.plot(spectrum.imag, label="Imag")
-            plt.plot(spectrum.real, label="Real")
-            plt.legend()
-            plt.show()
 
         return noise_ot
 
 
+    def _not_funcs(self, freq, intens):
+        print("noise over Time")
+        # Normalize
+        scale = 1 / np.max(intens)
+        temp = []
+        for elem in intens:
+            temp.append(scale * elem)
+        intens = temp
+        del temp
+
+
+        # Nur wichtige
+        no_of_inerest = 30
+        interesting = []
+
+        second = lambda elem: elem[1]
+
+        for i in range(no_of_inerest):
+            interesting.append((0, 0))
+
+        mini = interesting[0][1]
+        for i in range(1, len(freq)):
+            curr_int = intens[i]
+            if curr_int > mini:
+                interesting.append((freq[i], intens[i]))
+                interesting.sort(key=second)
+                interesting.pop(0)
+                mini = interesting[0][1]
+
+        newfreqs = []
+        new_intenses = []
+        for j in freq:
+            if j == 0:
+                continue
+            newfreqs.append(j)
+            new_intenses.append(0)
+
+        keys = [elem[0] for elem in interesting]
+        dictionary = {elem[0]: elem[1] for elem in interesting}
+
+        for i in range(len(newfreqs)):
+            if newfreqs[i] in keys:
+                new_intenses[i] = dictionary[newfreqs[i]]
+
+        freq = newfreqs
+        intens = new_intenses
+
+        # Test: Plot
+        # plt.plot(frequency, intensity)
+        # plt.title("Noise Spectrum")
+        # plt.show()
+
+        def get_phase_func(freq):
+            if freq == 0:
+                return lambda x: 0
+            max_time = 600
+            slotlength = 1 / freq
+            steps = 10
+            startphase = lambda: 2 * np.pi * random.random()
+
+
+            nextstep = lambda: 2 * np.pi * random.random() - np.pi
+
+            steady_len = steps * slotlength
+            slope_len = slotlength
+
+            t = 0
+            pairs = [] # (time bis, valueLeft, Slope)
+            oldphase = 0
+            while t < max_time:
+                t += steady_len
+                oldphase += nextstep()
+                pairs.append((t, oldphase, False))
+                t += slope_len
+                pairs.append((t, oldphase, True))
+
+            t += steady_len
+            pairs.append((t, oldphase, True))
+            assert t > max_time
+
+            def func(t):
+                t %= max_time
+                for i in range(len(pairs)):
+                    if t < pairs[i][0]:
+                        if pairs[i][2]:
+                            dec = slope_len + t - pairs[i][0]
+                            m = (pairs[i+1][1] - pairs[i][1])/slope_len
+                            return pairs[i][1] + m * dec
+                        else:
+                            return pairs[i][1]
+
+            return func
 
 
 
-    def noise_spektrum(self, sigma,  filename="NoiseSTM.csv", delimiter=";"):
+
+
+
+
+
+            #phases = [lambda x: sp, lambda x: sp]
+
+            #steady = [True, True]
+            #for i in range(slotnumber - 1):
+            #    steady.append((i % (steps + 1)) != 0)
+
+            #steady.append(True)
+            #steady.append(True)
+
+            #phases_appended = [sp, sp]
+
+            #for i in range(2, len(steady)):
+
+                # if i > 5:
+                #    print("i={} -> phase[0](0) = {}".format(i, phases[0](0)))
+                #    print("i={} -> phase[1](0) = {}".format(i, phases[1](0)))
+                #    #print("i={} -> phase[2](0) = {}".format(i, phases[2](0)))
+                #    print("i={} -> phase[3](0) = {}".format(i, phases[3](0)))
+                #    print("i={} -> phase[4](0) = {}".format(i, phases[4](0)))
+                #    print(phases_appended)
+
+                #if steady[i] and steady[i - 1]:
+                #    print("A")
+                #    phases_appended.append(phases_appended[-1])#
+
+               #     def f(x):
+               #         return phases_appended[i]
+
+               #     phases.append(f)
+               # elif steady[i] and not steady[i - 1]:
+                #    print("B")
+                #    old = phases_appended[-1]
+                #    new = old + nextstep()
+                #    phases_appended.append(new)
+
+                #    def f(x):
+                #        return phases_appended[i]
+
+               #     phases.append(f)
+               # elif not steady[i] and steady[i - 1]:
+               #     print("C")
+               #     phases_appended.append(phases_appended[-1])
+               #     phases.append("SLOPE")
+               #     print("Sloping")
+               # else:
+               #     print("i = {}, steady[i]={}, steady[i-1]={}".format(i, steady[i], steady[i - 1]))
+               #     raise ValueError
+
+
+        def _to_wave(freq, ampl):
+            phasefkt = get_phase_func(freq)
+            def f(t):
+                return ampl * np.cos(2*np.pi * freq * t + phasefkt(t))
+
+            return f
+
+
+        times = range(10000)
+        funcs = []
+        for i in range(len(freq)):
+            funcs.append(_to_wave(freq[i], intens[i]))
+
+
+        return funcs
+
+
+    def noise_spektrum(self, sigma, filename="NoiseSTM.csv", delimiter=";"):
         """
         Returns noise matrix according to provided measurement.
         Still under construction
@@ -419,8 +680,7 @@ class MyImage:
         t_line = width / scanspeed  # in s
 
         def _time_for_pos(x, y):
-            return 2 * y * t_line + (x/width.px) * t_line # 2 Due to repositioning
-
+            return 2 * y * t_line + (x / width.px) * t_line  # 2 Due to repositioning
 
         frequency = []
         intensity = []
@@ -433,10 +693,225 @@ class MyImage:
                 frequency.append(float(row[0]))
                 intensity.append(float(row[1]))
 
-        nse = self._noise_over_time(frequency, intensity)
+        #nse = self._noise_over_time(frequency, intensity)
 
-        print("Start: {}s".format(_time_for_pos(0, 0)))
-        print("End: {}s".format(_time_for_pos(width.px, height.px)))
+
+        #Testing new Method
+        # Nur wichtige
+        restrict = True
+        if restrict:
+            no_of_inerest = 30
+            interesting = []
+
+            second = lambda elem: elem[1]
+
+            for i in range(no_of_inerest):
+                interesting.append((0, 0))
+
+            mini = interesting[0][1]
+            for i in range(1, len(frequency)):
+                curr_int = intensity[i]
+                if curr_int > mini:
+                    interesting.append((frequency[i], intensity[i]))
+                    interesting.sort(key=second)
+                    interesting.pop(0)
+                    mini = interesting[0][1]
+
+            newfreqs = []
+            new_intenses = []
+            for j in frequency:
+                if j == 0:
+                    continue
+                newfreqs.append(j)
+                new_intenses.append(0)
+
+            keys = [elem[0] for elem in interesting]
+            dictionary = {elem[0]: elem[1] for elem in interesting}
+
+            for i in range(len(newfreqs)):
+                if newfreqs[i] in keys:
+                    new_intenses[i] = dictionary[newfreqs[i]]
+
+            frequency = newfreqs
+            intensity = new_intenses
+
+        #Def NSE
+        def get_phase_func(freq, maxtime=_time_for_pos(width.px, height.px)):
+            if freq == 0:
+                return lambda x: 0
+            max_time = maxtime
+            #slotlength = 0.001 *  max(1, np.random.normal(freq, np.sqrt(freq))) / freq
+            slotlength = 1/freq
+           # print("Old Slotlen: {:.3f}, new: {:.3f}".format(1/freq, slotlength))
+            steps =  max(1, int(np.random.normal(freq, np.sqrt(freq))))
+            startphase = lambda: 2 * np.pi * random.random()
+
+
+            nextstep = lambda: 2 * np.pi * random.random() - np.pi
+
+            steady_len = steps * slotlength
+            slope_len = slotlength
+
+            t = 0
+            pairs = [] # (time bis, valueLeft, Slope)
+            oldphase = 0
+            while t < max_time:
+                t += steady_len
+                oldphase += nextstep()
+                pairs.append((t, oldphase, False))
+                t += slope_len
+                pairs.append((t, oldphase, True))
+
+            t += steady_len
+            pairs.append((t, oldphase, True))
+            assert t > max_time
+
+            def func(t):
+                t %= max_time
+                for i in range(len(pairs)):
+                    if t < pairs[i][0]:
+                        if pairs[i][2]:
+                            dec = slope_len + t - pairs[i][0]
+                            m = (pairs[i+1][1] - pairs[i][1])/slope_len
+                            return pairs[i][1] + m * dec
+                        else:
+                            return pairs[i][1]
+
+            return func
+
+        # ampl * np.cos(2*np.pi * freq * t + phasefkt(t))
+
+        phasefkts = []
+        for i in range(len(frequency)):
+            phasefkts.append(get_phase_func(frequency[i]))
+
+        def nse(t):
+            sum = 0
+            for i in range(len(frequency)):
+                #sum += intensity[i] * np.cos(2*np.pi * frequency[i] * t + phasefkts[i](t))
+                sum += intensity[i] * np.cos(2 * np.pi * frequency[i] * t + phasefkts[i](t))
+            return sum
+
+        #Test NSE
+
+        if False:
+            print("Start testing")
+            xs = range(100 * int(_time_for_pos(width.px, height.px)))
+            ys = []
+            for i in xs:
+                ys.append(nse(i/100))
+            #plt.plot(xs, ys)
+            #plt.xlabel("100 * time")
+            #plt.ylabel("Noise Level weniger Wellen")
+            #plt.show()
+
+            # Speedtest plot phasenfkt
+            start = time.perf_counter()
+            an = int(_time_for_pos(width.px, height.px))
+            gen = 100
+            times = range(an * gen)
+            f = lambda x: np.sin(x) * np.exp(-0.005*x) + x*x - 4*x + 12
+            ysf = []
+            for t in times:
+                ysf.append(f(t/gen))
+
+            plt.plot(times, ysf)
+            plt.title("f mit genauigkeit {} nach {:.2f}s".format(gen, time.perf_counter() - start))
+            plt.show()
+            del ysf
+
+            start = time.perf_counter()
+            f = get_phase_func(0.5)
+            ysf = []
+            for t in times:
+                ysf.append(f(t/gen))
+
+            plt.plot(times, ysf)
+            plt.title(" Phase f=0.5 mit genauigkeit {} nach {:.2f}s".format(gen, time.perf_counter() - start))
+            plt.show()
+            del ysf
+
+            start = time.perf_counter()
+            f = get_phase_func(500)
+            ysf = []
+            for t in times:
+                ysf.append(f(t/gen))
+
+            plt.plot(times, ysf)
+            plt.title(" Phase f=500 mit genauigkeit {} nach {:.2f}s".format(gen, time.perf_counter() - start))
+            plt.show()
+            del ysf
+
+            start = time.perf_counter()
+            f = get_phase_func(500)
+            ysf = []
+            times = [_time_for_pos(0, i) for i in range(int(width.px))]
+            for t in times:
+                ysf.append(f(t))
+
+            plt.plot(times, ysf)
+            plt.title("1 Line duration: {}".format(time.perf_counter() - start))
+            plt.show()
+            del ysf
+
+            # End neue Impl
+
+
+
+
+
+
+
+    #Testing
+        if False:
+            print("testPhase")
+            start = time.perf_counter()
+            print("gen necessary")
+            necessary_pts = []
+            w = int(width.px)
+            h = int(height.px)
+            for i in tqdm(range(w)):
+                for j in range(h):
+                    necessary_pts.append(_time_for_pos(i, j))
+
+            print("1: {}".format(time.perf_counter() - start))
+            start = time.perf_counter()
+
+            print("Gen Funcs")
+            funcs = self._not_funcs(frequency, intensity)
+
+            print("2: {}".format(time.perf_counter() - start))
+            start = time.perf_counter()
+
+            print("eval Funcs")
+            values = []
+            for i in range(len(necessary_pts)):
+                values.append(0)
+
+            print("3: {}".format(time.perf_counter() - start))
+            start = time.perf_counter()
+
+            for f in tqdm(funcs):
+                for i in range(len(necessary_pts)):
+                    values[i] += f(necessary_pts[i])
+
+            print("4: {}".format(time.perf_counter() - start))
+            start = time.perf_counter()
+
+            print("Plot Noise")
+            plt.plot(necessary_pts, values)
+            plt.title("Testing Noise")
+            plt.show()
+
+
+            print("testPhase-END")
+
+
+
+    # end testing
+
+       # print("Start: {}s".format(_time_for_pos(0, 0)))
+       # print("End: {}s".format(_time_for_pos(width.px, height.px)))
 
         w = int(width.px)
         h = int(height.px)
@@ -446,31 +921,34 @@ class MyImage:
                 noisemat[i, j] = nse(_time_for_pos(i, j))
 
 
+        shift = np.average(noisemat)
+        nm2 = np.zeros(np.shape(noisemat))
+        for i in range(np.shape(noisemat)[0]):
+            for j in range(np.shape(noisemat)[1]):
+                nm2[i, j] = noisemat[i, j] - shift
+        noisemat = nm2
+        del nm2
+
         maxi = np.amax(noisemat)
         mini = np.amin(noisemat)
         diff = maxi - mini
-        scale = min(0.5, np.random.normal(1)) * sigma/diff
-        start = time.perf_counter()
+        print("Sigma = {}".format(sigma))
+        scale = max(0.5, np.random.normal(1)) * sigma / diff
         temp = np.zeros(np.shape(noisemat))
         for i in range(np.shape(noisemat)[0]):
             for j in range(np.shape(noisemat)[1]):
                 temp[i, j] = scale * noisemat[i, j]
         noisemat = temp
         del temp
-        print("Dur: {}ms".format(time.perf_counter() - start))
-
-       # plt.imshow(Functions.turn_matplotlib(noisemat))
-       # plt.title("Image Noise")
-       # plt.show()
-
         maxi = np.amax(noisemat)
         mini = np.amin(noisemat)
         diff = maxi - mini
-
         print("Diff: {}".format(diff))
+        plt.imshow(Functions.turn_matplotlib(noisemat))
+        plt.title("Image Noise")
+        plt.show()
 
         return noisemat
-
 
     def f1_line_noise(self, mu, sigma):
         """
@@ -510,8 +988,6 @@ class MyImage:
             for i in range(n_pts + 1, nn):
                 hfa.append(0)
                 wfa.append(0)
-
-
 
             reth = numpy.fft.rfft(hfa, n_pts)  # , 1
             retw = numpy.fft.rfft(wfa, n_pts)
@@ -556,38 +1032,36 @@ class MyImage:
             return xs
 
         alph = 2
-        xs = f_alpha(h, sigma**2, alph)
+        xs = f_alpha(h, sigma ** 2, alph)
 
         ys = []
         for i in range(h):
-            ys.append(f_alpha(w, sigma**2, 10))
+            ys.append(f_alpha(w, sigma ** 2, 10))
 
-       # print("YS after {:.2f}".format(time.perf_counter() - start))
-
+        # print("YS after {:.2f}".format(time.perf_counter() - start))
 
         for i in range(w):
             for j in range(h):
                 if not modify_each_line:
                     noisemat[i, j] += xs[j]
                 else:
-                    noisemat[i, j] += xs[j] * ys[j][int(round(i/2))]
+                    noisemat[i, j] += xs[j] * ys[j][int(round(i / 2))]
 
-       # print("Max: {}".format(np.amax(noisemat)))
-       # print("Min: {}".format(np.amin(noisemat)))
-       # print("Med: {}".format(np.average(noisemat)))
+        # print("Max: {}".format(np.amax(noisemat)))
+        # print("Min: {}".format(np.amin(noisemat)))
+        # print("Med: {}".format(np.average(noisemat)))
 
         scale = 8 * sigma / (np.amax(noisemat) - np.amin(noisemat))
-        #ToDo: Scale von scanline aus cfg
+        # ToDo: Scale von scanline aus cfg
         noisemat *= scale
         shift = mu + np.average(noisemat)
         noisemat += shift * np.ones(np.shape(noisemat))
 
-       # print("Max_New: {}".format(np.amax(noisemat)))
-       # print("Min_New: {}".format(np.amin(noisemat)))
-       # print("Med_New: {}".format(np.average(noisemat)))
+        # print("Max_New: {}".format(np.amax(noisemat)))
+        # print("Min_New: {}".format(np.amin(noisemat)))
+        # print("Med_New: {}".format(np.average(noisemat)))
 
         return noisemat
-
 
     @DeprecationWarning
     def noise_function(self):
@@ -599,17 +1073,15 @@ class MyImage:
         noise_mat = np.zeros(np.shape(self.colors))
         w, h = np.shape(noise_mat)
         two_pi = 2 * np.pi
-        gen_amplitude = lambda x:1
+        gen_amplitude = lambda x: 1
         shift = 90
-        phi = lambda x:two_pi*random.random()
+        phi = lambda x: two_pi * random.random()
         step = 1
-
-
 
         def f_alpha(n_pts, q_d, alpha, idum):
             xs = []
             nn = n_pts + n_pts
-            ha = alpha/2
+            ha = alpha / 2
             q_d = np.sqrt(q_d)
 
             hfa = [1, nn]
@@ -617,24 +1089,24 @@ class MyImage:
             hfa[1] = 1.0
             wfa[1] = q_d * np.random.normal()
 
-            for i in range(2, n_pts+1):
-                hfa.append(hfa[i-1] * (ha + i-2)/i-1)
+            for i in range(2, n_pts + 1):
+                hfa.append(hfa[i - 1] * (ha + i - 2) / i - 1)
                 wfa.append(q_d * random.random())
 
             for i in range(n_pts + 1, nn):
                 hfa.append(0)
                 wfa.append(0)
 
-     #       print("wfa start")
-    #        plt.plot(wfa)
-   #         plt.show()
-  #          print("hfa start")
- #           plt.plot(hfa)
-#            plt.show()
+            #       print("wfa start")
+            #        plt.plot(wfa)
+            #         plt.show()
+            #          print("hfa start")
+            #           plt.plot(hfa)
+            #            plt.show()
 
             print(len(hfa))
 
-            reth = numpy.fft.rfft(hfa, n_pts) # , 1
+            reth = numpy.fft.rfft(hfa, n_pts)  # , 1
             retw = numpy.fft.rfft(wfa, n_pts)
 
             for i in range(len(reth)):
@@ -646,46 +1118,40 @@ class MyImage:
             wfa[1] = wfa[1] * hfa[1]
             wfa[2] = wfa[2] * hfa[2]
 
-     #       print("premodified wfa")
-    #        plt.plot(wfa)
-   #         plt.show()
+            #       print("premodified wfa")
+            #        plt.plot(wfa)
+            #         plt.show()
 
+            for i in range(3, nn - 1, 2):
+                wr = wfa[i]
+                wi = wfa[i + 1]
+                wfa[i] = wr * hfa[i] - wi * hfa[i + 1]
+                wfa[i + 1] = wr * hfa[i + 1] + wi * hfa[i]
 
-            for i in range(3, nn-1, 2):
-                wr=wfa[i]
-                wi=wfa[i+1]
-                wfa[i] = wr * hfa[i] - wi * hfa[i+1]
-                wfa[i+1] = wr * hfa[i+1] + wi * hfa[i]
-
-  #          print("Wfa vor iff")
- #           plt.plot(wfa)
-#            plt.show()
+            #          print("Wfa vor iff")
+            #           plt.plot(wfa)
+            #            plt.show()
 
             retw = np.fft.irfft(wfa, n_pts)
 
-     #       print("retw")
-    #        plt.plot(retw)
-   #         plt.show()
-
+            #       print("retw")
+            #        plt.plot(retw)
+            #         plt.show()
 
             for i in range(len(retw)):
                 wfa[i] = retw[i]
 
+            for i in range(1, n_pts + 1):
+                xs.append(wfa[i] / n_pts)
 
-            for i in range(1, n_pts+1):
-                xs.append( wfa[i]/n_pts)
-
-
-  #          plt.plot(xs)
- #           plt.show()
+            #          plt.plot(xs)
+            #           plt.show()
             return xs
-
-
 
         def f_alpha_2D(n_pts, q_d, alpha):
             vals = np.zeros((n_pts, n_pts))
             nn = n_pts + n_pts
-            ha = alpha/2
+            ha = alpha / 2
             q_d = np.sqrt(q_d)
 
             hfa = np.zeros((nn, nn))
@@ -700,18 +1166,18 @@ class MyImage:
             hfa[0, 0] = 1.0
             wfa[0, 0] = 1
 
-            for i in range(1, n_pts+1):
+            for i in range(1, n_pts + 1):
                 hfa[0, i] = q_d * np.random.normal()
                 hfa[i, 0] = q_d * np.random.normal()
                 wfa[0, i] = 1
                 wfa[i, 0] = 1
 
-            for i in range(1, n_pts+1):
-                for j in range(1, n_pts+1):
-                    #h = hfa[i-1, j] * (ha + i-2)/i-1
-                    #h + hfa[i, j-1] * (ha + j-2)/j-1
-                    #h + hfa[i-1, j-1] * (ha +
-                    h = ha * (2* n_pts - i - j)
+            for i in range(1, n_pts + 1):
+                for j in range(1, n_pts + 1):
+                    # h = hfa[i-1, j] * (ha + i-2)/i-1
+                    # h + hfa[i, j-1] * (ha + j-2)/j-1
+                    # h + hfa[i-1, j-1] * (ha +
+                    h = ha * (2 * n_pts - i - j)
                     hfa[i, j] = h
                     wfa[i, j] = (q_d * random.random())
 
@@ -720,23 +1186,22 @@ class MyImage:
                     hfa[i, j] = 0
                     wfa[i, j] = 0
 
-     #       print("wfa start")
-    #        plt.imshow(wfa)
-   #         plt.show()
-  #          print("hfa start")
- #           plt.imshow(hfa)
-#            plt.show()
+            #       print("wfa start")
+            #        plt.imshow(wfa)
+            #         plt.show()
+            #          print("hfa start")
+            #           plt.imshow(hfa)
+            #            plt.show()
 
-
-            reth = numpy.fft.rfft2(hfa, (n_pts, n_pts)) # , 1
+            reth = numpy.fft.rfft2(hfa, (n_pts, n_pts))  # , 1
             retw = numpy.fft.rfft2(wfa, (n_pts, n_pts))
 
-            #print("ret fft w")
-            #plt.imshow(retw)
-            #plt.show()
-            #print("ret_fft_h")
-            #plt.imshow(reth)
-            #plt.show()
+            # print("ret fft w")
+            # plt.imshow(retw)
+            # plt.show()
+            # print("ret_fft_h")
+            # plt.imshow(reth)
+            # plt.show()
 
             for i in range(np.shape(reth)[0]):
                 for j in range(np.shape(reth)[1]):
@@ -751,53 +1216,49 @@ class MyImage:
             wfa[2, 1] = wfa[2, 1] * hfa[2, 1]
             wfa[1, 2] = wfa[1, 2] * hfa[1, 2]
 
-  #          print("premodified wfa")
- #           plt.imshow(wfa)
-#            plt.show()
+            #          print("premodified wfa")
+            #           plt.imshow(wfa)
+            #            plt.show()
 
+            for i in range(3, nn - 1, 2):
+                for j in range(3, nn - 1, 2):
+                    wr = wfa[i, j] * 0
+                    wi = wfa[i + 1, j] * 0
+                    wk = wfa[i, j + 1] * 0
+                    wfa[i] = wr * hfa[i, j] - wi * hfa[i + 1, j] - wk * hfa[i, j + 1]
+                    wfa[i + 1] = wr * hfa[i + 1, j] + wi * hfa[i, j] + wk * hfa[i, j + 1]
 
-            for i in range(3, nn-1, 2):
-                for j in range(3, nn-1, 2):
-                    wr=wfa[i, j] * 0
-                    wi=wfa[i+1, j]  *0
-                    wk = wfa[i, j+1] *0
-                    wfa[i] = wr * hfa[i, j] - wi * hfa[i+1, j] - wk * hfa[i, j+1]
-                    wfa[i+1] = wr * hfa[i+1, j] + wi * hfa[i, j] + wk * hfa[i, j+1]
-
-       #     print("Wfa vor iff")
-      #      plt.imshow(wfa)
-     #       plt.show()
+            #     print("Wfa vor iff")
+            #      plt.imshow(wfa)
+            #       plt.show()
 
             retw = np.fft.irfft2(wfa, (n_pts, n_pts))
 
-    #        print("retw")
-   #         plt.imshow(retw)
-  #          plt.show()
+            #        print("retw")
+            #         plt.imshow(retw)
+            #          plt.show()
 
             for i in range(np.shape(retw)[0]):
                 for j in range(np.shape(retw)[1]):
                     wfa[i, j] = retw[i, j]
 
-
             for i in range(1, n_pts):
                 for j in range(1, n_pts):
-                    vals[i, j] = ( wfa[i, j]/n_pts)
+                    vals[i, j] = (wfa[i, j] / n_pts)
 
             print("vals")
             plt.imshow(vals)
             plt.show()
             return vals
 
-
-
         xs = f_alpha(100, 1, 0, 1)
-        #plt.plot(range(len(xs)), xs)
-        #plt.show()
+        # plt.plot(range(len(xs)), xs)
+        # plt.show()
 
         print("2d")
 
         mat = f_alpha_2D(200, 1, 1)
-        #print(mat)
+        # print(mat)
         sc = 100 / np.amax(mat)
         shif = 10
 
@@ -807,11 +1268,6 @@ class MyImage:
                 mat[i, j] += shif
         noise_mat = mat
 
-
-
-
-
-
         def gen_single(width, nu):
             xi = gen_amplitude(nu)
             p = phi(nu)
@@ -819,7 +1275,7 @@ class MyImage:
             return lambda x: xi * np.sin(two_pi * x * nu / width + p)
 
         def gen_f(width):
-            func = lambda x:shift
+            func = lambda x: shift
             fs = []
             for nu in range(1, width, step):
                 fs.append(gen_single(width, nu))
@@ -840,25 +1296,19 @@ class MyImage:
 
             return f
 
+        # f_x = gen_f(w)
 
-
-
-        #f_x = gen_f(w)
-
-
-
-        #for i in range(w):
+        # for i in range(w):
         #    for j in range(h):
         #        noise_mat[i, j] = f_x(i) + f_x(j) + shift#
 
-        #plt.imshow(noise_mat)
-        #plt.show()
+        # plt.imshow(noise_mat)
+        # plt.show()
         print("Max: {:.2f}".format(np.amax(noise_mat)))
         print("Min: {:.2f}".format(np.amin(noise_mat)))
         print("Avg: {:.2f}".format(np.average(noise_mat)))
 
         self.colors += noise_mat
-
 
     # @measureTime
     def get_matrix(self):
@@ -928,7 +1378,7 @@ class MyImage:
         for i in range(len(xs_green) - 1):
             if xs_green[i] <= x < xs_green[i + 1]:
                 g = ys_green[i] + ((ys_green[i + 1] - ys_green[i]) / (xs_green[i + 1] - xs_green[i])) * (
-                            x - xs_green[i])
+                        x - xs_green[i])
                 break
         if g is None:
             if x > xs_green[-1]:
