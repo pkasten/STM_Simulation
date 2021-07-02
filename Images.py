@@ -673,7 +673,7 @@ class MyImage:
         :param delimiter: delimiter for CSV file
         :return: noise matrix
         """
-
+        starttime = time.perf_counter()
         scanspeed = Distance(True, SXM_info.get_scanspeed() * 1e10)  # in Angstr/s
         width = cfg.get_width()
         height = cfg.get_height()
@@ -682,23 +682,55 @@ class MyImage:
         def _time_for_pos(x, y):
             return 2 * y * t_line + (x / width.px) * t_line  # 2 Due to repositioning
 
+
+        timesteps = []
+        for x in range(int(np.ceil(width.px))):
+            for y in range(int(np.ceil(height.px))):
+                timesteps.append(_time_for_pos(x, y))
+
         frequency = []
         intensity = []
         # Read in
-        with open(filename, 'r') as csv_file:
-            csv_reader = csv.reader(csv_file, delimiter=delimiter)
-            for row in csv_reader:
-                if not row[0][0].isdigit():
-                    continue
-                frequency.append(float(row[0]))
-                intensity.append(float(row[1]))
+        ct = 0
+        all = False
+        if all:
+            with open(filename, 'r') as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter=delimiter)
+                for row in csv_reader:
+                    ct += 1
+                    if ct % 300 != 0:
+                        continue
+                    if not row[0][0].isdigit():
+                        continue
+                    frequency.append(float(row[0]))
+                    intensity.append(float(row[1]))
+        else:
+            pool = 5
+            ct = 0
+            pairs = []
+            second = lambda elem: elem[1]
+            with open(filename, 'r') as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter=delimiter)
+                for row in csv_reader:
+                    if not row[0][0].isdigit():
+                        continue
+                    ct += 1
+                    if ct % pool != 0:
+                        pairs.append((float(row[0]), float(row[1])))
+                    else:
+                        pairs.sort(key=second, reverse=True)
+                        pair = pairs.pop(0)
+                        frequency.append(pair[0])
+                        intensity.append(pair[1])
+                        pairs = []
+
 
         #nse = self._noise_over_time(frequency, intensity)
 
 
         #Testing new Method
         # Nur wichtige
-        restrict = True
+        restrict = False
         if restrict:
             no_of_inerest = 30
             interesting = []
@@ -743,7 +775,8 @@ class MyImage:
             #slotlength = 0.001 *  max(1, np.random.normal(freq, np.sqrt(freq))) / freq
             slotlength = 1/freq
            # print("Old Slotlen: {:.3f}, new: {:.3f}".format(1/freq, slotlength))
-            steps =  max(1, int(np.random.normal(freq, np.sqrt(freq))))
+            #steps =  max(1, int(np.random.normal(freq, np.sqrt(freq))))
+            steps = 10
             startphase = lambda: 2 * np.pi * random.random()
 
 
@@ -754,33 +787,91 @@ class MyImage:
 
             t = 0
             pairs = [] # (time bis, valueLeft, Slope)
-            oldphase = 0
-            while t < max_time:
+            oldphase = 2 * np.pi * random.random() - np.pi
+            #print("Startphase at {:.2f}".format(oldphase))
+            dict = {}
+            i_steps = 0
+            t_dict = timesteps[i_steps]
+            app_d_phases = []
+            try:
+                while t < max_time:
+                    t += steady_len
+                    #oldphase += nextstep()
+                    while t_dict < t:
+                        #print("Steady at {:.2f}".format(oldphase))
+                        #time.sleep(0.2)
+                        dict[t_dict] = oldphase
+                        i_steps += 1
+                        app_d_phases.append(oldphase)
+                        t_dict = timesteps[i_steps]
+
+                    #pairs.append((t, oldphase, False))
+                    t += slope_len
+                    m = (2 * np.pi * random.random() - np.pi)/ max(slope_len, (timesteps[i_steps + 1] - timesteps[i_steps]))
+
+                    while t_dict < t:
+                        #print("DT = {}".format())
+                        #print("Slopelen = {}".format(slope_len))
+                        #print("m = {}".format(m))
+                        oldphase += m * (timesteps[i_steps + 1] - timesteps[i_steps])
+                        #print("Slope at {:.2f}".format(oldphase))
+                        #time.sleep(2)
+                        dict[t_dict] = oldphase
+                        i_steps += 1
+                        app_d_phases.append(oldphase)
+                        t_dict = timesteps[i_steps]
+                    #pairs.append((t, oldphase, True))
+
                 t += steady_len
-                oldphase += nextstep()
-                pairs.append((t, oldphase, False))
-                t += slope_len
-                pairs.append((t, oldphase, True))
+                while t_dict < t:
+                    #print("End at {:.2f}".format(oldphase))
+                    #time.sleep(0.2)
+                    dict[t_dict] = oldphase
+                    app_d_phases.append(oldphase)
 
-            t += steady_len
-            pairs.append((t, oldphase, True))
-            assert t > max_time
+                    i_steps += 1
+                    t_dict = timesteps[i_steps]
+                # pairs.append((t, oldphase, True))
+                assert t > max_time
+            except IndexError:
+                pass
 
+            #plt.plot(app_d_phases)
+            #plt.title("Appd Phases for f={}".format(freq))
+            #plt.show()
+
+            #for key in dict.keys():
+            #    print("F={} has key {} with Phase {}".format(freq, key, dict[key]))
+            #    time.sleep(0.2)
+
+            keys = [k for k in dict.keys()]
             def func(t):
-                t %= max_time
-                for i in range(len(pairs)):
-                    if t < pairs[i][0]:
-                        if pairs[i][2]:
-                            dec = slope_len + t - pairs[i][0]
-                            m = (pairs[i+1][1] - pairs[i][1])/slope_len
-                            return pairs[i][1] + m * dec
-                        else:
-                            return pairs[i][1]
+                try:
+                    return dict[t]
+                except KeyError:
+                    if t not in keys:
+                        print("Key {} not Found".format(t))
+                        distances = [(t - key) for key in keys]
+                        mini = min(distances)
+                        for i in range(len(distances)):
+                            if distances[i] == mini:
+                                print("Closest: {}".format(keys[i]))
+                                return dict[keys[i]]
+                #t %= max_time
+                #for i in range(len(pairs)):
+                #    if t < pairs[i][0]:
+                #        if pairs[i][2]:
+                #            dec = slope_len + t - pairs[i][0]
+                #            m = (pairs[i+1][1] - pairs[i][1])/slope_len
+                #            return pairs[i][1] + m * dec
+                #        else:
+                #            return pairs[i][1]
 
             return func
 
         # ampl * np.cos(2*np.pi * freq * t + phasefkt(t))
 
+        # ToDo: Include
         phasefkts = []
         for i in range(len(frequency)):
             phasefkts.append(get_phase_func(frequency[i]))
@@ -788,11 +879,52 @@ class MyImage:
         def nse(t):
             sum = 0
             for i in range(len(frequency)):
-                #sum += intensity[i] * np.cos(2*np.pi * frequency[i] * t + phasefkts[i](t))
+                 #sum += intensity[i] * np.cos(2*np.pi * frequency[i] * t + phasefkts[i](t))
                 sum += intensity[i] * np.cos(2 * np.pi * frequency[i] * t + phasefkts[i](t))
             return sum
 
         #Test NSE
+
+        if False:
+            ts = []
+            xs1 = []
+            xs100 = []
+            xs500 = []
+            ph1 = get_phase_func(1)
+            ph100 = get_phase_func(100)
+            ph500 = get_phase_func(500)
+            for y in range(int(np.ceil(height.px))):
+                for x in range(int(np.ceil(width.px))):
+                    #print(" ({}, {})".format(x, y))
+                    t = _time_for_pos(x, y)
+                    ts.append(t)
+                    xs1.append(ph1(t))
+                    xs100.append(ph100(t))
+                    xs500.append(ph500(t))
+
+            plt.plot(ts)
+            plt.title("Time")
+            plt.show()
+
+            print(xs1)
+            print(min(xs1), max(xs1))
+            plt.plot(xs1)
+            plt.title("Phase for 1Hz")
+            plt.show()
+
+            print(xs100)
+            print(min(xs100), max(xs100))
+            plt.plot(xs100)
+            plt.title("Phase for 100Hz")
+            plt.show()
+
+            print(xs500)
+            print(min(xs500), max(xs500))
+            plt.plot(xs500)
+            plt.title("Phase for 500Hz")
+            plt.show()
+
+
 
         if False:
             print("Start testing")
@@ -944,10 +1076,10 @@ class MyImage:
         mini = np.amin(noisemat)
         diff = maxi - mini
         print("Diff: {}".format(diff))
-        plt.imshow(Functions.turn_matplotlib(noisemat))
-        plt.title("Image Noise")
-        plt.show()
-
+        #plt.imshow(Functions.turn_matplotlib(noisemat))
+        #plt.title("Image Noise")
+        #plt.show()
+        print("Noise Spectrum: {:.2f}s".format(time.perf_counter() - starttime))
         return noisemat
 
     def f1_line_noise(self, mu, sigma):
