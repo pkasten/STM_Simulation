@@ -153,7 +153,8 @@ def_shift_amount_x = 'Stretching factor of image Shift (x-Direction)', 1.05
 def_shift_amount_y = 'Stretching factor of image Shift (y-Direction)', 1.05
 def_shift_style = 'Image Shifting style (Lin/Exp)', "Exp"
 def_use_scanlines = 'Use scanlines', 1
-special_settings = [def_overlap_threshold, def_dragging_error, def_dragging_speed, def_dragging_possibility, def_raster_angle, def_doubletip_possibility, def_atomic_step_height, def_atomic_step_poss, def_dust_amount, def_use_imgshift, def_shift_style, def_shift_amount_x, def_shift_amount_y, def_use_scanlines]
+def_slope_dist = 'Distance of maximum slope(Ang), 0 for 0ff', 0
+special_settings = [def_overlap_threshold, def_dragging_error, def_dragging_speed, def_dragging_possibility, def_raster_angle, def_doubletip_possibility, def_atomic_step_height, def_atomic_step_poss, def_dust_amount, def_use_imgshift, def_shift_style, def_shift_amount_x, def_shift_amount_y, def_use_scanlines, def_slope_dist]
 
 val_overlap_threshold = None
 val_dragging_error = None
@@ -169,6 +170,7 @@ val_shift_style = None
 val_shift_amount_x = None
 val_shift_amount_y = None
 val_use_scanlines = None
+val_slope_dist = None
 
 cat_lattice = 'lattice'
 def_nn_dist = 'Distance between nearest neighbours (Ang)', 2.88
@@ -225,7 +227,7 @@ def update_params():
     global val_dragging_error, val_raster_angle, val_dragging_speed, val_dragging_possibility, val_doubletip_possibility
     global val_prefix_sxm, val_suffix_sxm, val_sxm_folder, val_px_per_angstrom, val_nn_dist, val_atomc_step_height, val_atomic_step_poss
     global val_dust_amount, val_use_img_shift, val_color_scheme, val_order_ang_var, val_order_pos_var, val_shift_amount_x, val_shift_amount_y, val_shift_style
-    global val_use_ordered_variation, val_use_white_noise, val_use_line_noise, val_use_scanlines, val_molecule_style
+    global val_use_ordered_variation, val_use_white_noise, val_use_line_noise, val_use_scanlines, val_molecule_style, val_slope_dist
     val_threads = int(conf[cat_pc][def_threads[0]])
     val_images_per_thread = int(conf[cat_pc][def_images_per_thread[0]])
     val_image_folder = conf[cat_pc][def_image_folder[0]]
@@ -284,6 +286,7 @@ def update_params():
     val_use_ordered_variation = bool(int(conf[cat_particle_properties][def_use_ordered_variation[0]]))
     val_order_pos_var = float(conf[cat_particle_properties][def_order_pos_var[0]]) / 100
     val_order_ang_var = float(conf[cat_particle_properties][def_order_ang_var[0]]) / 100
+    val_slope_dist = Distance(True, float(conf[cat_special][def_slope_dist[0]]))
 
 # return THREADS parameter
 
@@ -716,3 +719,7 @@ def get_use_ordered_variation():
 def use_scanlines():
     if not initialized: setupConfigurationManager()
     return val_use_scanlines
+
+def get_slope_dist():
+    if not initialized: setupConfigurationManager()
+    return val_slope_dist

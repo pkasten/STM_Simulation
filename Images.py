@@ -303,6 +303,38 @@ class MyImage:
         img = Image.new('RGB', (int(np.ceil(wid)), int(np.ceil(hei))), 0)
         return img
 
+    def slope(self):
+
+        dif = cfg.get_slope_dist()
+        dif_gsc = 255 * dif / cfg.get_max_height()
+
+
+        def plane(diff):
+            '''
+            Creates constant slope along entire plane
+            param diff: Difference between highest and lowest point
+            :return:
+            '''
+            w = int(cfg.get_width().px)
+            h = int(cfg.get_height().px)
+            maxampl = diff * 2
+
+            a = (random.random() - 0.5) * (maxampl / w)
+            b = (random.random() - 0.5) * (maxampl / h)
+            midpointx = random.randint(0, w)
+            midpointy = random.randint(0, h)
+            mat = np.zeros((w, h))
+            for i in range(w):
+                for j in range(h):
+                    mat[i, j] = a * (i - midpointx) + (j - midpointy) * b
+
+            # plt.imshow(mat)
+            # plt.show()
+            return mat
+
+        mat = plane(dif_gsc)
+        self.colors += mat
+
     def noise(self, mu, sigma):
         """
         Adds noise to the image
@@ -310,7 +342,9 @@ class MyImage:
         :param sigma: Standard derivation of white noise
         :return:
         """
-        # self.colors += self.noise_spektrum(sigma)
+        noise_spektrum = True
+        if noise_spektrum:
+            self.colors += self.noise_spektrum(sigma)
         self.colors += mu * np.ones(np.shape(self.colors))
         if self.use_white_noise:
             self.colors += np.random.normal(0, sigma, np.shape(self.colors))
@@ -673,11 +707,14 @@ class MyImage:
         :param delimiter: delimiter for CSV file
         :return: noise matrix
         """
+
         starttime = time.perf_counter()
         scanspeed = Distance(True, SXM_info.get_scanspeed() * 1e10)  # in Angstr/s
         width = cfg.get_width()
         height = cfg.get_height()
         t_line = width / scanspeed  # in s
+        all = True
+        no_of_inerest = 30
 
         def _time_for_pos(x, y):
             return 2 * y * t_line + (x / width.px) * t_line  # 2 Due to repositioning
@@ -692,7 +729,6 @@ class MyImage:
         intensity = []
         # Read in
         ct = 0
-        all = False
         if all:
             with open(filename, 'r') as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter=delimiter)
@@ -728,9 +764,9 @@ class MyImage:
 
         #Testing new Method
         # Nur wichtige
-        restrict = False
+        restrict = (no_of_inerest > 0)
         if restrict:
-            no_of_inerest = 30
+
             interesting = []
 
             second = lambda elem: elem[1]
@@ -848,12 +884,12 @@ class MyImage:
                     return dict[t]
                 except KeyError:
                     if t not in keys:
-                        print("Key {} not Found".format(t))
+             #           print("Key {} not Found".format(t))
                         distances = [(t - key) for key in keys]
                         mini = min(distances)
                         for i in range(len(distances)):
                             if distances[i] == mini:
-                                print("Closest: {}".format(keys[i]))
+              #                  print("Closest: {}".format(keys[i]))
                                 return dict[keys[i]]
                 #t %= max_time
                 #for i in range(len(pairs)):
@@ -1062,7 +1098,7 @@ class MyImage:
         maxi = np.amax(noisemat)
         mini = np.amin(noisemat)
         diff = maxi - mini
-        print("Sigma = {}".format(sigma))
+        #print("Sigma = {}".format(sigma))
         scale = max(0.5, np.random.normal(1)) * sigma / diff
         temp = np.zeros(np.shape(noisemat))
         for i in range(np.shape(noisemat)[0]):
@@ -1073,7 +1109,7 @@ class MyImage:
         maxi = np.amax(noisemat)
         mini = np.amin(noisemat)
         diff = maxi - mini
-        print("Diff: {}".format(diff))
+        #print("Diff: {}".format(diff))
         #plt.imshow(Functions.turn_matplotlib(noisemat))
         #plt.title("Image Noise")
         #plt.show()

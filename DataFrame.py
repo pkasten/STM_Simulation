@@ -97,6 +97,7 @@ class DataFrame:
         self.max_height = cfg.get_max_height()
         self.use_img_shift = cfg.get_use_img_shift()
         self.use_scanlines = cfg.use_scanlines()
+        self.use_slope = cfg.get_slope_dist() != Distance(True, 0)
         print("__init__: {:.2f}s".format(time.perf_counter() - start))
 
         # returns iterator over Particles
@@ -2341,6 +2342,7 @@ class DataFrame:
 
         # @measureTime
 
+
     @measureTime
     def get_Image(self, ang=None):
         """
@@ -2391,6 +2393,11 @@ class DataFrame:
         # add Dust
         if self.usedust:
             self.get_Image_Dust()
+
+
+        if self.use_slope:
+            self.img.slope()
+
 
         # Noise image
         if self.use_noise:

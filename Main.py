@@ -1,6 +1,8 @@
 import numpy as np
 import random
 
+from tqdm import tqdm
+
 from Molecule import Molecule
 from Particle import Particle
 from FilenameGenerator import FilenameGenerator
@@ -575,7 +577,7 @@ def test_fft():
 Add Code here
 """
 thrds = cfg.get_threads()
-recursions = 5
+recursions = 1
 
 
 def act(dat):
@@ -686,8 +688,48 @@ def execNthreads(n, amnt=1):
     return True
 
 
+def ebene(diff = 120):
+    w = int(cfg.get_width().px)
+    h = int(cfg.get_height().px)
+    maxampl = diff * 2
+
+    a = (random.random() - 0.5) * (maxampl / w)
+    b = (random.random() - 0.5) * (maxampl / h)
+    midpointx = random.randint(0, w)
+    midpointy = random.randint(0, h)
+    mat = np.zeros((w, h))
+    for i in range(w):
+        for j in range(h):
+            mat[i, j] = a * (i - midpointx) + (j- midpointy) * b
+
+    #plt.imshow(mat)
+    #plt.show()
+    return mat
+
+def ebenentest():
+    mitt = 30
+    xs = [i for i in range(10, 300)]
+    ys = []
+    for max in tqdm(range(10, 300)):
+        temp = []
+        for i in range(mitt):
+            eb = ebene(diff=max)
+            diff = np.amax(eb) - np.amin(eb)
+            temp.append(diff)
+        ys.append(np.average(temp))
+
+    plt.plot(xs, ys)
+    plt.title("Ebenediff über maxampl")
+    plt.show()
+
+
+
+
 if __name__ == "__main__":
     clearLog()
+    #ebenentest()
+
+
     #test_fft()
     execNthreads(thrds, recursions)
     #test_gaussian_blur("bildordner/BlurImage.png")
