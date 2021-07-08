@@ -18,6 +18,7 @@ Mail: johannes.seifert@tu-braunschweig.de
  - pillow, PIL
  - tqdm (If progressbar should be displayed)
  - matplotlib (Used in some testing methods)
+ - pySPM
 
 # Performing a simulation
 
