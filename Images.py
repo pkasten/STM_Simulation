@@ -310,7 +310,7 @@ class MyImage:
         :param sigma: Standard derivation of white noise
         :return:
         """
-        self.colors += self.noise_spektrum(sigma)
+        # self.colors += self.noise_spektrum(sigma)
         self.colors += mu * np.ones(np.shape(self.colors))
         if self.use_white_noise:
             self.colors += np.random.normal(0, sigma, np.shape(self.colors))
@@ -698,8 +698,6 @@ class MyImage:
                 csv_reader = csv.reader(csv_file, delimiter=delimiter)
                 for row in csv_reader:
                     ct += 1
-                    if ct % 300 != 0:
-                        continue
                     if not row[0][0].isdigit():
                         continue
                     frequency.append(float(row[0]))

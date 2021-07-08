@@ -12,6 +12,10 @@ from multiprocessing import Process
 from multiprocessing.managers import BaseManager
 import matplotlib.pyplot as plt
 import csv
+import skimage
+
+from skimage.viewer import ImageViewer
+import sys
 """
 Main class used to interact with the program. Provides basic methods
 Important are act(), GenExec and execNthreads()
@@ -34,6 +38,20 @@ def test_frame(data_frame):
             data_frame.addParticle(Particle(x, y, th))
             th += dth
 
+
+def test_gaussian_blur(fname):
+    """
+    Testing method to apply gaussian blur to an image
+    :param fname: Filename
+    :return: None
+    """
+    print(fname)
+    image = skimage.io.imread(fname=fname)
+    viewer = ImageViewer(image)
+    viewer.show()
+    blurred = skimage.filters.gaussian(image, sigma=(1,1), truncate=3, multichannel=True)
+    viewer = ImageViewer(blurred)
+    viewer.show()
 
 def measure_speed():
     """
@@ -557,7 +575,7 @@ def test_fft():
 Add Code here
 """
 thrds = cfg.get_threads()
-recursions = 20
+recursions = 5
 
 
 def act(dat):
@@ -619,7 +637,7 @@ def act(dat):
     #dat.addParticles(amount=20)
     #dat.add_Ordered()
 
-    dat.add_Ordered(ph_grps=5)
+    dat.add_Ordered()
     dat.get_Image()
     dat.save()
 
@@ -672,7 +690,7 @@ if __name__ == "__main__":
     clearLog()
     #test_fft()
     execNthreads(thrds, recursions)
-
+    #test_gaussian_blur("bildordner/BlurImage.png")
     # lo = Lock()
     # start = time.perf_counter()
     # fn = FilenameGenerator()
