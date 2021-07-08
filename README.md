@@ -16,9 +16,9 @@ Mail: johannes.seifert@tu-braunschweig.de
  - scipy
  - pickle
  - pillow, PIL
+ - pySPM
  - tqdm (If progressbar should be displayed)
  - matplotlib (Used in some testing methods)
- - pySPM
 
 # Performing a simulation
 
