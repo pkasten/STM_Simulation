@@ -688,6 +688,8 @@ def execNthreads(n, amnt=1):
 
 if __name__ == "__main__":
     clearLog()
+    if not os.path.isdir("Pickle_Data"):
+        os.mkdir("Pickle_Data")
     #test_fft()
     execNthreads(thrds, recursions)
     #test_gaussian_blur("bildordner/BlurImage.png")
