@@ -342,7 +342,7 @@ class MyImage:
         :param sigma: Standard derivation of white noise
         :return:
         """
-        noise_spektrum = True
+        noise_spektrum = False
         if noise_spektrum:
             self.colors += self.noise_spektrum(sigma)
         self.colors += mu * np.ones(np.shape(self.colors))
@@ -714,7 +714,7 @@ class MyImage:
         height = cfg.get_height()
         t_line = width / scanspeed  # in s
         all = True
-        no_of_inerest = 30
+        no_of_inerest = 0
 
         def _time_for_pos(x, y):
             return 2 * y * t_line + (x / width.px) * t_line  # 2 Due to repositioning
@@ -893,7 +893,7 @@ class MyImage:
                                 return dict[keys[i]]
                 #t %= max_time
                 #for i in range(len(pairs)):
-                #    if t < pairs[i][0]:
+                #    if t < pairs[i][0]:q
                 #        if pairs[i][2]:
                 #            dec = slope_len + t - pairs[i][0]
                 #            m = (pairs[i+1][1] - pairs[i][1])/slope_len
@@ -905,17 +905,23 @@ class MyImage:
 
         # ampl * np.cos(2*np.pi * freq * t + phasefkt(t))
 
+        # ------ Dict Mode
         # ToDo: Include
-        phasefkts = []
-        for i in range(len(frequency)):
-            phasefkts.append(get_phase_func(frequency[i]))
+       # phasefkts = []
+       # for i in range(len(frequency)):
+       #     phasefkts.append(get_phase_func(frequency[i]))
+       #
+      # #
+#
+ #       def nse(t):
+  #          sum = 0
+   #         for i in range(len(frequency)):
+    #             sum += intensity[i] * np.cos(2*np.pi * frequency[i] * t + phasefkts[i](t))
+     #           #sum += intensity[i] * np.cos(2 * np.pi * frequency[i] * t + phasefkts[i](t))
+      #      return sum
 
-        def nse(t):
-            sum = 0
-            for i in range(len(frequency)):
-                 #sum += intensity[i] * np.cos(2*np.pi * frequency[i] * t + phasefkts[i](t))
-                sum += intensity[i] * np.cos(2 * np.pi * frequency[i] * t + phasefkts[i](t))
-            return sum
+        # ---- Wave Mode
+        nse = self._noise_over_time(frequency, intensity)
 
         #Test NSE
 
@@ -1082,6 +1088,7 @@ class MyImage:
         w = int(width.px)
         h = int(height.px)
         noisemat = np.zeros((w, h))
+        print("TQDM Spektrum Matrix generation")
         for i in tqdm(range(w)):
             for j in range(h):
                 noisemat[i, j] = nse(_time_for_pos(i, j))

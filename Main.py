@@ -577,7 +577,7 @@ def test_fft():
 Add Code here
 """
 thrds = cfg.get_threads()
-recursions = 1
+recursions = 4
 
 
 def act(dat):
@@ -639,7 +639,7 @@ def act(dat):
     #dat.addParticles(amount=20)
     #dat.add_Ordered()
 
-    dat.add_Ordered()
+    dat.add_Ordered(ph_grps=5)
     dat.get_Image()
     dat.save()
 
