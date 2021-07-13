@@ -639,7 +639,7 @@ def act(dat):
     #dat.addParticles(amount=20)
     #dat.add_Ordered()
 
-    dat.add_Ordered(ph_grps=5)
+    dat.add_Ordered()
     dat.get_Image()
     dat.save()
 
