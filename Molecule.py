@@ -403,6 +403,8 @@ class Molecule(Particle):
                     self.visualize_pixel(i, j)
 
         if not os.path.isfile(path):
+            if not os.path.isdir("Pickle_Data"):
+                os.mkdir("Pickle_Data")
             with open(path, "wb") as pth:
                 pickle.dump(eff_matrix, pth)
 
