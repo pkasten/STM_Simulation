@@ -639,9 +639,14 @@ def act(dat):
     #dat.addParticles(amount=20)
     #dat.add_Ordered()
 
-    dat.add_Ordered(ph_grps=5)
+    m = Molecule()
+
+    dat.addObjects(Object=Particle, amount=6)
+
     dat.get_Image()
     dat.save()
+
+    #dat.add_Ordered()
 
 
 class GenExc(Process):
@@ -727,12 +732,12 @@ def ebenentest():
 
 if __name__ == "__main__":
     clearLog()
-    #ebenentest()
-
-
-    #test_fft()
     execNthreads(thrds, recursions)
-    #test_gaussian_blur("bildordner/BlurImage.png")
+
+    # if not os.path.isdir("Pickle_Data"):
+    #   os.mkdir("Pickle_Data")
+    # test_fft()
+    # test_gaussian_blur("bildordner/BlurImage.png")
     # lo = Lock()
     # start = time.perf_counter()
     # fn = FilenameGenerator()
