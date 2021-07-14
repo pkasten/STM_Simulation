@@ -342,9 +342,10 @@ class MyImage:
         :param sigma: Standard derivation of white noise
         :return:
         """
-        noise_spektrum = False
+        noise_spektrum = True
         if noise_spektrum:
-            self.colors += self.noise_spektrum(sigma)
+            # 5* to make it stronger, otherwise too weak
+            self.colors += self.noise_spektrum(5 * sigma)
         self.colors += mu * np.ones(np.shape(self.colors))
         if self.use_white_noise:
             self.colors += np.random.normal(0, sigma, np.shape(self.colors))
@@ -365,6 +366,59 @@ class MyImage:
         # plt.plot(frequency, intensity)
         # plt.title("Noise Spectrum")
         # plt.show()
+
+        class Phase_Generator:
+            zero = False
+            steady = True
+
+            def __init__(self, freq):
+                self.freq = freq
+                if freq == 0:
+                    self.zero = True
+                    self.slotlen = 1000
+                    self.steps = 10
+                    self.slopelen = self.slotlen
+                    self.steadylen = self.steps * self.slopelen
+                    self.timeremaining = self.steadylen
+                    self.last_t = 0
+                    self.phase = 2 * np.pi * random.random() - np.pi
+                    self.next_phase = 2 * np.pi * random.random() - np.pi
+                else:
+                    self.slotlen = 1/freq
+                    self.steps = 10
+                    self.slopelen = self.slotlen
+                    self.steadylen = self.steps * self.slopelen
+                    self.timeremaining = self.steadylen
+                    self.last_t = 0
+                    self.phase = 2 * np.pi * random.random() - np.pi
+                    self.next_phase = 2 * np.pi * random.random() - np.pi
+
+            def generate(self, t):
+                if self.zero:
+                    return self.phase
+
+                dt = t - self.last_t
+                self.last_t = t
+                self.timeremaining -= dt
+                if self.timeremaining >= 0:
+                    if self.steady:
+                        return self.phase
+                    else:
+                        return ((self.slopelen - self.timeremaining) * (self.next_phase - self.phase) / self.slopelen) \
+                               + self.phase
+                else:
+                    self.phase = self.next_phase
+                    self.next_phase = 2 * np.pi * random.random() - np.pi
+                    if self.steady:
+                        self.steady = False
+                        self.timeremaining += self.slopelen
+                        return ((self.slopelen - self.timeremaining) * (self.next_phase - self.phase) / self.slopelen) \
+                               + self.phase
+                    else:
+                        self.steady = True
+                        self.timeremaining += self.steadylen
+                        return self.phase
+
 
         def get_phase_func(freq):
             if freq == 0:
@@ -485,12 +539,26 @@ class MyImage:
 
         def _to_wave(freq, ampl):
             # 1 Index = 1ms
-            phasefkt = get_phase_func(freq)
+            #phasefkt = get_phase_func(freq)
+            phasegen = Phase_Generator(freq)
             #f = lambda t: ampl * np.cos(2 * np.pi * freq * t + phasefkt(t))
             def f(t):
-                return ampl * np.cos(2*np.pi * freq * t + phasefkt(t))
+                return ampl * np.cos(2*np.pi * freq * t + phasegen.generate(t))
 
             return f
+
+
+        test_generator = False
+
+        if test_generator:
+            print("test Generator")
+            gen = Phase_Generator(1)
+            times = [x/1000 for x in range(50000)]
+            vals = [gen.generate(t) for t in times]
+            plt.plot(times, vals)
+            plt.title("Generator for 1Hz")
+            plt.show()
+
 
 
         waves = []
@@ -802,73 +870,73 @@ class MyImage:
             intensity = new_intenses
 
         #Def NSE
-        def get_phase_func(freq, maxtime=_time_for_pos(width.px, height.px)):
-            if freq == 0:
-                return lambda x: 0
-            max_time = maxtime
-            #slotlength = 0.001 *  max(1, np.random.normal(freq, np.sqrt(freq))) / freq
-            slotlength = 1/freq
-           # print("Old Slotlen: {:.3f}, new: {:.3f}".format(1/freq, slotlength))
+        #def get_phase_func(freq, maxtime=_time_for_pos(width.px, height.px)):
+        #    if freq == 0:
+        #        return lambda x: 0
+        #    max_time = maxtime
+        #    #slotlength = 0.001 *  max(1, np.random.normal(freq, np.sqrt(freq))) / freq
+        #    slotlength = 1/freq
+        #   # print("Old Slotlen: {:.3f}, new: {:.3f}".format(1/freq, slotlength))
             #steps =  max(1, int(np.random.normal(freq, np.sqrt(freq))))
-            steps = 10
-            startphase = lambda: 2 * np.pi * random.random()
+        #    steps = 10
+        #    startphase = lambda: 2 * np.pi * random.random()
 
 
-            nextstep = lambda: 2 * np.pi * random.random() - np.pi
+        #    nextstep = lambda: 2 * np.pi * random.random() - np.pi
 
-            steady_len = steps * slotlength
-            slope_len = slotlength
+        #    steady_len = steps * slotlength
+        #    slope_len = slotlength
 
-            t = 0
-            pairs = [] # (time bis, valueLeft, Slope)
-            oldphase = 2 * np.pi * random.random() - np.pi
-            #print("Startphase at {:.2f}".format(oldphase))
-            dict = {}
-            i_steps = 0
-            t_dict = timesteps[i_steps]
-            app_d_phases = []
-            try:
-                while t < max_time:
-                    t += steady_len
-                    #oldphase += nextstep()
-                    while t_dict < t:
-                        #print("Steady at {:.2f}".format(oldphase))
-                        #time.sleep(0.2)
-                        dict[t_dict] = oldphase
-                        i_steps += 1
-                        app_d_phases.append(oldphase)
-                        t_dict = timesteps[i_steps]
+        #    t = 0
+        #    pairs = [] # (time bis, valueLeft, Slope)
+        #    oldphase = 2 * np.pi * random.random() - np.pi
+        #    #print("Startphase at {:.2f}".format(oldphase))
+        #    dict = {}
+        #    i_steps = 0
+        #    t_dict = timesteps[i_steps]
+        #    app_d_phases = []
+        #    try:
+        #        while t < max_time:
+        #            t += steady_len
+        #            #oldphase += nextstep()
+        #            while t_dict < t:
+        #                #print("Steady at {:.2f}".format(oldphase))
+        #                #time.sleep(0.2)
+        #                dict[t_dict] = oldphase
+        #                i_steps += 1
+        #                app_d_phases.append(oldphase)
+        #                t_dict = timesteps[i_steps]#
 
                     #pairs.append((t, oldphase, False))
-                    t += slope_len
-                    m = (2 * np.pi * random.random() - np.pi)/ max(slope_len, (timesteps[i_steps + 1] - timesteps[i_steps]))
+        #            t += slope_len
+        #            m = (2 * np.pi * random.random() - np.pi)/ max(slope_len, (timesteps[i_steps + 1] - timesteps[i_steps]))
 
-                    while t_dict < t:
-                        #print("DT = {}".format())
-                        #print("Slopelen = {}".format(slope_len))
-                        #print("m = {}".format(m))
-                        oldphase += m * (timesteps[i_steps + 1] - timesteps[i_steps])
-                        #print("Slope at {:.2f}".format(oldphase))
-                        #time.sleep(2)
-                        dict[t_dict] = oldphase
-                        i_steps += 1
-                        app_d_phases.append(oldphase)
-                        t_dict = timesteps[i_steps]
-                    #pairs.append((t, oldphase, True))
+        #            while t_dict < t:
+        #                #print("DT = {}".format())
+        #                #print("Slopelen = {}".format(slope_len))
+        #                #print("m = {}".format(m))
+        #                oldphase += m * (timesteps[i_steps + 1] - timesteps[i_steps])
+        #                #print("Slope at {:.2f}".format(oldphase))
+        #                #time.sleep(2)
+        #                dict[t_dict] = oldphase
+        #                i_steps += 1
+        #                app_d_phases.append(oldphase)
+        #                t_dict = timesteps[i_steps]
+        #            #pairs.append((t, oldphase, True))
 
-                t += steady_len
-                while t_dict < t:
-                    #print("End at {:.2f}".format(oldphase))
-                    #time.sleep(0.2)
-                    dict[t_dict] = oldphase
-                    app_d_phases.append(oldphase)
+        #        t += steady_len
+        #        while t_dict < t:
+        #            #print("End at {:.2f}".format(oldphase))
+        #            #time.sleep(0.2)
+        #            dict[t_dict] = oldphase
+        #            app_d_phases.append(oldphase)#
 
-                    i_steps += 1
-                    t_dict = timesteps[i_steps]
-                # pairs.append((t, oldphase, True))
-                assert t > max_time
-            except IndexError:
-                pass
+        #            i_steps += 1
+        #            t_dict = timesteps[i_steps]
+        #        # pairs.append((t, oldphase, True))
+        #        assert t > max_time
+        #    except IndexError:
+        #        pass
 
             #plt.plot(app_d_phases)
             #plt.title("Appd Phases for f={}".format(freq))
@@ -878,19 +946,19 @@ class MyImage:
             #    print("F={} has key {} with Phase {}".format(freq, key, dict[key]))
             #    time.sleep(0.2)
 
-            keys = [k for k in dict.keys()]
-            def func(t):
-                try:
-                    return dict[t]
-                except KeyError:
-                    if t not in keys:
+        #    keys = [k for k in dict.keys()]
+        #    def func(t):
+        #        try:
+        #            return dict[t]
+        #        except KeyError:
+        #            if t not in keys:
              #           print("Key {} not Found".format(t))
-                        distances = [(t - key) for key in keys]
-                        mini = min(distances)
-                        for i in range(len(distances)):
-                            if distances[i] == mini:
-              #                  print("Closest: {}".format(keys[i]))
-                                return dict[keys[i]]
+        #                distances = [(t - key) for key in keys]
+        #                mini = min(distances)
+        #                for i in range(len(distances)):
+        #                    if distances[i] == mini:
+        #      #                  print("Closest: {}".format(keys[i]))
+        #                        return dict[keys[i]]
                 #t %= max_time
                 #for i in range(len(pairs)):
                 #    if t < pairs[i][0]:q
@@ -901,7 +969,7 @@ class MyImage:
                 #        else:
                 #            return pairs[i][1]
 
-            return func
+        #    return func
 
         # ampl * np.cos(2*np.pi * freq * t + phasefkt(t))
 
@@ -1029,12 +1097,6 @@ class MyImage:
             # End neue Impl
 
 
-
-
-
-
-
-    #Testing
         if False:
             print("testPhase")
             start = time.perf_counter()
@@ -1089,9 +1151,11 @@ class MyImage:
         h = int(height.px)
         noisemat = np.zeros((w, h))
         print("TQDM Spektrum Matrix generation")
-        for i in tqdm(range(w)):
-            for j in range(h):
-                noisemat[i, j] = nse(_time_for_pos(i, j))
+        for i in tqdm(range(h)):
+            for j in range(w):
+                t = _time_for_pos(j, i)
+                #print("Time for position ({},{}) = {:.3f}".format(j, i, t))
+                noisemat[j, i] = nse(t)
 
 
         shift = np.average(noisemat)

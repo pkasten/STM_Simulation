@@ -2251,7 +2251,7 @@ class DataFrame:
             :param dist: distance to the line
             :return: possibility to remove the particle
             """
-            return (1 + (3 / 16)) - (dist / (16 * part.get_dimension().px))
+            return (1 + (3 / 7)) - (dist / (7 * part.get_dimension().px))
 
         # Removes all existing objects
         old_objs = self.objects.copy()
