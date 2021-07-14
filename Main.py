@@ -14,9 +14,9 @@ from multiprocessing import Process
 from multiprocessing.managers import BaseManager
 import matplotlib.pyplot as plt
 import csv
-import skimage
+#import skimage
 
-from skimage.viewer import ImageViewer
+#from skimage.viewer import ImageViewer
 import sys
 """
 Main class used to interact with the program. Provides basic methods

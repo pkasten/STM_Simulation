@@ -373,8 +373,8 @@ class Molecule(Particle):
         :return: Visu_Matrix, center x, center y
         """
         path = os.path.join(os.getcwd(), "Pickle_Data",
-                            "Molec{}Vis{:.2f}_{:.2f}_{}".format(self.molecule_ph_groups, cfg.get_px_per_angstrom(),
-                                                             cfg.get_fermi_exp(), self.molecule_style))
+                            "Molec{}Vis{:.2f}_{:.2f}_{}_{:.2f}_{:.2f}".format(self.molecule_ph_groups, cfg.get_px_per_angstrom(),
+                                                             cfg.get_fermi_exp(), self.molecule_style, cfg.get_part_height().ang, cfg.get_max_height().ang))
 
         if self.molecule_style == "complex" and not os.path.isfile(path):
             m = Molecule(self.pos, 0, self.lookup_table, None, self.molecule_class, self.molecule_ph_groups, self.molecule_style)
