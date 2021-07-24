@@ -342,10 +342,10 @@ class MyImage:
         :param sigma: Standard derivation of white noise
         :return:
         """
-        noise_spektrum = True
+        noise_spektrum = cfg.use_stm_noise()
         if noise_spektrum:
             # 5* to make it stronger, otherwise too weak
-            self.colors += self.noise_spektrum(5 * sigma)
+            self.colors += self.noise_spektrum(4 * sigma)
         self.colors += mu * np.ones(np.shape(self.colors))
         if self.use_white_noise:
             self.colors += np.random.normal(0, sigma, np.shape(self.colors))
@@ -353,7 +353,6 @@ class MyImage:
             self.colors += self.f1_line_noise(0, sigma)
 
     def _noise_over_time(self, freq, intens):
-        print("noise over Time")
         # Normalize
         scale = 1 / np.max(intens)
         temp = []
@@ -1618,7 +1617,7 @@ class MyImage:
                         x - xs_green[i])
                 break
         if g is None:
-            if x > xs_green[-1]:
+            if x >= xs_green[-1]:
                 g = ys_green[-1]
             elif x < xs_green[0]:
                 g = ys_green[0]
@@ -1633,7 +1632,7 @@ class MyImage:
                 # print("Ret {}".format(b))
                 break
         if b is None:
-            if x > xs_blue[-1]:
+            if x >= xs_blue[-1]:
                 b = ys_blue[-1]
             elif x < xs_blue[0]:
                 b = ys_blue[0]
@@ -1645,7 +1644,7 @@ class MyImage:
                 r = ys_red[i] + ((ys_red[i + 1] - ys_red[i]) / (xs_red[i + 1] - xs_red[i])) * (x - xs_red[i])
                 break
         if r is None:
-            if x > xs_red[-1]:
+            if x >= xs_red[-1]:
                 r = ys_red[-1]
             elif x < xs_red[0]:
                 r = ys_red[0]

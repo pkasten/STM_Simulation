@@ -153,9 +153,15 @@ class Molecule(Particle):
         String representation
         :return:
         """
+
+        m_cls = self.molecule_class
         if self.molecule_class == "NCPhCN":
-            return "NCPh{}CN".format(self.molecule_ph_groups)
-        return self.molecule_class
+            m_cls = "NCPh{}CN".format(self.molecule_ph_groups)
+
+        args = [m_cls, self.x, self.y, self.theta, self.width, self.height, self.length, self.dragged,
+                self.dragged_dist]
+        return ", ".join(str(arg) for arg in args)
+
 
     def __repr__(self):
         return "Molecule {} (x={})".format(self.molecule_class, self.molecule_ph_groups)

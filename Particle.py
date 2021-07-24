@@ -1,4 +1,7 @@
 import math, random
+
+from tqdm import tqdm
+
 import Configuration as cfg
 import numpy as np
 from Functions import turnMatrix
@@ -10,6 +13,9 @@ import matplotlib.pyplot as plt
 
 
 class Particle:
+
+
+
     """
     Class particle abstracts any particle adsorbed to a surface that should be displayable.
     Is extended by molecule, Atom and Dust.
@@ -75,6 +81,8 @@ class Particle:
         #self.charges = []
         #self.calc_charges()
 
+
+
     def set_maxHeight(self, maxH):
         """
         setter method for maximum height parameter.
@@ -85,12 +93,12 @@ class Particle:
 
     def efficient_Matrix(self):
         """
-        produces the visualization amtrix for this particle, without using the orientation.
+        produces the visualization matrix for this particle, without using the orientation.
         Is called by efficient_Matrix_turned which turns it
         :return: visualization matrix, particle position x, y
         """
         eff_matrix = np.zeros((2 * self.effect_range, 2 * self.effect_range))
-        for i in range(-self.effect_range, self.effect_range):
+        for i in tqdm(range(-self.effect_range, self.effect_range)): #ToDo: rem
             for j in range(-self.effect_range, self.effect_range):
                 eff_matrix[i + self.effect_range, j + self.effect_range] = \
                     self.visualize_pixel(i, j)
@@ -614,14 +622,14 @@ class Particle:
         static method. Returns the scheme after which particles are returned as strings
         :return:
         """
-        return "x, y, theta, width, height, length, dragged, dragged_dist\n"
+        return "type, x, y, theta, width, height, length, dragged, dragged_dist\n"
 
     def __str__(self):
         """
         string representation of a particle after scheme defined in str_Header
         :return: string representation
         """
-        args = [self.x, self.y, self.theta, self.width, self.height, self.length, self.dragged, self.dragged_dist]
+        args = ["Particle", self.x, self.y, self.theta, self.width, self.height, self.length, self.dragged, self.dragged_dist]
         return ", ".join(str(arg) for arg in args)
 
 

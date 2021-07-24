@@ -567,6 +567,54 @@ def test_fft():
     plt.title("Wenige Wellen Phase zufällig")
     plt.show()
 
+def test_atan():
+
+    def eigen(x, y):
+        if x > 0 and y > 0:
+            return np.pi / 2 + np.arctan(y / x)
+        elif x > 0 and y < 0:
+            return np.arctan( - x/y)
+        elif x < 0 and y > 0:
+            return np.pi + np.arctan(-x/ y)
+        elif x < 0 and y < 0:
+            return 2* np.pi - np.arctan(x / y)
+        elif y == 0 and x < 0:
+            return (3/2) * np.pi
+        elif y == 0 and x >= 0:
+            return np.pi/2
+        elif x==0 and y <= 0:
+            return 0
+        elif x == 0 and y > 0:
+            return np.pi
+        else:
+            raise ValueError
+
+    def mathe(x, y):
+        return np.arctan2(-x, y) + np.pi
+
+    xs = [x for x in range(-100, 100)]
+    ys = [x for x in range(-100, 100)]
+    mat_Eig = np.zeros((len(xs), len(ys)))
+    mat_mathe= np.zeros((len(xs), len(ys)))
+
+    #print("Matheig {}, {} = {}".format(50, -50, eigen(50, -50)))
+
+    for x in xs:
+        for y in ys:
+            mat_Eig[x + 100, y + 100] = eigen(x, y)
+            mat_mathe[x + 100, y + 100] = mathe(x, y)
+
+    #mat_Eig = turn_matplotlib(mat_Eig)
+    #mat_mathe = turn_matplotlib(mat_mathe)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+    fig.suptitle('Horizontally stacked subplots')
+    ax1.imshow(mat_Eig)
+    ax1.set_title("Eigen")
+    ax2.imshow(mat_mathe)
+    ax2.set_title("Math")
+    plt.show()
+
 
 
 
@@ -577,7 +625,7 @@ def test_fft():
 Add Code here
 """
 thrds = cfg.get_threads()
-recursions = 3
+recursions = 1
 
 
 def act(dat):
@@ -587,9 +635,11 @@ def act(dat):
     :param dat: Data frame opertaions should be done on
     :return:
     """
-
-
-    dat.add_Ordered()
+    #pos = np.array([cfg.get_width()/2, cfg.get_height()/2])
+    #m = Particle(pos[0], pos[1], theta=0)
+    #m = Molecule(pos, theta=0)
+    #dat.addParticle(m)
+    dat.add_Ordered(ph_grps=5)
     dat.get_Image()
     dat.save()
 

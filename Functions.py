@@ -68,6 +68,12 @@ def turnMatrix(mat, theta):
     :param theta: angle by which matrix should be turned
     :return: new matrix, new center x, new center y
     """
+    if (theta % 2 * np.pi) == 0:
+        w, h = np.shape(mat)
+        cx_old = w / 2
+        cy_old = h / 2
+        return mat, cx_old, cy_old
+
     w, h = np.shape(mat)
     b = abs(np.sqrt(np.square(h) / (1 + np.square(np.tan(theta)))))
     a = abs(b * np.tan(theta))
@@ -95,24 +101,27 @@ def turnMatrix(mat, theta):
             pos = np.array([x, y])
             d = np.linalg.norm(pos)
 
-            if x > 0 and y > 0:
-                theta_pos = np.pi / 2 + np.arctan(y / x)
-            elif x > 0 and y < 0:
-                theta_pos = np.arctan(- x / y)
-            elif x < 0 and y > 0:
-                theta_pos = np.pi + np.arctan(-x / y)
-            elif x < 0 and y < 0:
-                theta_pos = 2 * np.pi - np.arctan(x / y)
-            elif y == 0 and x < 0:
-                theta_pos = (3 / 2) * np.pi
-            elif y == 0 and x >= 0:
-                theta_pos = np.pi / 2
-            elif x == 0 and y <= 0:
-                theta_pos = 0
-            elif x == 0 and y > 0:
-                theta_pos = np.pi
-            else:
-                raise ValueError
+            #print("hi")
+            theta_pos = math.atan2(-x, y) + np.pi
+
+            #if x > 0 and y > 0:
+            #    theta_pos = np.pi / 2 + np.arctan(y / x)
+            #elif x > 0 and y < 0:
+            #    theta_pos = np.arctan(- x / y)
+            #elif x < 0 and y > 0:
+            #    theta_pos = np.pi + np.arctan(-x / y)
+            #elif x < 0 and y < 0:
+            #    theta_pos = 2 * np.pi - np.arctan(x / y)
+            #elif y == 0 and x < 0:
+            #    theta_pos = (3 / 2) * np.pi
+            #elif y == 0 and x >= 0:
+            #    theta_pos = np.pi / 2
+            #elif x == 0 and y <= 0:
+            #    theta_pos = 0
+            #elif x == 0 and y > 0:
+            #    theta_pos = np.pi
+            #else:
+            #    raise ValueError
 
             theta_old = (theta_pos - th_loc + 2 * np.pi) % (2 * np.pi)
             assert 0 <= theta_old <= 2 * np.pi

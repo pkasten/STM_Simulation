@@ -57,12 +57,13 @@ def_px_overlap = 'Pixel overlap where Particles can be (in px)', 40
 def_anti_aliasing = 'Use Anti Aliasing (1 True, 0 False)', 1
 def_use_white_noise = "Use white noise", 0
 def_use_line_noise = 'Use line noise/ 1/f noise', 1
+def_use_STM_noise = 'Use STM characteristic noise', 0
 def_noise_mu = 'Grayscale value of mean noise', 40
 def_noise_std_deriv = 'Image noise standard derivation', 0.7 * def_noise_mu[1]
 image_basics_settings = [def_prefix_image, def_suffix_image, def_prefix_data, def_suffix_data, def_prefix_sxm,
                          def_suffix_sxm, def_color_scheme, def_px_per_angstrom, def_width, def_height,
                          def_particles, def_px_overlap, def_anti_aliasing,def_use_white_noise,
-                         def_use_line_noise, def_noise_mu, def_noise_std_deriv]
+                         def_use_line_noise,def_use_STM_noise, def_noise_mu, def_noise_std_deriv]
 
 
 val_prefix_image = None
@@ -82,6 +83,7 @@ val_use_white_noise = None
 val_use_line_noise = None
 val_noise_mu = None
 val_noise_std_deriv = None
+val_use_stm_noise = None
 
 
 cat_particle_properties = 'particle_properties'
@@ -152,7 +154,7 @@ def_use_imgshift = 'Use Image shift', 0
 def_shift_amount_x = 'Stretching factor of image Shift (x-Direction)', 1.05
 def_shift_amount_y = 'Stretching factor of image Shift (y-Direction)', 1.05
 def_shift_style = 'Image Shifting style (Lin/Exp)', "Exp"
-def_use_scanlines = 'Use scanlines', 1
+def_use_scanlines = 'Use scanlines', 0
 def_slope_dist = 'Distance of maximum slope(Ang), 0 for 0ff', 0
 special_settings = [def_overlap_threshold, def_dragging_error, def_dragging_speed, def_dragging_possibility, def_raster_angle, def_doubletip_possibility, def_atomic_step_height, def_atomic_step_poss, def_dust_amount, def_use_imgshift, def_shift_style, def_shift_amount_x, def_shift_amount_y, def_use_scanlines, def_slope_dist]
 
@@ -228,6 +230,7 @@ def update_params():
     global val_prefix_sxm, val_suffix_sxm, val_sxm_folder, val_px_per_angstrom, val_nn_dist, val_atomc_step_height, val_atomic_step_poss
     global val_dust_amount, val_use_img_shift, val_color_scheme, val_order_ang_var, val_order_pos_var, val_shift_amount_x, val_shift_amount_y, val_shift_style
     global val_use_ordered_variation, val_use_white_noise, val_use_line_noise, val_use_scanlines, val_molecule_style, val_slope_dist
+    global val_use_stm_noise
     val_threads = int(conf[cat_pc][def_threads[0]])
     val_images_per_thread = int(conf[cat_pc][def_images_per_thread[0]])
     val_image_folder = conf[cat_pc][def_image_folder[0]]
@@ -249,6 +252,7 @@ def update_params():
     val_anti_aliasing = bool(int(conf[cat_image_basics][def_anti_aliasing[0]]))
     val_use_white_noise = bool(int(conf[cat_image_basics][def_use_white_noise[0]]))
     val_use_line_noise = bool(int(conf[cat_image_basics][def_use_line_noise[0]]))
+    val_use_stm_noise = bool(int(conf[cat_image_basics][def_use_STM_noise[0]]))
     val_noise_mu = float(conf[cat_image_basics][def_noise_mu[0]])
     val_noise_std_deriv = float(conf[cat_image_basics][def_noise_std_deriv[0]])
     val_height_part = Distance(True, float(conf[cat_particle_properties][def_height_part[0]]))
@@ -486,6 +490,11 @@ def use_line_noise():
     global settings_file
     if not initialized: setupConfigurationManager()
     return val_use_line_noise
+
+def use_stm_noise():
+    if not initialized: setupConfigurationManager()
+    return val_use_stm_noise
+
 
 
 def get_image_noise_mu():

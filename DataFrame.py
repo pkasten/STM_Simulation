@@ -3689,7 +3689,7 @@ class Double_Frame(DataFrame):
                 # plt.show()
                 # print(np.max(eff_mat))
                 mat_h = eff_mat.shape[1]
-                for i in range(mat_w):
+                for i in tqdm(range(mat_w)): #ToDo: Rem
                     for j in range(mat_h):
                         new_x = x - math.floor((mat_w / 2)) + i
                         new_y = y - math.floor(mat_h / 2) + j
@@ -3701,7 +3701,6 @@ class Double_Frame(DataFrame):
             self.add_Dust()
 
         if self.usedust:
-            print("DD Dusting")
             self.get_Image_Dust()
 
         if use_atomstep:

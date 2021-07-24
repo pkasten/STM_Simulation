@@ -153,18 +153,26 @@ def rewrite_file():
         with open(settings_file, 'w') as settings_fd:
             conf.write(settings_fd)
 
+#def create_file():
+
+
 
 def update_params():
     """
     Load parameters from file
     :return:
     """
-    global initialized
-    initialized = True
-    conf.read(settings_file)
-    global storage
-    for key in storage.keys():
-        storage[key] = parse_arg(conf[cat][key])
+    try:
+        global initialized
+        initialized = True
+        conf.read(settings_file)
+        global storage
+        for key in storage.keys():
+            storage[key] = parse_arg(conf[cat][key])
+    except KeyError:
+        print("No SXM Info file found. Creating one with default variables")
+        _writeDefaults()
+        exit(0)
 
 def parse_arg(string):
     """

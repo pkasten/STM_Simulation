@@ -23,7 +23,7 @@ class Distance:
             self.ang = arg / px_durch_ang
 
     def __str__(self):
-        return "{:.1f}px".format(self.px)
+        return "{:.3f}A".format(self.ang)
 
     def __repr__(self):
         return "Distance({:.2f}px, {:.2f}Ang)".format(self.px, self.ang)
