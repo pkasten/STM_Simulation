@@ -1,11 +1,12 @@
 from functools import lru_cache
 
 import numpy as np
+from Particle import Particle
 import Configuration as cfg
 from Distance import Distance
 
 
-class Atom:
+class Atom(Particle):
     """
     Class representing any atom inside Molecules.
     Implements basic methods of Particle. Should possibly extend Particle
@@ -52,6 +53,7 @@ class Atom:
         self.fermi_range = np.log(99) / self.fermi_exp + self.radius.px
 
         self.type = type
+        super().__init__(self.abspos[0], self.abspos[1], 0)
 
     def __repr__(self):
         """
