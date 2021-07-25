@@ -617,6 +617,41 @@ def test_atan():
 
 
 
+def ebene(diff = 120):
+    w = int(cfg.get_width().px)
+    h = int(cfg.get_height().px)
+    maxampl = diff * 2
+
+    a = (random.random() - 0.5) * (maxampl / w)
+    b = (random.random() - 0.5) * (maxampl / h)
+    midpointx = random.randint(0, w)
+    midpointy = random.randint(0, h)
+    mat = np.zeros((w, h))
+    for i in range(w):
+        for j in range(h):
+            mat[i, j] = a * (i - midpointx) + (j- midpointy) * b
+
+    #plt.imshow(mat)
+    #plt.show()
+    return mat
+
+def ebenentest():
+    mitt = 30
+    xs = [i for i in range(10, 300)]
+    ys = []
+    for max in tqdm(range(10, 300)):
+        temp = []
+        for i in range(mitt):
+            eb = ebene(diff=max)
+            diff = np.amax(eb) - np.amin(eb)
+            temp.append(diff)
+        ys.append(np.average(temp))
+
+    plt.plot(xs, ys)
+    plt.title("Ebenediff über maxampl")
+    plt.show()
+
+
 
 
 
@@ -625,7 +660,7 @@ def test_atan():
 Add Code here
 """
 thrds = cfg.get_threads()
-recursions = 1
+recursions = 20
 
 
 def act(dat):
@@ -639,7 +674,7 @@ def act(dat):
     #m = Particle(pos[0], pos[1], theta=0)
     #m = Molecule(pos, theta=0)
     #dat.addParticle(m)
-    dat.add_Ordered(ph_grps=5)
+    dat.add_Ordered()
     dat.get_Image()
     dat.save()
 
@@ -686,41 +721,6 @@ def execNthreads(n, amnt=1):
     for t in ts:
         t.join()
     return True
-
-
-def ebene(diff = 120):
-    w = int(cfg.get_width().px)
-    h = int(cfg.get_height().px)
-    maxampl = diff * 2
-
-    a = (random.random() - 0.5) * (maxampl / w)
-    b = (random.random() - 0.5) * (maxampl / h)
-    midpointx = random.randint(0, w)
-    midpointy = random.randint(0, h)
-    mat = np.zeros((w, h))
-    for i in range(w):
-        for j in range(h):
-            mat[i, j] = a * (i - midpointx) + (j- midpointy) * b
-
-    #plt.imshow(mat)
-    #plt.show()
-    return mat
-
-def ebenentest():
-    mitt = 30
-    xs = [i for i in range(10, 300)]
-    ys = []
-    for max in tqdm(range(10, 300)):
-        temp = []
-        for i in range(mitt):
-            eb = ebene(diff=max)
-            diff = np.amax(eb) - np.amin(eb)
-            temp.append(diff)
-        ys.append(np.average(temp))
-
-    plt.plot(xs, ys)
-    plt.title("Ebenediff über maxampl")
-    plt.show()
 
 
 

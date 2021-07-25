@@ -1903,7 +1903,7 @@ class DataFrame:
             assert side_A is not None
             sideA = side_A
             show_line = False
-            show_Toolbar = True
+            show_Toolbar = False
 
             if updown:
                 border = []
@@ -3676,8 +3676,9 @@ class Double_Frame(DataFrame):
 
             # f = lambda x: m * x + b
 
-        for part in tqdm(self.objects):
-            for tuple in part.get_visualization():
+        #for part in tqdm(self.objects):
+        for part in self.objects:
+           for tuple in part.get_visualization():
                 # print("Tupel:{}".format(tuple))
                 eff_mat, x, y = tuple
                 mat_w = eff_mat.shape[0]
@@ -3689,7 +3690,8 @@ class Double_Frame(DataFrame):
                 # plt.show()
                 # print(np.max(eff_mat))
                 mat_h = eff_mat.shape[1]
-                for i in tqdm(range(mat_w)): #ToDo: Rem
+                #for i in tqdm(range(mat_w)): #ToDo: Rem
+                for i in range(mat_w):
                     for j in range(mat_h):
                         new_x = x - math.floor((mat_w / 2)) + i
                         new_y = y - math.floor(mat_h / 2) + j
