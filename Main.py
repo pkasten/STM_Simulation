@@ -709,7 +709,7 @@ class ChangeSettings(Process):
 
     def run(self):
         while True:
-            time.sleep(30) # Change parameters every 5 minutes
+            time.sleep(300) # Change parameters every 5 minutes
 
             new_part_height = random.uniform(0.5, 5) # Set ranges for variable parameters
             new_img_width_ang = random.randint(50, 300) # All possibly wrong, correct
@@ -717,6 +717,7 @@ class ChangeSettings(Process):
             new_gsc = random.uniform(0, 20)
             new_stdderiv = random.uniform(0, 20)
             new_maxH = random.uniform(0, 2 * new_part_height) + new_part_height
+            new_fex = random.uniform(0.5, 2)
 
             cfg.set_part_height(new_part_height)
             cfg.set_image_dim(new_img_width_ang)
@@ -724,6 +725,8 @@ class ChangeSettings(Process):
             cfg.set_grayscale_noise(new_gsc)
             cfg.set_noise_stdderiv(new_stdderiv)
             cfg.set_max_height(new_maxH)
+            cfg.set_fermi(new_fex)
+
 
 
 def execContinously_vary_params():

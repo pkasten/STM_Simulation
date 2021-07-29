@@ -759,3 +759,10 @@ def set_noise_stdderiv(new_sigma):
 def set_max_height(new_mh):
     global val_part_max_height
     val_part_max_height = Distance(True, new_mh)
+
+
+def set_fermi(fex):
+    global val_fermi_exp, val_px_per_angstrom
+    val_fermi_exp = fex / val_px_per_angstrom
+
+
