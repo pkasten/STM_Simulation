@@ -732,3 +732,30 @@ def use_scanlines():
 def get_slope_dist():
     if not initialized: setupConfigurationManager()
     return val_slope_dist
+
+
+def set_part_height(new_h):
+    global val_height_part
+    val_height_part = Distance(True, new_h)
+
+
+def set_image_dim(new_dim):
+    global val_width, val_height
+    val_width = Distance(True, new_dim)
+    val_height = Distance(True, new_dim)
+
+def set_px_per_ang(new_px_per_ang):
+    global val_px_per_angstrom
+    val_px_per_angstrom = new_px_per_ang
+
+def set_grayscale_noise(new_gsc):
+    global val_noise_mu
+    val_noise_mu = new_gsc
+
+def set_noise_stdderiv(new_sigma):
+    global val_noise_std_deriv
+    val_noise_std_deriv = new_sigma
+
+def set_max_height(new_mh):
+    global val_part_max_height
+    val_part_max_height = Distance(True, new_mh)

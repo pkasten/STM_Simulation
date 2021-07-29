@@ -699,6 +699,60 @@ class GenExc(Process):
             act(dat)
 
 
+class ChangeSettings(Process):
+    """
+    Thread that paralelly chages the configuration settings
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def run(self):
+        while True:
+            time.sleep(30) # Change parameters every 5 minutes
+
+            new_part_height = random.uniform(0.5, 5) # Set ranges for variable parameters
+            new_img_width_ang = random.randint(50, 300) # All possibly wrong, correct
+            new_px_ang = 512/new_img_width_ang
+            new_gsc = random.uniform(0, 20)
+            new_stdderiv = random.uniform(0, 20)
+            new_maxH = random.uniform(0, 2 * new_part_height) + new_part_height
+
+            cfg.set_part_height(new_part_height)
+            cfg.set_image_dim(new_img_width_ang)
+            cfg.set_px_per_ang(new_px_ang)
+            cfg.set_grayscale_noise(new_gsc)
+            cfg.set_noise_stdderiv(new_stdderiv)
+            cfg.set_max_height(new_maxH)
+
+
+def execContinously_vary_params():
+    BaseManager.register('FilenameGenerator', FilenameGenerator)
+    filemanager = BaseManager()
+    filemanager.start()
+    fn_gen = filemanager.FilenameGenerator()
+
+    n = cfg.get_threads() - 1
+
+    # One thread changes settings
+    changes = ChangeSettings()
+    changes.start()
+
+
+    ts = []
+
+
+    for i in range(n):
+        ts.append(GenExc(fn_gen, 10000000)) # May images
+    for t in ts:
+        t.start()
+        time.sleep(0.1)
+    for t in ts:
+        t.join()
+    return True
+
+
+
 def execNthreads(n, amnt=1):
     """
     Core method. Generates and runs n GenExcs
@@ -730,8 +784,9 @@ if __name__ == "__main__":
     #ebenentest()
 
 
+    execContinously_vary_params()
     #test_fft()
-    execNthreads(thrds, recursions)
+    #execNthreads(thrds, recursions)
     #test_gaussian_blur("bildordner/BlurImage.png")
     # lo = Lock()
     # start = time.perf_counter()
