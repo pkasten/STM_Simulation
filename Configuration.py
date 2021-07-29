@@ -376,12 +376,12 @@ def get_data_folder():
     if not initialized: setupConfigurationManager()
     return val_data_folder
 
+
 #@measureTime
 def get_sxm_folder():
     global settings_file
     if not initialized: setupConfigurationManager()
     return val_sxm_folder
-
 
 
 #@measureTime
@@ -430,6 +430,7 @@ def get_particles_per_image():
     global settings_file
     if not initialized: setupConfigurationManager()
     return val_particles
+
 
 def get_px_per_angstrom():
     global settings_file

@@ -554,11 +554,12 @@ class DataFrame:
                     self.objects.append(p)
 
     @measureTime
-    def add_Ordered(self, Object=Molecule, theta=None, factor=1.0, ph_grps=None, style=None):
+    def add_Ordered(self, Object=Molecule, theta=None, chirality=None, factor=1.0, ph_grps=None, style=None):
         """
         Add particles at positions observed in real STM Data forming regular patterns
         :param Object: Particle Class to be added in an ordered way
         :param theta: Angle by which the resulting lattice is turned. Random if None
+        :param chirality: Random if None
         :param factor: Multiplicative factor for increasing the spacing between molecules
         :param ph_grps: number of phenyl groups
         :param style: Specifies the display-style for added particles
@@ -570,7 +571,7 @@ class DataFrame:
         offset = 1.5*Molecule(molecule_ph_groups=5).get_simple_length()
         self.passed_args_Ordered = (Object, theta)
         var_pos = cfg.get_order_pos_var() * Molecule().get_simple_length()
-        var_ang = cfg.get_order_ang_var() * 2 * 3.141592653589793238462643
+        var_ang = cfg.get_order_ang_var() * 2 * np.pi
         vary_params = cfg.get_use_ordered_variation()
 
 
@@ -713,9 +714,10 @@ class DataFrame:
                 self.objects.append(Object(pos=pair[0], theta=pair[1], molecule_ph_groups=4, style=style))
 
         @measureTime
-        def add_ordered_NCPh5CN(theta=None):
+        def add_ordered_NCPh5CN(theta=None, chirality=None):
             """
             Method that adds Molecules with 5 phenyl groups
+            :param chirality:
             :param theta: Angle by which the resulting lattice is turned. Random if None
             :return: None
             """
@@ -791,8 +793,8 @@ class DataFrame:
                 theta_0 = 2 * np.pi * random.random()
             else:
                 theta_0 = theta
-
-            chirality = np.sign(random.random() - 0.5)
+            if chirality is None:
+                chirality = np.sign(random.random() - 0.5)
 
             gv_dist = Distance(True, 55.4938) * factor
             gv_a_w = theta_0 + bog(179.782)
@@ -840,7 +842,7 @@ class DataFrame:
         elif random_ph_grps == 4:
             add_ordered_NCPh4CN(theta)
         elif random_ph_grps == 5:
-            add_ordered_NCPh5CN(theta)
+            add_ordered_NCPh5CN(theta, chirality)
         else:
             raise NotImplementedError
 
