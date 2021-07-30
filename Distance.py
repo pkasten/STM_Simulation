@@ -8,13 +8,16 @@ class Distance:
     Helps to use same parameters for calculations in Angstrom and Visualitation in pixeln
     """
 
-    def __init__(self, useAng, arg):
+    def __init__(self, useAng, arg, pxPerAng=None):
         """
         Initializes new Distance
         :param useAng: True: arg has the unit Angstrom, False: arg has the unit pixels
         :param arg: length in angstrom or pixel
         """
-        px_durch_ang = cfg.get_px_per_angstrom()
+        if pxPerAng is None:
+            px_durch_ang = cfg.get_px_per_angstrom()
+        else:
+            px_durch_ang = pxPerAng
         if (useAng):
             self.px = px_durch_ang * arg
             self.ang = arg

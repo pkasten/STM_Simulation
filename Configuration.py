@@ -292,6 +292,8 @@ def update_params():
     val_order_ang_var = float(conf[cat_particle_properties][def_order_ang_var[0]]) / 100
     val_slope_dist = Distance(True, float(conf[cat_special][def_slope_dist[0]]))
 
+    #print("Upadted Params")
+
 # return THREADS parameter
 
 #@measureTime
@@ -376,12 +378,12 @@ def get_data_folder():
     if not initialized: setupConfigurationManager()
     return val_data_folder
 
-
 #@measureTime
 def get_sxm_folder():
     global settings_file
     if not initialized: setupConfigurationManager()
     return val_sxm_folder
+
 
 
 #@measureTime
@@ -431,9 +433,9 @@ def get_particles_per_image():
     if not initialized: setupConfigurationManager()
     return val_particles
 
-
 def get_px_per_angstrom():
-    global settings_file
+    global settings_file#, val_px_per_angstrom
+    #print("Ret px/ang: {}".format(val_px_per_angstrom))
     if not initialized: setupConfigurationManager()
     return val_px_per_angstrom
 
@@ -746,6 +748,7 @@ def set_image_dim(new_dim):
     val_height = Distance(True, new_dim)
 
 def set_px_per_ang(new_px_per_ang):
+    #print("Set px/ang to {}".format(new_px_per_ang))
     global val_px_per_angstrom
     val_px_per_angstrom = new_px_per_ang
 

@@ -10,20 +10,18 @@ from DataFrame import DataFrame
 from Functions import *
 import Configuration as cfg
 import math, time
-from multiprocessing import Process
+from multiprocessing import Process, Lock
 from multiprocessing.managers import BaseManager
 import matplotlib.pyplot as plt
 import csv
-# import skimage
+#import skimage
 
-# from skimage.viewer import ImageViewer
+#from skimage.viewer import ImageViewer
 import sys
-
 """
 Main class used to interact with the program. Provides basic methods
 Important are act(), GenExec and execNthreads()
 """
-
 
 def test_frame(data_frame):
     """
@@ -53,10 +51,9 @@ def test_gaussian_blur(fname):
     image = skimage.io.imread(fname=fname)
     viewer = ImageViewer(image)
     viewer.show()
-    blurred = skimage.filters.gaussian(image, sigma=(1, 1), truncate=3, multichannel=True)
+    blurred = skimage.filters.gaussian(image, sigma=(1,1), truncate=3, multichannel=True)
     viewer = ImageViewer(blurred)
     viewer.show()
-
 
 def measure_speed():
     """
@@ -116,13 +113,14 @@ class Generator(Process):
     """
     Multiprocessing process to execute generate()
     """
-
     def __init__(self, fn_gen):
         super().__init__()
         self.fn_gen = fn_gen
 
     def run(self):
         generate(self.fn_gen)
+
+
 
 
 def multi_test_fn(t, fgen):
@@ -144,11 +142,13 @@ def multi_test_fn(t, fgen):
         gen.kill()
 
 
+
+
+
 class Gen1(Process):
     """
     Generator that runs generate multiple times
     """
-
     def __init__(self, fn, n):
         """
 
@@ -214,7 +214,6 @@ class Gen2(Process):
     """
     Generator used for ordered adding at specific angles
     """
-
     def __init__(self, fn, a):
         """
 
@@ -259,7 +258,6 @@ class Gen3(Process):
     """
     Generator used to test Double-Tip method
     """
-
     def __init__(self, fn, a):
         """
 
@@ -276,6 +274,8 @@ class Gen3(Process):
         dat_frame.get_Image(ang=self.a)
         index = dat_frame.save()
         print("index {} had angle {:.1f}°".format(index, 180 * self.a / 3.14159))
+
+
 
 
 @DeprecationWarning
@@ -359,7 +359,6 @@ class Gen4(Process):
     """
     Generator for adding a single particle in the middle of the image rotated by given angle
     """
-
     def __init__(self, fn, a):
         """
 
@@ -400,8 +399,8 @@ def every_angle2():
         t.join()
     return True
 
-
 def test_fft():
+
     def _not_funcs(freq, intens):
         print("noise over Time")
         # Normalize
@@ -418,7 +417,7 @@ def test_fft():
         # plt.show()
 
         def get_phase_func(freq):
-            # return lambda x:0
+            #return lambda x:0
             if freq == 0:
                 return lambda x: 0
             max_time = 600
@@ -426,13 +425,14 @@ def test_fft():
             steps = 10
             startphase = lambda: 2 * np.pi * random.random()
 
+
             nextstep = lambda: 2 * np.pi * random.random() - np.pi
 
             steady_len = steps * slotlength
             slope_len = slotlength
 
             t = 0
-            pairs = []  # (time bis, valueLeft, Slope)
+            pairs = [] # (time bis, valueLeft, Slope)
             oldphase = 0
             while t < max_time:
                 t += steady_len
@@ -451,20 +451,22 @@ def test_fft():
                     if t < pairs[i][0]:
                         if pairs[i][2]:
                             dec = slope_len + t - pairs[i][0]
-                            m = (pairs[i + 1][1] - pairs[i][1]) / slope_len
+                            m = (pairs[i+1][1] - pairs[i][1])/slope_len
                             return pairs[i][1] + m * dec
                         else:
                             return pairs[i][1]
 
             return func
 
+
+
         def _to_wave(freq, ampl):
             phasefkt = get_phase_func(freq)
-
             def f(t):
-                return ampl * np.cos(2 * np.pi * freq * t + phasefkt(t))
+                return ampl * np.cos(2*np.pi * freq * t + phasefkt(t))
 
             return f
+
 
         times = range(10000)
         funcs = []
@@ -479,7 +481,10 @@ def test_fft():
                 summe += f(t)
             return summe
 
+
         return f
+
+
 
     frequency = []
     intensity = []
@@ -512,7 +517,7 @@ def test_fft():
 
     no_t = _not_funcs(frequency, intensity[:l])
     times = range(1000)
-    vals = [no_t(t / 1000) for t in times]
+    vals = [no_t(t/1000) for t in times]
 
     plt.plot(times, vals)
     plt.title("Alle Wellen mit Phase zufällig")
@@ -562,22 +567,22 @@ def test_fft():
     plt.title("Wenige Wellen Phase zufällig")
     plt.show()
 
-
 def test_atan():
+
     def eigen(x, y):
         if x > 0 and y > 0:
             return np.pi / 2 + np.arctan(y / x)
         elif x > 0 and y < 0:
-            return np.arctan(- x / y)
+            return np.arctan( - x/y)
         elif x < 0 and y > 0:
-            return np.pi + np.arctan(-x / y)
+            return np.pi + np.arctan(-x/ y)
         elif x < 0 and y < 0:
-            return 2 * np.pi - np.arctan(x / y)
+            return 2* np.pi - np.arctan(x / y)
         elif y == 0 and x < 0:
-            return (3 / 2) * np.pi
+            return (3/2) * np.pi
         elif y == 0 and x >= 0:
-            return np.pi / 2
-        elif x == 0 and y <= 0:
+            return np.pi/2
+        elif x==0 and y <= 0:
             return 0
         elif x == 0 and y > 0:
             return np.pi
@@ -590,17 +595,17 @@ def test_atan():
     xs = [x for x in range(-100, 100)]
     ys = [x for x in range(-100, 100)]
     mat_Eig = np.zeros((len(xs), len(ys)))
-    mat_mathe = np.zeros((len(xs), len(ys)))
+    mat_mathe= np.zeros((len(xs), len(ys)))
 
-    # print("Matheig {}, {} = {}".format(50, -50, eigen(50, -50)))
+    #print("Matheig {}, {} = {}".format(50, -50, eigen(50, -50)))
 
     for x in xs:
         for y in ys:
             mat_Eig[x + 100, y + 100] = eigen(x, y)
             mat_mathe[x + 100, y + 100] = mathe(x, y)
 
-    # mat_Eig = turn_matplotlib(mat_Eig)
-    # mat_mathe = turn_matplotlib(mat_mathe)
+    #mat_Eig = turn_matplotlib(mat_Eig)
+    #mat_mathe = turn_matplotlib(mat_mathe)
 
     fig, (ax1, ax2) = plt.subplots(1, 2)
     fig.suptitle('Horizontally stacked subplots')
@@ -611,7 +616,8 @@ def test_atan():
     plt.show()
 
 
-def ebene(diff=120):
+
+def ebene(diff = 120):
     w = int(cfg.get_width().px)
     h = int(cfg.get_height().px)
     maxampl = diff * 2
@@ -623,12 +629,11 @@ def ebene(diff=120):
     mat = np.zeros((w, h))
     for i in range(w):
         for j in range(h):
-            mat[i, j] = a * (i - midpointx) + (j - midpointy) * b
+            mat[i, j] = a * (i - midpointx) + (j- midpointy) * b
 
-    # plt.imshow(mat)
-    # plt.show()
+    #plt.imshow(mat)
+    #plt.show()
     return mat
-
 
 def ebenentest():
     mitt = 30
@@ -647,11 +652,15 @@ def ebenentest():
     plt.show()
 
 
+
+
+
+
 """
 Add Code here
 """
 thrds = cfg.get_threads()
-recursions = 20000
+recursions = 20
 
 
 def act(dat):
@@ -661,11 +670,11 @@ def act(dat):
     :param dat: Data frame opertaions should be done on
     :return:
     """
-    # pos = np.array([cfg.get_width()/2, cfg.get_height()/2])
-    # m = Particle(pos[0], pos[1], theta=0)
-    # m = Molecule(pos, theta=0)
-    # dat.addParticle(m)
-    dat.add_Ordered(ph_grps=5, chirality=-1)
+    #pos = np.array([cfg.get_width()/2, cfg.get_height()/2])
+    #m = Particle(pos[0], pos[1], theta=0)
+    #m = Molecule(pos, theta=0)
+    #dat.addParticle(m)
+    dat.add_Ordered(ph_grps=5)
     dat.get_Image()
     dat.save()
 
@@ -674,8 +683,7 @@ class GenExc(Process):
     """
     Core Generator. Code inside act() will be called amnt time by every thread
     """
-
-    def __init__(self, fn, amnt):
+    def __init__(self, fn, amnt, lck, name="GenExc"):
         """
 
         :param fn: Filename Generator instance
@@ -684,16 +692,38 @@ class GenExc(Process):
         super().__init__()
         self.fn = fn
         self.am = amnt
+        self.lck = lck
+        self.name = name
 
     def run(self) -> None:
         for i in range(self.am):
+            self.lck.acquire()
+            new_part_height = random.uniform(0.5, 5)  # Set ranges for variable parameters
+            new_img_width_ang = random.randint(10, 500)  # All possibly wrong, correct
+            new_px_ang = 224 / new_img_width_ang
+            new_gsc = random.uniform(0, 20)
+            new_stdderiv = random.uniform(0, 20)
+            new_maxH = random.uniform(0, 2 * new_part_height) + new_part_height
+            new_fex = random.uniform(0.5, 2)
+
+            #print("{} Set new Px/ang to {}".format(self.name, new_px_ang))
+            cfg.set_part_height(new_part_height)
+            cfg.set_px_per_ang(new_px_ang)
+            cfg.set_image_dim(new_img_width_ang)
+            cfg.set_grayscale_noise(new_gsc)
+            cfg.set_noise_stdderiv(new_stdderiv)
+            cfg.set_max_height(new_maxH)
+            cfg.set_fermi(new_fex)
+            self.lck.release()
+
+            #time.sleep(6)
+            #print("{} Got px/ang: {}".format(self.name, cfg.get_px_per_angstrom()))
             dat = DataFrame(self.fn)
             act(dat)
 
-
 class ChangeSettings(Process):
     """
-    Thread that parallelly changes the configuration settings
+    Thread that paralelly chages the configuration settings
     """
 
     def __init__(self):
@@ -701,9 +731,11 @@ class ChangeSettings(Process):
 
     def run(self):
         while True:
-            new_part_height = random.uniform(0.5, 5)  # Set ranges for variable parameters
-            new_img_width_ang = random.randint(5, 300)  # All possibly wrong, correct
-            new_px_ang = 512 / new_img_width_ang
+            time.sleep(14) # Change parameters every 5 minutes
+
+            new_part_height = random.uniform(0.5, 5) # Set ranges for variable parameters
+            new_img_width_ang = random.randint(50, 300) # All possibly wrong, correct
+            new_px_ang = 512/new_img_width_ang
             new_gsc = random.uniform(0, 20)
             new_stdderiv = random.uniform(0, 20)
             new_maxH = random.uniform(0, 2 * new_part_height) + new_part_height
@@ -717,7 +749,6 @@ class ChangeSettings(Process):
             cfg.set_max_height(new_maxH)
             cfg.set_fermi(new_fex)
 
-            time.sleep(300)  # Change parameters every 5 minutes
 
 
 def execContinously_vary_params():
@@ -726,22 +757,28 @@ def execContinously_vary_params():
     filemanager.start()
     fn_gen = filemanager.FilenameGenerator()
 
-    n = cfg.get_threads() - 1
+
+    n = cfg.get_threads()
 
     # One thread changes settings
-    changes = ChangeSettings()
-    changes.start()
+    #changes = ChangeSettings()
+    #changes.start()
+
+    edit_lock = Lock()
+
 
     ts = []
 
+
     for i in range(n):
-        ts.append(GenExc(fn_gen, 10000000))  # May images
+        ts.append(GenExc(fn_gen, 10000000, edit_lock, str(i))) # May images
     for t in ts:
         t.start()
         time.sleep(0.1)
     for t in ts:
         t.join()
     return True
+
 
 
 def execNthreads(n, amnt=1):
@@ -768,14 +805,17 @@ def execNthreads(n, amnt=1):
     return True
 
 
+
+
 if __name__ == "__main__":
     clearLog()
-    # ebenentest()
+    #ebenentest()
+
 
     execContinously_vary_params()
-    # test_fft()
-    # execNthreads(thrds, recursions)
-    # test_gaussian_blur("bildordner/BlurImage.png")
+    #test_fft()
+    #execNthreads(thrds, recursions)
+    #test_gaussian_blur("bildordner/BlurImage.png")
     # lo = Lock()
     # start = time.perf_counter()
     # fn = FilenameGenerator()

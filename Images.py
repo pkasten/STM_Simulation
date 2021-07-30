@@ -26,17 +26,15 @@ class MyImage:
     """
 
     # Import configuration parameters
-    width = cfg.get_width().px
-    height = cfg.get_height().px
+
     # Matrix to store grayscale values of visualization
-    colors = np.zeros((int(np.ceil(width)), int(np.ceil(height))))
     sigma = 5.5
     color_scheme = cfg.get_color_scheme()
 
     img = ""
     filename_generator = ""
 
-    def __init__(self, matrix=None):
+    def __init__(self, matrix=None, width=None, height=None, px_per_ang=None):
         """
         Initializes new Image. Uses matrix as color matrix, Zeros otherwise
         :param matrix: image matrix
@@ -44,14 +42,34 @@ class MyImage:
         self.use_white_noise = cfg.use_white_noise()
         self.use_line_noise = cfg.use_line_noise()
         if matrix is None:
+            if width is not None:
+                assert height is not None
+                assert px_per_ang is not None
+                self.width = width
+                self.height = height
+                self.px_per_ang = px_per_ang
+            else:
+                self.width = cfg.get_width().px
+                self.height = cfg.get_height().px
+                self.px_per_ang = cfg.get_px_per_angstrom()
+
+
+            self.colors = np.zeros((int(np.ceil(self.width)), int(np.ceil(self.height))))
             self.img = self.newImage()
             self.noised = False
+
         else:
             self.width = np.shape(matrix)[0]
             self.height = np.shape(matrix)[1]
+            if px_per_ang is None:
+                self.px_per_ang = cfg.get_px_per_angstrom()
+            else:
+                self.px_per_ang = px_per_ang
+
             self.img = self.newImage()
             self.colors = matrix
             self.updateImage()
+
 
     # @measureTime
     def getWidth(self):
@@ -248,7 +266,8 @@ class MyImage:
         """
         style = "horizontal"
         if style == "horizontal":
-            med_strength = 0.1 * cfg.get_width().px
+            #med_strength = 0.1 * cfg.get_width().px
+            med_strength = self.width
             variation = med_strength
             poss = 0.5
             y = 0
@@ -315,8 +334,10 @@ class MyImage:
             param diff: Difference between highest and lowest point
             :return:
             '''
-            w = int(cfg.get_width().px)
-            h = int(cfg.get_height().px)
+            #w = int(cfg.get_width().px)
+            #h = int(cfg.get_height().px)
+            w = int(self.width)
+            h = int(self.height)
             maxampl = diff * 2
 
             a = (random.random() - 0.5) * (maxampl / w)
@@ -776,9 +797,11 @@ class MyImage:
         """
 
         starttime = time.perf_counter()
-        scanspeed = Distance(True, SXM_info.get_scanspeed() * 1e10)  # in Angstr/s
-        width = cfg.get_width()
-        height = cfg.get_height()
+        scanspeed = Distance(True, SXM_info.get_scanspeed() * 1e10, self.px_per_ang)  # in Angstr/s
+        #width = cfg.get_width()
+        #height = cfg.get_height()
+        width = Distance(False, self.width, self.px_per_ang)
+        height = Distance(False, self.height, self.px_per_ang)
         t_line = width / scanspeed  # in s
         all = True
         no_of_inerest = 0

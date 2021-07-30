@@ -48,11 +48,14 @@ class DataFrame:
         self.text = ""
         self.img = None
 
+        self.px_per_ang = cfg.get_px_per_angstrom()
+
+
         # Get parameters from configuration for possible further use
         self.angle_char_len = cfg.get_angle_char_len()
         self.angle_correlation_std = cfg.get_angle_stdderiv()
         self.area = cfg.get_width() * cfg.get_height()
-        self.max_dist = Distance(True, np.sqrt(np.square(cfg.get_height().ang) + np.square(cfg.get_width().ang)))
+        self.max_dist = Distance(True, np.sqrt(np.square(cfg.get_height().ang) + np.square(cfg.get_width().ang)), self.px_per_ang)
         self.min_angle = cfg.get_angle_range_min()
         self.max_angle = cfg.get_angle_range_max()
         self.use_range = cfg.get_angle_range_usage()
@@ -87,7 +90,7 @@ class DataFrame:
         self.atomic_step_height = cfg.get_atomic_step_height()
 
         # AtomStepFermi
-        self.fermi_exp = cfg.get_fermi_exp() * cfg.get_nn_dist().px / Distance(True, 0.07).px
+        self.fermi_exp = cfg.get_fermi_exp() * cfg.get_nn_dist().px / Distance(True, 0.07, self.px_per_ang).px
         self.fermi_exp = 0.05
         self.fermi_range = np.log(99) / self.fermi_exp + cfg.get_atomic_step_height().px
         # self.fermi_range = 100
@@ -97,8 +100,11 @@ class DataFrame:
         self.max_height = cfg.get_max_height()
         self.use_img_shift = cfg.get_use_img_shift()
         self.use_scanlines = cfg.use_scanlines()
-        self.use_slope = cfg.get_slope_dist() != Distance(True, 0)
+        self.use_slope = cfg.get_slope_dist() != Distance(True, 0, self.px_per_ang)
         print("__init__: {:.2f}s".format(time.perf_counter() - start))
+
+
+
 
         # returns iterator over Particles
 
@@ -554,12 +560,11 @@ class DataFrame:
                     self.objects.append(p)
 
     @measureTime
-    def add_Ordered(self, Object=Molecule, theta=None, chirality=None, factor=1.0, ph_grps=None, style=None):
+    def add_Ordered(self, Object=Molecule, theta=None, factor=1.0, ph_grps=None, style=None):
         """
         Add particles at positions observed in real STM Data forming regular patterns
         :param Object: Particle Class to be added in an ordered way
         :param theta: Angle by which the resulting lattice is turned. Random if None
-        :param chirality: Random if None
         :param factor: Multiplicative factor for increasing the spacing between molecules
         :param ph_grps: number of phenyl groups
         :param style: Specifies the display-style for added particles
@@ -571,7 +576,7 @@ class DataFrame:
         offset = 1.5*Molecule(molecule_ph_groups=5).get_simple_length()
         self.passed_args_Ordered = (Object, theta)
         var_pos = cfg.get_order_pos_var() * Molecule().get_simple_length()
-        var_ang = cfg.get_order_ang_var() * 2 * np.pi
+        var_ang = cfg.get_order_ang_var() * 2 * 3.141592653589793238462643
         vary_params = cfg.get_use_ordered_variation()
 
 
@@ -596,8 +601,8 @@ class DataFrame:
                 theta_0 = random.random() * np.pi * 2
             else:
                 theta_0 = theta
-            dist_h = Distance(True, 13.226) * factor
-            dist_v = Distance(True, 13.1933) * factor
+            dist_h = Distance(True, 13.226, self.px_per_ang) * factor
+            dist_v = Distance(True, 13.1933, self.px_per_ang) * factor
             gv_a = np.array([dist_h * np.cos(theta_0), dist_h * np.sin(theta_0)])
             gv_b = np.array([-dist_v * np.sin(theta_0), dist_v * np.cos(theta_0)])
 
@@ -606,7 +611,7 @@ class DataFrame:
 
             pairs = []
 
-            start = np.array([Distance(True, 0), Distance(True, 0)])
+            start = np.array([Distance(True, 0, self.px_per_ang), Distance(True, 0, self.px_per_ang)])
             current = np.array([0, 0])
             a_temp = self.img_width / gv_b[0] if gv_b[0].px != 0 else -np.infty
             b_temp = self.img_height / gv_b[1] if gv_b[1].px != 0 else -np.infty
@@ -619,7 +624,7 @@ class DataFrame:
                     if self.img_width + offset > current[0] > (-1) * offset and offset + self.img_height > current[
                         1] > (-1) * offset:
                         if vary_params:
-                            wid = Distance(False, np.random.normal(0, var_pos.px))
+                            wid = Distance(False, np.random.normal(0, var_pos.px, self.px_per_ang))
                             rang = random.random() * 2 * np.pi
                             pos = current + np.array([wid * np.cos(rang), wid * np.sin(rang)])
                             angdiff = np.random.normal(ang_a if (i + j) % 2 == 0 else ang_b, var_ang)
@@ -645,7 +650,11 @@ class DataFrame:
                 theta_0 = random.random() * np.pi * 2
             else:
                 theta_0 = theta
-            chirality = np.sign(random.random() - 0.5)
+
+            # KI Train
+            #chirality = np.sign(random.random() - 0.5)
+            chirality = 1
+
             if chirality > 0:
                 ang_ud = (theta_0 + bog(217.306)) % (2 * np.pi)
                 ang_lr = (theta_0 + bog(134.136)) % (2 * np.pi)
@@ -660,10 +669,10 @@ class DataFrame:
                 lr_lat_ang = (theta_0 + bog(259.227)) % (2 * np.pi)
                 cross_ang = (theta_0 + bog(212.506)) % (2 * np.pi)
 
-            ud_dist = Distance(True, 24.1689) * factor
-            lr_dist = Distance(True, 22.7745) * factor
+            ud_dist = Distance(True, 24.1689, self.px_per_ang) * factor
+            lr_dist = Distance(True, 22.7745, self.px_per_ang) * factor
 
-            crossU_R = Distance(True, 17.1015) * factor
+            crossU_R = Distance(True, 17.1015, self.px_per_ang) * factor
 
             vec_ud_lr = np.array([crossU_R * np.sin(cross_ang), -crossU_R * np.cos(cross_ang)])
             vec_r = np.array([lr_dist * np.sin(lr_lat_ang), -lr_dist * np.cos(lr_lat_ang)])
@@ -679,14 +688,14 @@ class DataFrame:
             i = 5
             j = -10
 
-            start = np.array([Distance(True, 0), Distance(True, 0)])
+            start = np.array([Distance(True, 0, self.px_per_ang), Distance(True, 0, self.px_per_ang)])
             for i in range(-100, 100):
                 for j in range(-100, 100):
                     current = start + (vec_u * i) + (vec_r * j)
                     if self.img_width + offset > current[0] > (-1) * offset and offset + self.img_height > current[
                         1] > (-1) * offset:
                         if vary_params:
-                            wid = Distance(False, np.random.normal(0, var_pos.px))
+                            wid = Distance(False, np.random.normal(0, var_pos.px, self.px_per_ang))
                             rang = random.random() * 2 * np.pi
                             pos = current + np.array([wid * np.cos(rang), wid * np.sin(rang)])
                             angdiff = np.random.normal(ang_ud, var_ang)
@@ -699,7 +708,7 @@ class DataFrame:
                     if self.img_width + offset > secnd[0] > (-1) * offset and offset + self.img_height > secnd[
                         1] > (-1) * offset:
                         if vary_params:
-                            wid = Distance(False, np.random.normal(0, var_pos.px))
+                            wid = Distance(False, np.random.normal(0, var_pos.px, self.px_per_ang))
                             rang = random.random() * 2 * np.pi
                             pos = secnd + np.array([wid * np.cos(rang), wid * np.sin(rang)])
                             angdiff = np.random.normal(ang_lr, var_ang)
@@ -714,10 +723,9 @@ class DataFrame:
                 self.objects.append(Object(pos=pair[0], theta=pair[1], molecule_ph_groups=4, style=style))
 
         @measureTime
-        def add_ordered_NCPh5CN(theta=None, chirality=None):
+        def add_ordered_NCPh5CN(theta=None):
             """
             Method that adds Molecules with 5 phenyl groups
-            :param chirality:
             :param theta: Angle by which the resulting lattice is turned. Random if None
             :return: None
             """
@@ -732,7 +740,7 @@ class DataFrame:
                 :return:
                 """
 
-                d = Distance(True, 22.457) * factor
+                d = Distance(True, 22.457, self.px_per_ang) * factor
 
                 @measureTime
                 def turnvec(len, ang):
@@ -777,7 +785,7 @@ class DataFrame:
                     if self.img_width + offset > position[0] > (-1) * offset and offset + self.img_height > position[
                         1] > (-1) * offset:
                         if vary_params:
-                            wid = Distance(False, np.random.normal(0, var_pos.px))
+                            wid = Distance(False, np.random.normal(0, var_pos.px), self.px_per_ang)
                             rang = random.random() * 2 * np.pi
                             pos = position + np.array([wid * np.cos(rang), wid * np.sin(rang)])
                             angdiff = np.random.normal(thetas[i], var_ang)
@@ -793,10 +801,10 @@ class DataFrame:
                 theta_0 = 2 * np.pi * random.random()
             else:
                 theta_0 = theta
-            if chirality is None:
-                chirality = np.sign(random.random() - 0.5)
 
-            gv_dist = Distance(True, 55.4938) * factor
+            chirality = np.sign(random.random() - 0.5)
+
+            gv_dist = Distance(True, 55.4938, self.px_per_ang) * factor
             gv_a_w = theta_0 + bog(179.782)
             gv_b_w = theta_0 + bog(119.782)
 
@@ -805,7 +813,7 @@ class DataFrame:
 
             offset_loc = offset + gv_dist
 
-            start = np.array([Distance(True, 0), Distance(True, 0)])
+            start = np.array([Distance(True, 0,self.px_per_ang), Distance(True, 0, self.px_per_ang)])
             current = np.array([0, 0])
             a_temp = self.img_width / gv_b[0] if gv_b[0].px != 0 else -np.infty
             b_temp = self.img_height / gv_b[1] if gv_b[1].px != 0 else -np.infty
@@ -842,7 +850,7 @@ class DataFrame:
         elif random_ph_grps == 4:
             add_ordered_NCPh4CN(theta)
         elif random_ph_grps == 5:
-            add_ordered_NCPh5CN(theta, chirality)
+            add_ordered_NCPh5CN(theta)
         else:
             raise NotImplementedError
 
@@ -1390,7 +1398,7 @@ class DataFrame:
         debug_mode = False
         # rem
         # atoms_near_step = []
-        fex2 = 0.15 * Distance(True, 2.88).px / cfg.get_nn_dist().px
+        fex2 = 0.15 * Distance(True, 2.88, self.px_per_ang).px / cfg.get_nn_dist().px
 
         fermi_range2 = np.log(99) / fex2 + 50
         fermi_range2 = find_fermi_range(dh, fex2)
@@ -2015,7 +2023,7 @@ class DataFrame:
         """
 
         # New image istance for this frame
-        self.img = MyImage()
+        self.img = MyImage(width=self.img_width.px, height=self.img_height.px, px_per_ang=self.px_per_ang)
 
         # create new matrix with specified parameters
         width = self.img_width
@@ -3649,7 +3657,7 @@ class Double_Frame(DataFrame):
         see DataFrame.create_Image_Visualization
         :return:
         """
-        self.img = MyImage()
+        self.img = MyImage(width=self.img_width.px, height=self.img_height.px, px_per_ang=self.px_per_ang)
         self.img.setWidth(int(np.ceil(self.img_width.px)))
         self.img.setHeight(int(np.ceil(self.img_height.px)))
         # print("W: {} - {}".format(self.img_width, self.img.getWidth()))
