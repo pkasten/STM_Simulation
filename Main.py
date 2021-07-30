@@ -700,7 +700,7 @@ class GenExc(Process):
             self.lck.acquire()
             new_part_height = random.uniform(0.5, 5)  # Set ranges for variable parameters
             new_img_width_ang = random.randint(10, 500)  # All possibly wrong, correct
-            new_px_ang = 512 / new_img_width_ang
+            new_px_ang = 224 / new_img_width_ang
             new_gsc = random.uniform(0, 20)
             new_stdderiv = random.uniform(0, 20)
             new_maxH = random.uniform(0, 2 * new_part_height) + new_part_height

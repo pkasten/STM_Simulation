@@ -650,7 +650,11 @@ class DataFrame:
                 theta_0 = random.random() * np.pi * 2
             else:
                 theta_0 = theta
-            chirality = np.sign(random.random() - 0.5)
+
+            # KI Train
+            #chirality = np.sign(random.random() - 0.5)
+            chirality = 1
+
             if chirality > 0:
                 ang_ud = (theta_0 + bog(217.306)) % (2 * np.pi)
                 ang_lr = (theta_0 + bog(134.136)) % (2 * np.pi)
