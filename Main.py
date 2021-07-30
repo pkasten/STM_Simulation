@@ -660,7 +660,7 @@ def ebenentest():
 Add Code here
 """
 thrds = cfg.get_threads()
-recursions = 20
+recursions = 200000000
 
 
 def act(dat):
@@ -674,7 +674,7 @@ def act(dat):
     #m = Particle(pos[0], pos[1], theta=0)
     #m = Molecule(pos, theta=0)
     #dat.addParticle(m)
-    dat.add_Ordered(ph_grps=5)
+    dat.add_Ordered(ph_grps=5, chirality=-1)
     dat.get_Image()
     dat.save()
 
@@ -700,9 +700,9 @@ class GenExc(Process):
             self.lck.acquire()
             new_part_height = random.uniform(0.5, 5)  # Set ranges for variable parameters
             new_img_width_ang = random.randint(10, 500)  # All possibly wrong, correct
-            new_px_ang = 224 / new_img_width_ang
-            new_gsc = random.uniform(0, 20)
-            new_stdderiv = random.uniform(0, 20)
+            new_px_ang = 512 / new_img_width_ang
+            new_gsc = random.uniform(10, 200)
+            new_stdderiv = random.uniform(10, 200)
             new_maxH = random.uniform(0, 2 * new_part_height) + new_part_height
             new_fex = random.uniform(0.5, 2)
 
