@@ -699,7 +699,7 @@ class GenExc(Process):
         for i in range(self.am):
             self.lck.acquire()
             new_part_height = random.uniform(0.5, 5)  # Set ranges for variable parameters
-            new_img_width_ang = random.randint(50, 300)  # All possibly wrong, correct
+            new_img_width_ang = random.randint(10, 500)  # All possibly wrong, correct
             new_px_ang = 512 / new_img_width_ang
             new_gsc = random.uniform(0, 20)
             new_stdderiv = random.uniform(0, 20)
@@ -708,8 +708,8 @@ class GenExc(Process):
 
             #print("{} Set new Px/ang to {}".format(self.name, new_px_ang))
             cfg.set_part_height(new_part_height)
-            cfg.set_image_dim(new_img_width_ang)
             cfg.set_px_per_ang(new_px_ang)
+            cfg.set_image_dim(new_img_width_ang)
             cfg.set_grayscale_noise(new_gsc)
             cfg.set_noise_stdderiv(new_stdderiv)
             cfg.set_max_height(new_maxH)
