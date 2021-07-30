@@ -10,7 +10,7 @@ from DataFrame import DataFrame
 from Functions import *
 import Configuration as cfg
 import math, time
-from multiprocessing import Process
+from multiprocessing import Process, Lock
 from multiprocessing.managers import BaseManager
 import matplotlib.pyplot as plt
 import csv
@@ -674,7 +674,7 @@ def act(dat):
     #m = Particle(pos[0], pos[1], theta=0)
     #m = Molecule(pos, theta=0)
     #dat.addParticle(m)
-    dat.add_Ordered()
+    dat.add_Ordered(ph_grps=5)
     dat.get_Image()
     dat.save()
 
@@ -683,7 +683,7 @@ class GenExc(Process):
     """
     Core Generator. Code inside act() will be called amnt time by every thread
     """
-    def __init__(self, fn, amnt):
+    def __init__(self, fn, amnt, lck, name="GenExc"):
         """
 
         :param fn: Filename Generator instance
@@ -692,12 +692,34 @@ class GenExc(Process):
         super().__init__()
         self.fn = fn
         self.am = amnt
+        self.lck = lck
+        self.name = name
 
     def run(self) -> None:
         for i in range(self.am):
+            self.lck.acquire()
+            new_part_height = random.uniform(0.5, 5)  # Set ranges for variable parameters
+            new_img_width_ang = random.randint(50, 300)  # All possibly wrong, correct
+            new_px_ang = 512 / new_img_width_ang
+            new_gsc = random.uniform(0, 20)
+            new_stdderiv = random.uniform(0, 20)
+            new_maxH = random.uniform(0, 2 * new_part_height) + new_part_height
+            new_fex = random.uniform(0.5, 2)
+
+            #print("{} Set new Px/ang to {}".format(self.name, new_px_ang))
+            cfg.set_part_height(new_part_height)
+            cfg.set_image_dim(new_img_width_ang)
+            cfg.set_px_per_ang(new_px_ang)
+            cfg.set_grayscale_noise(new_gsc)
+            cfg.set_noise_stdderiv(new_stdderiv)
+            cfg.set_max_height(new_maxH)
+            cfg.set_fermi(new_fex)
+            self.lck.release()
+
+            #time.sleep(6)
+            #print("{} Got px/ang: {}".format(self.name, cfg.get_px_per_angstrom()))
             dat = DataFrame(self.fn)
             act(dat)
-
 
 class ChangeSettings(Process):
     """
@@ -709,7 +731,7 @@ class ChangeSettings(Process):
 
     def run(self):
         while True:
-            time.sleep(300) # Change parameters every 5 minutes
+            time.sleep(14) # Change parameters every 5 minutes
 
             new_part_height = random.uniform(0.5, 5) # Set ranges for variable parameters
             new_img_width_ang = random.randint(50, 300) # All possibly wrong, correct
@@ -735,18 +757,21 @@ def execContinously_vary_params():
     filemanager.start()
     fn_gen = filemanager.FilenameGenerator()
 
-    n = cfg.get_threads() - 1
+
+    n = cfg.get_threads()
 
     # One thread changes settings
-    changes = ChangeSettings()
-    changes.start()
+    #changes = ChangeSettings()
+    #changes.start()
+
+    edit_lock = Lock()
 
 
     ts = []
 
 
     for i in range(n):
-        ts.append(GenExc(fn_gen, 10000000)) # May images
+        ts.append(GenExc(fn_gen, 10000000, edit_lock, str(i))) # May images
     for t in ts:
         t.start()
         time.sleep(0.1)

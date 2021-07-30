@@ -2013,7 +2013,7 @@ class DataFrame:
         """
 
         # New image istance for this frame
-        self.img = MyImage()
+        self.img = MyImage(width=self.img_width.px, height=self.img_height.px)
 
         # create new matrix with specified parameters
         width = self.img_width
@@ -3647,7 +3647,7 @@ class Double_Frame(DataFrame):
         see DataFrame.create_Image_Visualization
         :return:
         """
-        self.img = MyImage()
+        self.img = MyImage(width=self.img_width.px, height=self.img_height.px)
         self.img.setWidth(int(np.ceil(self.img_width.px)))
         self.img.setHeight(int(np.ceil(self.img_height.px)))
         # print("W: {} - {}".format(self.img_width, self.img.getWidth()))

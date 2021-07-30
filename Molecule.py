@@ -52,8 +52,8 @@ class Molecule(Particle):
 
         # set positioning parameters
         if pos is None:
-            x = Distance(False, random.randint(0 - cfg.get_px_overlap(), cfg.get_width().px + cfg.get_px_overlap()))
-            y = Distance(False, random.randint(0 - cfg.get_px_overlap(), cfg.get_height().px + cfg.get_px_overlap()))
+            x = Distance(False, random.randint(0 - cfg.get_px_overlap(), int(cfg.get_width().px + cfg.get_px_overlap())))
+            y = Distance(False, random.randint(0 - cfg.get_px_overlap(), int(cfg.get_height().px + cfg.get_px_overlap())))
             self.pos = np.array([x, y])
         else:
             self.pos = pos
