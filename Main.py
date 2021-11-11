@@ -698,6 +698,7 @@ class GenExc(Process):
     def run(self) -> None:
         for i in range(self.am):
             self.lck.acquire()
+
             new_part_height = random.uniform(0.5, 5)  # Set ranges for variable parameters
             new_img_width_ang_min = 80
             new_img_width_ang_max = 3000
@@ -724,33 +725,33 @@ class GenExc(Process):
             act(dat)
 
 # class ChangeSettings(Process):
-#    """
-#    Thread that paralelly chages the configuration settings
-#    """
+#     """
+#     Thread that paralelly chages the configuration settings
+#     """
 #
-#    def __init__(self):
-#        super().__init__()
+#     def __init__(self):
+#         super().__init__()
 #
-#    def run(self):
-#        while True:
-#            time.sleep(14) # Change parameters every 5 minutes
+#     def run(self):
+#         while True:
+#             time.sleep(14) # Change parameters every 5 minutes
 #
-#            new_part_height = random.uniform(0.5, 5) # Set ranges for variable parameters
-#            new_img_width_ang = random.randint(50, 300) # All possibly wrong, correct
-#            new_px_ang = 512/new_img_width_ang
-#            new_gsc = random.uniform(0, 20)
-#            new_stdderiv = random.uniform(0, 20)
-#            new_maxH = random.uniform(0, 2 * new_part_height) + new_part_height
-#            new_fex = random.uniform(0.5, 2)
+#             new_part_height = random.uniform(0.5, 5) # Set ranges for variable parameters
+#             new_img_width_ang = random.randint(10, 500) # All possibly wrong, correct
+#             new_px_ang = 512/new_img_width_ang
+#             new_gsc = random.uniform(30, 200)
+#             new_stdderiv = random.uniform(30, 300)
+#             new_maxH = random.uniform(0, 2 * new_part_height) + new_part_height
+#             new_fex = random.uniform(0.5, 2)
 #
-#            cfg.set_part_height(new_part_height)
-#            cfg.set_image_dim(new_img_width_ang)
-#            cfg.set_px_per_ang(new_px_ang)
-#            cfg.set_grayscale_noise(new_gsc)
-#            cfg.set_noise_stdderiv(new_stdderiv)
-#            cfg.set_max_height(new_maxH)
-#            cfg.set_fermi(new_fex)
-
+#             cfg.set_part_height(new_part_height)
+#             cfg.set_image_dim(new_img_width_ang)
+#             cfg.set_px_per_ang(new_px_ang)
+#             cfg.set_grayscale_noise(new_gsc)
+#             cfg.set_noise_stdderiv(new_stdderiv)
+#             cfg.set_max_height(new_maxH)
+#             cfg.set_fermi(new_fex)
+#
 
 
 def execContinously_vary_params():
@@ -760,7 +761,9 @@ def execContinously_vary_params():
     fn_gen = filemanager.FilenameGenerator()
 
 
-    n = cfg.get_threads()
+    #n = cfg.get_threads()
+
+    n = 14
 
     # One thread changes settings
     #changes = ChangeSettings()

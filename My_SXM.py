@@ -10,33 +10,63 @@ class My_SXM():
     """
 
     @staticmethod
-    def write_header(filename):
+    def write_header(filename, range=None):
         """
         Write Header for SXM File
         :param filename: file to write header tp
         :return:
         """
-        with open(filename, "w") as file:
-            settings = SXM_info.get_header_arr()
-            for elem in settings:
-                arg = elem[1]
-                string = ""
-                try:
-                    arg = arg[0]
-                except IndexError:
-                    file.write(":{}:\n\n".format(elem[0]))
-                    continue
-                if len(elem[1]) == 1:
-                    string = "\t".join(arg)
-                    file.write(":{}:\n{}\n".format(elem[0], string))
-                    continue
-                else:
-                    file.write(":{}:\n".format(elem[0]))
-                    for arg in elem[1]:
-                        file.write("{}\n".format("\t".join(arg)))
+
+        if range is None:
+            with open(filename, "w") as file:
+                settings = SXM_info.get_header_arr()
+                for elem in settings:
+                    arg = elem[1]
+                    string = ""
+                    try:
+                        arg = arg[0]
+                    except IndexError:
+                        file.write(":{}:\n\n".format(elem[0]))
+                        continue
+                    if len(elem[1]) == 1:
+                        string = "\t".join(arg)
+                        file.write(":{}:\n{}\n".format(elem[0], string))
+                        continue
+                    else:
+                        file.write(":{}:\n".format(elem[0]))
+                        for arg in elem[1]:
+                            file.write("{}\n".format("\t".join(arg)))
+        else:
+
+            #print(f"Range Parameter: {range}")
+            #print(f"Range[0] Parameter: {range[0]}")
+            #print(f"Range[0].ang Parameter: {range[0].ang}")
+
+            with open(filename, "w") as file:
+                settings = SXM_info.get_header_arr()
+                for elem in settings:
+                   # print(elem)
+                    if elem[0] == "SCAN_RANGE":
+                        elem = ("SCAN_RANGE", [[str(range[0].ang) + "E-10", str(range[1].ang) + "E-10"]])
+                    #    print(f"Adjusted Range to {elem}")
+                    arg = elem[1]
+                    string = ""
+                    try:
+                        arg = arg[0]
+                    except IndexError:
+                        file.write(":{}:\n\n".format(elem[0]))
+                        continue
+                    if len(elem[1]) == 1:
+                        string = "\t".join(arg)
+                        file.write(":{}:\n{}\n".format(elem[0], string))
+                        continue
+                    else:
+                        file.write(":{}:\n".format(elem[0]))
+                        for arg in elem[1]:
+                            file.write("{}\n".format("\t".join(arg)))
 
     @staticmethod
-    def write_sxm(filename, data):
+    def write_sxm(filename, data, range=None):
         """
         write SXM data
         :param filename: file
@@ -55,7 +85,7 @@ class My_SXM():
         except FileNotFoundError:
             os.mkdir(cfg.get_sxm_folder())
 
-        My_SXM.write_header(filename)
+        My_SXM.write_header(filename, range=range)
         My_SXM.write_image(filename, data)
 
 

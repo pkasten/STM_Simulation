@@ -76,6 +76,7 @@ class DataFrame:
 
         self.img_width = cfg.get_width()
         self.img_height = cfg.get_height()
+        print(f"Recieved Dimensions in DF: {self.img_width} = {self.img_width.px}")
         self.use_crystal_orientations = cfg.get_crystal_orientation_usage()
         self.crystal_directions_num = cfg.get_no_of_orientations()
         self.crystal_directions = cfg.get_crystal_orientations_array()
@@ -101,6 +102,14 @@ class DataFrame:
         self.use_img_shift = cfg.get_use_img_shift()
         self.use_scanlines = cfg.use_scanlines()
         self.use_slope = cfg.get_slope_dist() != Distance(True, 0, self.px_per_ang)
+
+        self.label_map = np.zeros((int(self.img_width.px), int(self.img_height.px)))
+        self.create_labelmap = True
+        self.noiseLabel= True
+        self.chirality = None
+        self.has_atomic_step = None
+        self.noise_poss = 0.3
+
         print("__init__: {:.2f}s".format(time.perf_counter() - start))
 
 
@@ -560,7 +569,7 @@ class DataFrame:
                     self.objects.append(p)
 
     @measureTime
-    def add_Ordered(self, Object=Molecule, theta=None, chirality =None, factor=1.0, ph_grps=None, style=None):
+    def add_Ordered(self, Object=Molecule, theta=None, factor=1.0, ph_grps=None, style=None, chirality=None):
         """
         Add particles at positions observed in real STM Data forming regular patterns
         :param Object: Particle Class to be added in an ordered way
@@ -570,6 +579,14 @@ class DataFrame:
         :param style: Specifies the display-style for added particles
         :return: None
         """
+
+        print(f"AddOrdered Call: ph={ph_grps}, chri={chirality}")
+
+        # LBLMP_Modifications
+        if (random.random() < self.noise_poss) and (chirality is not None):
+            print("Noise in entire Image")
+            self.chirality = 0
+            return
 
         start = time.perf_counter()
         #offset = Distance(False, cfg.get_px_overlap())
@@ -652,8 +669,8 @@ class DataFrame:
                 theta_0 = theta
 
             # KI Train
-            #chirality = np.sign(random.random() - 0.5)
-            chirality = 1
+            chirality = np.sign(random.random() - 0.5)
+            #chirality = 1
 
             if chirality > 0:
                 ang_ud = (theta_0 + bog(217.306)) % (2 * np.pi)
@@ -723,7 +740,7 @@ class DataFrame:
                 self.objects.append(Object(pos=pair[0], theta=pair[1], molecule_ph_groups=4, style=style))
 
         @measureTime
-        def add_ordered_NCPh5CN(theta=None, chirality =None):
+        def add_ordered_NCPh5CN(theta=None, chirality=None):
             """
             Method that adds Molecules with 5 phenyl groups
             :param theta: Angle by which the resulting lattice is turned. Random if None
@@ -801,8 +818,13 @@ class DataFrame:
                 theta_0 = 2 * np.pi * random.random()
             else:
                 theta_0 = theta
+
             if chirality is None:
                 chirality = np.sign(random.random() - 0.5)
+            else:
+                chirality = chirality
+
+            self.chirality = chirality
 
             gv_dist = Distance(True, 55.4938, self.px_per_ang) * factor
             gv_a_w = theta_0 + bog(179.782)
@@ -850,7 +872,7 @@ class DataFrame:
         elif random_ph_grps == 4:
             add_ordered_NCPh4CN(theta)
         elif random_ph_grps == 5:
-            add_ordered_NCPh5CN(theta, chirality)
+            add_ordered_NCPh5CN(theta, chirality=chirality)
         else:
             raise NotImplementedError
 
@@ -2032,6 +2054,7 @@ class DataFrame:
 
         # Decides if atomic step should be present
         use_atomstep = random.random() < cfg.get_atomic_step_poss()
+        self.has_atomic_step = use_atomstep
 
         # Set Max Height for parts
         if use_atomstep:
@@ -2193,6 +2216,14 @@ class DataFrame:
         :return:
         """
 
+        # LBLMP_Modifications
+        if self.create_labelmap:
+            upperchir = 0
+            lowerchir = 0
+            uppernoise = random.random() < self.noise_poss
+            lowernoise = random.random() < self.noise_poss
+            print(f"UN: {uppernoise}, LN:{lowernoise}")
+
         if self.passed_args_Ordered is None:
             return
 
@@ -2254,6 +2285,32 @@ class DataFrame:
                 else:
                     return not posy < border[posx][1], dist
 
+        def _upper(x, y):
+            """
+            returns if position (x, y) is on the upper side and which distance to the step it has
+            :param x: x
+            :param y: y
+            :return: if its on the upper side, distance
+            """
+
+            posy = max(0, y)
+            posy = int(np.round(min(np.shape(matrix)[1] - 1, posy)))
+            posx = max(0, x)
+            posx = int(np.round(min(np.shape(matrix)[0] - 1, posx)))
+
+            if updown:
+                if sideA:
+                    return posx < border[posy][0]
+
+                else:
+                    return not posx < border[posy][0]
+
+            else:
+                if sideA:
+                    return posy < border[posx][1]
+                else:
+                    return not posy < border[posx][1]
+
         def rempos(part, dist):  # 1 at 3pd, 0 at 7pd
             """
             Definition of possibility to remove a particle depending on its distance to the line
@@ -2261,7 +2318,7 @@ class DataFrame:
             :param dist: distance to the line
             :return: possibility to remove the particle
             """
-            return (1 + (3 / 7)) - (dist / (7 * part.get_dimension().px))
+            return (1 + (1 / 4)) - (dist / (4 * part.get_dimension().px))
 
         # Removes all existing objects
         old_objs = self.objects.copy()
@@ -2270,12 +2327,31 @@ class DataFrame:
         ph_groups = old_objs[0].molecule_ph_groups
 
         # add particles on the upper plane
-        self.add_Ordered(*self.passed_args_Ordered, ph_grps=ph_groups)
+        # LBLMP_Modifications
+        if self.create_labelmap:
+            if not uppernoise:
+                upperchir = np.sign(random.random() - 0.5)
+                # print(f"upperchir: {upperchir}")
+                self.add_Ordered(*self.passed_args_Ordered, ph_grps=ph_groups, chirality=upperchir)
+            else:
+                upperchir = 0
+        else:
+            self.add_Ordered(*self.passed_args_Ordered, ph_grps=ph_groups)
+
         upper_obs = self.objects.copy()
         self.objects = []
 
         # add particles on the lower plane
-        self.add_Ordered(*self.passed_args_Ordered, ph_grps=ph_groups)
+        # LBLMP_Modifications
+        if self.create_labelmap:
+            if not lowernoise:
+                lowerchir = np.sign(random.random() - 0.5)
+                # print(f"lowerchir: {lowerchir}")
+                self.add_Ordered(*self.passed_args_Ordered, ph_grps=ph_groups, chirality=lowerchir)
+            else:
+                lowerchir = 0
+        else:
+            self.add_Ordered(*self.passed_args_Ordered, ph_grps=ph_groups)
         lower_obs = self.objects.copy()
         self.objects = []
 
@@ -2304,9 +2380,46 @@ class DataFrame:
             if i not in rem_ind_lower:
                 self.objects.append(lower_obs[i])
 
+        # LBLMP_Modifications
+        if self.create_labelmap:
+
+            print(f"Crating Labelmap: UC={upperchir}, UN={uppernoise} \nLC={lowerchir}, LN={lowernoise}")
+
+            def chir2color(chir):
+                if chir == 0:
+                    return 128
+                return 0 if chir < 0 else 255
+
+            if upperchir == lowerchir:
+                print(f"Are Equal -> using {upperchir}")
+                self.label_map = chir2color(upperchir) * np.ones(np.shape(self.label_map))
+            else:
+                print("Not Equal")
+
+                # print(f"color for lowerchir: {chir2color(lowerchir)} and upperchir: {chir2color(upperchir)}")
+
+                matrix = self.label_map
+                newmatrix = np.zeros(np.shape(matrix))
+                for y in range(np.shape(matrix)[1]):
+                    for x in range(np.shape(matrix)[0]):
+                        newmatrix[x, y] = chir2color(upperchir) if _upper(x, y) else chir2color(lowerchir)
+                        #print(f"Setting color of ({x},{y}) to {newmatrix[x, y]}")
+
+                self.label_map = newmatrix
+            #plt.imshow(self.label_map)
+            #plt.title("Lable Map")
+            #plt.show()
+
         # Add particles at random positions around the steps if they dont overlap
         start = time.perf_counter()
         i = 0
+        # LBLMP_Modifications
+        if uppernoise and lowernoise:
+            i = 200
+        elif uppernoise or lowernoise:
+            i = 60
+        else:
+            i = 0
         while i < 100:
             no = self._get_molec_thatnot_overlaps(self.passed_args_Ordered[0], ph=ph_groups, maximumtries=5000)
             if no is None:
@@ -2317,9 +2430,20 @@ class DataFrame:
                 #print("Prevented from crossing ang")
                 continue
 
+            # LBLMP_Modifications
+            if uppernoise and lowernoise:
+                return
+
+            if uppernoise or lowernoise:
+                uppr = _upper(no.pos[0].px, no.pos[1].px)
+                if uppr and uppernoise or lowernoise and not uppr:
+                    i += 1
+                    continue
+
             i += 1
             self.objects.append(no)
-        #print("Got {} after {:.2f}ms".format(i, time.perf_counter() - start))
+            if i % 10 == 0:
+                print("Got {} after {:.2f}ms".format(i, time.perf_counter() - start))
 
     @measureTime
     def get_Image_Dust(self):
@@ -2425,6 +2549,28 @@ class DataFrame:
         # update image matrix
         self.img.updateImage()
 
+
+        # LBLMP_Modifications
+        if self.create_labelmap:
+            if not self.has_atomic_step:
+                def chir2color(chir):
+                    if chir == 0:
+                        return 128
+                    return 0 if chir < 0 else 255
+                print("Labelmap in normal image:")
+                self.label_map = chir2color(self.chirality) * np.ones((int(self.img_width.px), int(self.img_height.px)))
+               # plt.imshow(self.label_map)
+               # plt.title("Normal")
+               # plt.show()
+            #else:
+            #    plt.imshow(self.label_map)
+            #    plt.title("AS")
+            #    plt.show()
+
+            self.label_map_img = MyImage(matrix=self.label_map)
+            #self.label_map_img.addMatrix(self.label_map)
+            self.label_map_img.updateImage()
+
         print("get Image: {:.2f}s".format(time.perf_counter() - start))
 
         # @measureTime
@@ -2468,7 +2614,12 @@ class DataFrame:
             with open(dat_path, "w") as dat_file:
                 dat_file.write(self.text)
         self.img.saveImage(img_path)
-        My_SXM.write_sxm(sxm_path, self.img.get_matrix())
+
+        # LBLMP_Modifications
+        if self.create_labelmap:
+            labelpath = dat_path[::-1].split(".", 1)[1][::-1] + ".png"
+            self.label_map_img.saveImage(labelpath)
+        My_SXM.write_sxm(sxm_path, self.img.get_matrix(), range=(self.img_width, self.img_height))
         print("Save: {:.2f}s".format(time.perf_counter() - start))
         return index
 
@@ -3668,6 +3819,7 @@ class Double_Frame(DataFrame):
         matrix = np.zeros((width, height))
 
         use_atomstep = random.random() < cfg.get_atomic_step_poss()
+        self.has_atomic_step = use_atomstep
 
         # Set Max Height for parts
         if use_atomstep:
