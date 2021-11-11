@@ -699,14 +699,18 @@ class GenExc(Process):
         for i in range(self.am):
             self.lck.acquire()
             new_part_height = random.uniform(0.5, 5)  # Set ranges for variable parameters
-            new_img_width_ang = random.randint(10, 500)  # All possibly wrong, correct
+            new_img_width_ang_min = 80
+            new_img_width_ang_max = 3000
+            #new_img_width_ang = random.uniform(new_img_width_ang_min, new_img_width_ang_max)
+            #new_img_width_ang = 1 / random.uniform(1 / new_img_width_ang_max, 1 / new_img_width_ang_min)
+            new_img_width_ang = np.exp(random.uniform(np.log(new_img_width_ang_min), np.log(new_img_width_ang_max)))
+            #print(f"new_img_width_ang: {new_img_width_ang}")
             new_px_ang = 512 / new_img_width_ang
-            new_gsc = random.uniform(10, 200)
-            new_stdderiv = random.uniform(10, 200)
-            new_maxH = random.uniform(0, 2 * new_part_height) + new_part_height
-            new_fex = random.uniform(0.5, 2)
+            new_gsc = random.uniform(90, 120)
+            new_stdderiv = random.uniform(90, 120)
+            new_maxH = random.uniform(0.5, 1 * new_part_height) + new_part_height
+            new_fex = random.uniform(0.5, 1)
 
-            #print("{} Set new Px/ang to {}".format(self.name, new_px_ang))
             cfg.set_part_height(new_part_height)
             cfg.set_px_per_ang(new_px_ang)
             cfg.set_image_dim(new_img_width_ang)
@@ -716,38 +720,36 @@ class GenExc(Process):
             cfg.set_fermi(new_fex)
             self.lck.release()
 
-            #time.sleep(6)
-            #print("{} Got px/ang: {}".format(self.name, cfg.get_px_per_angstrom()))
             dat = DataFrame(self.fn)
             act(dat)
 
-class ChangeSettings(Process):
-    """
-    Thread that paralelly chages the configuration settings
-    """
-
-    def __init__(self):
-        super().__init__()
-
-    def run(self):
-        while True:
-            time.sleep(14) # Change parameters every 5 minutes
-
-            new_part_height = random.uniform(0.5, 5) # Set ranges for variable parameters
-            new_img_width_ang = random.randint(50, 300) # All possibly wrong, correct
-            new_px_ang = 512/new_img_width_ang
-            new_gsc = random.uniform(0, 20)
-            new_stdderiv = random.uniform(0, 20)
-            new_maxH = random.uniform(0, 2 * new_part_height) + new_part_height
-            new_fex = random.uniform(0.5, 2)
-
-            cfg.set_part_height(new_part_height)
-            cfg.set_image_dim(new_img_width_ang)
-            cfg.set_px_per_ang(new_px_ang)
-            cfg.set_grayscale_noise(new_gsc)
-            cfg.set_noise_stdderiv(new_stdderiv)
-            cfg.set_max_height(new_maxH)
-            cfg.set_fermi(new_fex)
+# class ChangeSettings(Process):
+#    """
+#    Thread that paralelly chages the configuration settings
+#    """
+#
+#    def __init__(self):
+#        super().__init__()
+#
+#    def run(self):
+#        while True:
+#            time.sleep(14) # Change parameters every 5 minutes
+#
+#            new_part_height = random.uniform(0.5, 5) # Set ranges for variable parameters
+#            new_img_width_ang = random.randint(50, 300) # All possibly wrong, correct
+#            new_px_ang = 512/new_img_width_ang
+#            new_gsc = random.uniform(0, 20)
+#            new_stdderiv = random.uniform(0, 20)
+#            new_maxH = random.uniform(0, 2 * new_part_height) + new_part_height
+#            new_fex = random.uniform(0.5, 2)
+#
+#            cfg.set_part_height(new_part_height)
+#            cfg.set_image_dim(new_img_width_ang)
+#            cfg.set_px_per_ang(new_px_ang)
+#            cfg.set_grayscale_noise(new_gsc)
+#            cfg.set_noise_stdderiv(new_stdderiv)
+#            cfg.set_max_height(new_maxH)
+#            cfg.set_fermi(new_fex)
 
 
 
