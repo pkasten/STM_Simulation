@@ -108,7 +108,7 @@ class DataFrame:
         self.noiseLabel= True
         self.chirality = None
         self.has_atomic_step = None
-        self.noise_poss = 0.3
+        self.noise_poss = 0.0
 
         print("__init__: {:.2f}s".format(time.perf_counter() - start))
 
@@ -580,7 +580,7 @@ class DataFrame:
         :return: None
         """
 
-        print(f"AddOrdered Call: ph={ph_grps}, chri={chirality}")
+        print(f"AddOrdered Call: ph={ph_grps}, chir={chirality}")
 
         # LBLMP_Modifications
         if (random.random() < self.noise_poss) and (chirality is not None):
